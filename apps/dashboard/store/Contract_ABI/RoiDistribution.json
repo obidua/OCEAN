@@ -43,13 +43,13 @@
       {
         "indexed": true,
         "internalType": "uint32",
-        "name": "fromDay",
+        "name": "fromPeriod",
         "type": "uint32"
       },
       {
         "indexed": true,
         "internalType": "uint32",
-        "name": "toDay",
+        "name": "toPeriod",
         "type": "uint32"
       },
       {
@@ -165,12 +165,12 @@
       },
       {
         "internalType": "uint32",
-        "name": "fromDay",
+        "name": "fromPeriod",
         "type": "uint32"
       },
       {
         "internalType": "uint32",
-        "name": "toDay",
+        "name": "toPeriod",
         "type": "uint32"
       }
     ],
@@ -185,6 +185,11 @@
         "internalType": "uint256",
         "name": "ramaTotal",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "epochsCount",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -199,12 +204,12 @@
       },
       {
         "internalType": "uint32",
-        "name": "fromDay",
+        "name": "fromPeriod",
         "type": "uint32"
       },
       {
         "internalType": "uint32",
-        "name": "toDay",
+        "name": "toPeriod",
         "type": "uint32"
       }
     ],
@@ -219,6 +224,11 @@
         "internalType": "uint256",
         "name": "ramaTotal",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "epochsCount",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -297,6 +307,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "epochSeconds",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -339,12 +362,12 @@
         "components": [
           {
             "internalType": "uint32",
-            "name": "fromDay",
+            "name": "fromPeriod",
             "type": "uint32"
           },
           {
             "internalType": "uint32",
-            "name": "toDay",
+            "name": "toPeriod",
             "type": "uint32"
           },
           {
@@ -371,25 +394,6 @@
         "internalType": "struct ROIDistributor.ClaimRec[]",
         "name": "out",
         "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getLastClaimedDay",
-    "outputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -498,12 +502,59 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_cfg",
+        "name": "user",
         "type": "address"
+      }
+    ],
+    "name": "getUnclaimedROI",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "usdTotalMicro",
+        "type": "uint256"
       },
       {
+        "internalType": "uint256",
+        "name": "ramaTotalWei",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "fromPeriod",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "lastPeriod",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "epochsCount",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
-        "name": "_oracle",
+        "name": "_cfg",
+        "type": "address"
+      }
+    ],
+    "name": "initConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_cfg",
         "type": "address"
       }
     ],
@@ -520,7 +571,7 @@
         "type": "address"
       }
     ],
-    "name": "lastClaimDay",
+    "name": "lastClaimPeriod",
     "outputs": [
       {
         "internalType": "uint32",
@@ -533,7 +584,7 @@
   },
   {
     "inputs": [],
-    "name": "maxDaysPerClaim",
+    "name": "maxPeriodsPerClaim",
     "outputs": [
       {
         "internalType": "uint32",
@@ -598,31 +649,36 @@
       },
       {
         "internalType": "uint32",
-        "name": "fromDay",
+        "name": "fromPeriod",
         "type": "uint32"
       },
       {
         "internalType": "uint32",
-        "name": "toDay",
+        "name": "toPeriod",
         "type": "uint32"
       }
     ],
-    "name": "perDayPreview",
+    "name": "perPeriodPreview",
     "outputs": [
       {
         "internalType": "uint32[]",
-        "name": "dayIds",
+        "name": "periodIds",
         "type": "uint32[]"
       },
       {
         "internalType": "uint256[]",
-        "name": "usdPerDay",
+        "name": "usdPerPeriod",
         "type": "uint256[]"
       },
       {
         "internalType": "uint256[]",
-        "name": "ramaPerDay",
+        "name": "ramaPerPeriod",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "uint32",
+        "name": "epochsCount",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -667,14 +723,78 @@
         "type": "uint256[]"
       },
       {
+        "internalType": "uint32[]",
+        "name": "epochCounts",
+        "type": "uint32[]"
+      },
+      {
         "internalType": "uint32",
-        "name": "fromDay",
+        "name": "fromPeriod",
         "type": "uint32"
       },
       {
         "internalType": "uint32",
-        "name": "lastDay",
+        "name": "lastPeriod",
         "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "previewClaimPerPortfolioSlice",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "pids",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "usdTotals",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "ramaTotals",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "epochCounts",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint32",
+        "name": "fromPeriod",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "lastPeriod",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalCount",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -704,11 +824,42 @@
     "inputs": [
       {
         "internalType": "uint32",
-        "name": "maxDays_",
+        "name": "unit",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "value",
         "type": "uint32"
       }
     ],
-    "name": "setMaxDaysPerClaim",
+    "name": "setEpochSeconds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "secs",
+        "type": "uint32"
+      }
+    ],
+    "name": "setEpochSecondsDirect",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "maxPeriods",
+        "type": "uint32"
+      }
+    ],
+    "name": "setMaxPeriodsPerClaim",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

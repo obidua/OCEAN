@@ -21,15 +21,14 @@ import {
   ONE_TIME_REWARDS as ONE_TIME_REWARDS_FALLBACK,
 } from "../src/utils/contractData";
 
-// Initialize contract interfaces
+// Initialize contract interfaces using the configured RPC-based web3 instance.
+// Read-only calls use the RPC provider (safer for previews/paging). Transactions
+// are created as unsigned tx objects and returned for the app's wallet layer
+// (Reown AppKit / Wagmi) to sign & submit.
 const getContractInterface = async () => {
-  const web3 = new Web3(window.ethereum);
   try {
-    const oceanicView = new web3.eth.Contract(OceanicViewABI, "0xf352ded4a4F9A18062B639224E80C225F2Ae0b88");
-    const portfolioManager = new web3.eth.Contract(
-      PortFolioManagerABI,
-      "0x139b15932d767c72aAAdC4848552674d0C32084d"
-    );
+    const oceanicView = new web3.eth.Contract(OceanicViewABI, oceanicViewAddress);
+    const portfolioManager = new web3.eth.Contract(PortFolioManagerABI, Contract["PortFolioManager"]);
     return { oceanicView, portfolioManager };
   } catch (error) {
     console.error("Failed to initialize contracts:", error);
@@ -272,31 +271,144 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  claimROI: async (portfolioId) => {
+  claimAccruedROI: async (fromAddress) => {
     try {
-      const { portfolioManager } = await getContractInterface();
-      // Get unclaimed periods first
-      const periods = await oceanicView.methods.getROIUnclaimedPerPeriod(
-        window.ethereum.selectedAddress,
-        0, // from start
-        Math.floor(Date.now() / 86400) // until today
-      ).call();
-      
-      if (periods.epochsCount === 0) {
-        throw new Error('No unclaimed ROI available');
+     
+      if (!fromAddress) throw new Error('No connected wallet address found');
+
+      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
+      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
+
+      const data =  roiDistributor.methods.claimROI().encodeABI();
+
+      const gasPrice = await web3.eth.getGasPrice();
+      let gasLimit;
+      try {
+        gasLimit = await web3.eth.estimateGas({
+          from: fromAddress,
+          to: Contract.RoiDistribution,
+          data,
+        });
+      } catch (err) {
+        console.error('Gas estimation failed for claimROI:', err);
+        throw new Error('Gas estimation failed. The transaction may fail.');
       }
 
-      const transaction = await portfolioManager.methods.claimROI(
-        portfolioId,
-        periods.periodIds,
-        periods.usdPerPeriod,
-        periods.ramaPerPeriod
-      ).send({
-        from: window.ethereum.selectedAddress
-      });
-      return transaction;
+      const toHex = web3.utils.toHex;
+      const tx = {
+        from: fromAddress,
+        to: Contract.RoiDistribution,
+        data,
+        gas: toHex(gasLimit),
+        gasPrice: toHex(gasPrice),
+      };
+
+      return tx;
     } catch (error) {
-      console.error('Error claiming ROI:', error);
+      console.error('Error building claimROI transaction:', error);
+      throw error;
+    }
+  },
+
+ 
+
+  getAccruedRewardsPaged: async (address, offset = 0, limit = 50) => {
+    try {
+      const oceanicView = makeContract(OceanicViewABI, oceanicViewAddress);
+      if (!oceanicView) {
+        throw new Error("OceanicView contract not available");
+      }
+
+      // Fetch paged data from the contract
+      const result = await oceanicView.methods
+        .getROIPreviewPerPortfolioPaged(address, offset, limit)
+        .call();
+
+      // The contract returns a struct of arrays. We need to "zip" them into an
+      // array of objects for easier consumption by the UI.
+      const portfolios = (result.pids ?? []).map((pid, index) => {
+        const meta = result.meta?.[index] ?? {};
+        const principalUsd = fromMicroUSD(meta.principal_USD_WAD ?? 0);
+        const accruedUsd = fromMicroUSD(result.usdMicro?.[index] ?? 0);
+        const totalBoosterROI = fromWeiToRama(meta.totalReceivedBoosterROI ?? 0); // Assuming this is in wei
+
+        // Calculate cap USD
+        const capPct = Number(meta.capPct ?? 0);
+        const capUsd = principalUsd * (capPct / 100 || (meta.booster ? 2.5 : 2));
+
+        return {
+          portfolioId: Number(pid),
+          roi: {
+            accrued: accruedUsd,
+            usdAmount: accruedUsd, // Assuming usdMicro is the accrued/pending amount
+            ramaAmount: fromWeiToRama(result.ramaWei?.[index] ?? 0),
+            credited: 0, // This view doesn't provide credited, set to 0
+            principalUsd: principalUsd,
+            meta: {
+              roi: principalUsd > 0 ? ((accruedUsd / principalUsd) * 100).toFixed(2) : "0.00",
+              boosterActive: meta.booster ?? false,
+              boosterROI: totalBoosterROI,
+              tier: Number(meta.tier ?? 0),
+              principalUsd: principalUsd,
+              isCapped: meta.isCapped ?? false,
+              isClosed: meta.isClosed ?? false,
+              capPct: capPct,
+              frozenUntil: Number(meta.frozenUntil ?? 0),
+              createdAt: Number(meta.createdAt ?? 0),
+              cappedAt: Number(meta.cappedAt ?? 0),
+              closedAt: Number(meta.closedAt ?? 0),
+              lastUpdate: Number(meta.lastAccrual ?? 0), // Or a more appropriate field if available
+            },
+          },
+          epochCount: Number(result.epochCounts?.[index] ?? 0),
+        };
+      });
+
+      return {
+        portfolios,
+        totalCount: Number(result.totalCount ?? 0),
+      };
+    } catch (error) {
+      console.error("Error fetching paged accrued rewards:", error);
+      // Add user-friendly error message
+      if (error.message.includes("invalid BigNumber value")) {
+        throw new Error("Received invalid data from the blockchain. Please try again.");
+      }
+      throw error;
+    }
+  },
+
+  getClaimHistoryPaged: async (address, offset = 0, limit = 20) => {
+    try {
+      const oceanicView = makeContract(OceanicViewABI, oceanicViewAddress);
+      if (!oceanicView) {
+        throw new Error("OceanicView contract not available");
+      }
+
+      const result = await oceanicView.methods
+        .getRoiClaimHistory(address, offset, limit)
+        .call();
+
+      const history = (result.dayIds ?? []).map((dayId, index) => {
+        const usdAmount = fromWadToUsd(result.usdWad?.[index] ?? 0);
+        const ramaAmount = fromWeiToRama(result.ramaWei?.[index] ?? 0);
+        
+        return {
+          id: `${dayId}-${index}`,
+          dayId: Number(dayId),
+          usdAmount,
+          ramaAmount,
+          claimedAt: null // This view doesn't provide a specific timestamp
+        };
+      });
+
+      return {
+        history,
+        hasMore: history.length === limit,
+      };
+
+    } catch (error) {
+      console.error("Error fetching claim history:", error);
       throw error;
     }
   },
