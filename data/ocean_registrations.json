@@ -1,0 +1,3370 @@
+{
+  "meta": {
+    "root": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+    "createdAt": "2025-10-22 21:22:54",
+    "lastUpdated": "2025-10-22 22:02:52"
+  },
+  "users": {
+    "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5": {
+      "referrer": null,
+      "keyIndex": -1,
+      "activation": null,
+      "registeredAt": "2025-10-22 21:22:54"
+    },
+    "0x90E903158eB442478628cBD330aa385de873E466": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 2,
+      "activation": {
+        "usd": 300,
+        "ramaWei": "30000000000000000",
+        "txHash": "0x8a8c5337ab9400eedb8ed2948663c9e38d824c397f002b9449ed1a8d1ba22061",
+        "timestamp": "2025-10-22 21:23:01"
+      },
+      "registeredAt": "2025-10-22 21:23:01"
+    },
+    "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 3,
+      "activation": {
+        "usd": 68,
+        "ramaWei": "6800000000000000",
+        "txHash": "0xf0821adc4c2910e01cd1fb2a2eb3bae60c562f02d6b9d3b8b420a9405bcd160b",
+        "timestamp": "2025-10-22 21:23:08"
+      },
+      "registeredAt": "2025-10-22 21:23:08"
+    },
+    "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 4,
+      "activation": {
+        "usd": 109,
+        "ramaWei": "10900000000000000",
+        "txHash": "0x0b417c0464d3f355cd4caae3c823aed59e9f198ee6462d72a65af0294b41e8b1",
+        "timestamp": "2025-10-22 21:23:15"
+      },
+      "registeredAt": "2025-10-22 21:23:15"
+    },
+    "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 5,
+      "activation": {
+        "usd": 297,
+        "ramaWei": "29700000000000000",
+        "txHash": "0xa7f9a0e88a489bff4d00481ae2670e27749baa538ab277a2cfbdabe80b8b381f",
+        "timestamp": "2025-10-22 21:23:22"
+      },
+      "registeredAt": "2025-10-22 21:23:22"
+    },
+    "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 6,
+      "activation": {
+        "usd": 122,
+        "ramaWei": "12200000000000000",
+        "txHash": "0xa7342062bec7d309b14c29e8836868f7bd3397b46f582e51358624f7094c70ea",
+        "timestamp": "2025-10-22 21:23:33"
+      },
+      "registeredAt": "2025-10-22 21:23:33"
+    },
+    "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 7,
+      "activation": {
+        "usd": 154,
+        "ramaWei": "15400000000000000",
+        "txHash": "0xcbf5b06fc2078b26c978f8d756a2ebab29ba4c8ec1f3ffe0efcb7f4526790f15",
+        "timestamp": "2025-10-22 21:23:40"
+      },
+      "registeredAt": "2025-10-22 21:23:40"
+    },
+    "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 8,
+      "activation": {
+        "usd": 233,
+        "ramaWei": "23300000000000000",
+        "txHash": "0x13c4bda5fd6c6936695ade02a6312e90f22ee04ec031a02a2964307ad07628da",
+        "timestamp": "2025-10-22 21:23:51"
+      },
+      "registeredAt": "2025-10-22 21:23:51"
+    },
+    "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 9,
+      "activation": {
+        "usd": 273,
+        "ramaWei": "27300000000000000",
+        "txHash": "0xd8a8376e45e659a4f31a87c62ed7c902b0a8e09b6b467df636624557e910ef48",
+        "timestamp": "2025-10-22 21:23:58"
+      },
+      "registeredAt": "2025-10-22 21:23:58"
+    },
+    "0xC98D8650b07B53FD76450F035B29c869bE93B9e6": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 10,
+      "activation": {
+        "usd": 233,
+        "ramaWei": "23300000000000000",
+        "txHash": "0x8e9170484183c1423459576da5fd6382420197d3ee1e08050e799558b83f805d",
+        "timestamp": "2025-10-22 21:24:09"
+      },
+      "registeredAt": "2025-10-22 21:24:09"
+    },
+    "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 12,
+      "activation": {
+        "usd": 277,
+        "ramaWei": "27700000000000000",
+        "txHash": "0x6ce0f487c6f8c15747f62f62eb272c50798a28c5bc8ef0bcfd440f70e20657f8",
+        "timestamp": "2025-10-22 21:24:37"
+      },
+      "registeredAt": "2025-10-22 21:24:37"
+    },
+    "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 13,
+      "activation": {
+        "usd": 64,
+        "ramaWei": "6400000000000000",
+        "txHash": "0x7cd9ef5042dee1afe05c7c03326baddc0e6e8978ff4f6953a20321de0896819a",
+        "timestamp": "2025-10-22 21:24:44"
+      },
+      "registeredAt": "2025-10-22 21:24:44"
+    },
+    "0xD089A76b50334839d91Ffd70132e41f047F11F8c": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 14,
+      "activation": {
+        "usd": 280,
+        "ramaWei": "28000000000000000",
+        "txHash": "0xc15c02ac3ecc7aa51e6ae00fe22995c022a7403d80e814be737244c70f77e0e5",
+        "timestamp": "2025-10-22 21:24:55"
+      },
+      "registeredAt": "2025-10-22 21:24:55"
+    },
+    "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 15,
+      "activation": {
+        "usd": 91,
+        "ramaWei": "9100000000000000",
+        "txHash": "0x1cba946b0ff3045d3722fe70c1cd4d615ce98f1f199b7eecc0fb3bd1f7d1cea6",
+        "timestamp": "2025-10-22 21:25:02"
+      },
+      "registeredAt": "2025-10-22 21:25:02"
+    },
+    "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 16,
+      "activation": {
+        "usd": 30,
+        "ramaWei": "3000000000000000",
+        "txHash": "0x390927443f9ecc855ca6707ba3c67af839693e64e2578112b692befff280f437",
+        "timestamp": "2025-10-22 21:25:09"
+      },
+      "registeredAt": "2025-10-22 21:25:09"
+    },
+    "0xaaAB907479D1Bd9E1503210d48cB220c5D0e0CaC": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 17,
+      "activation": {
+        "usd": 93,
+        "ramaWei": "9300000000000000",
+        "txHash": "0xb4d91c430c420d8927b2fc5678bd295eb747d4c5cee8710c3c4cf16a2b578e47",
+        "timestamp": "2025-10-22 21:25:15"
+      },
+      "registeredAt": "2025-10-22 21:25:15"
+    },
+    "0x3E4fD4E07c373469C097A0d6eF75c35Fd8118935": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 18,
+      "activation": {
+        "usd": 21,
+        "ramaWei": "2100000000000000",
+        "txHash": "0xcfd25409fe746346b8935d9cd9cf08b605f4ff243540de6b3e5c0ecc25ea0371",
+        "timestamp": "2025-10-22 21:25:22"
+      },
+      "registeredAt": "2025-10-22 21:25:22"
+    },
+    "0x66Ca0FA32481a97cF67ff397ce8C4930BC5e88C3": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 19,
+      "activation": {
+        "usd": 264,
+        "ramaWei": "26400000000000000",
+        "txHash": "0x1a9bf00c22299295104dfabc8ec8603ed97fc18e53f2c667b2bdf343b94cc504",
+        "timestamp": "2025-10-22 21:25:33"
+      },
+      "registeredAt": "2025-10-22 21:25:33"
+    },
+    "0xE5E45e109035fb370B84C910fae6B111B71bd96c": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 20,
+      "activation": {
+        "usd": 43,
+        "ramaWei": "4300000000000000",
+        "txHash": "0x11600567cf112847fa671337ab15fd2199d2506ad5a7a9450013476b1b20ca53",
+        "timestamp": "2025-10-22 21:25:40"
+      },
+      "registeredAt": "2025-10-22 21:25:40"
+    },
+    "0xf5f76c769C658c348b3B8542cd7fcCdaFC693302": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 21,
+      "activation": {
+        "usd": 187,
+        "ramaWei": "18700000000000000",
+        "txHash": "0x0f9e4c4b057be8494ac255968bc395fe3f556ce1ae5c70dcce987bdd1baf74af",
+        "timestamp": "2025-10-22 21:25:51"
+      },
+      "registeredAt": "2025-10-22 21:25:51"
+    },
+    "0x8144942f14865CE30F9C501a0FFD316a636971E4": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 22,
+      "activation": {
+        "usd": 27,
+        "ramaWei": "2700000000000000",
+        "txHash": "0xf506fe12f16957cb19eb3d74f864e61881d7ac6a3c128855b8705a9439387ae0",
+        "timestamp": "2025-10-22 21:25:58"
+      },
+      "registeredAt": "2025-10-22 21:25:58"
+    },
+    "0x5648497c54a4e5d91f1e7729De963AcF007B8a5c": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 23,
+      "activation": {
+        "usd": 219,
+        "ramaWei": "21900000000000000",
+        "txHash": "0x7508b99fa39c8348f664e9d528bf4c12dee4e24e9224ddba0d0e14170fa3b594",
+        "timestamp": "2025-10-22 21:26:04"
+      },
+      "registeredAt": "2025-10-22 21:26:04"
+    },
+    "0xbBf3A124fB8bB3276659B573D65a5016517437c4": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 24,
+      "activation": {
+        "usd": 233,
+        "ramaWei": "23300000000000000",
+        "txHash": "0xda52d588a22f576e7b82d4d70106d82b465256356bbd96aff025acb63a02e794",
+        "timestamp": "2025-10-22 21:26:11"
+      },
+      "registeredAt": "2025-10-22 21:26:11"
+    },
+    "0x26726810231E87B09eEA30347e6B8417d2E258f0": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 25,
+      "activation": {
+        "usd": 102,
+        "ramaWei": "10200000000000000",
+        "txHash": "0x9e9072e3f6886d183931d9141eba224ff3bee7f564559951e31a23192dd1f4d9",
+        "timestamp": "2025-10-22 21:26:18"
+      },
+      "registeredAt": "2025-10-22 21:26:18"
+    },
+    "0x74D2b538537962336771bA258165343C87015908": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 26,
+      "activation": {
+        "usd": 78,
+        "ramaWei": "7800000000000000",
+        "txHash": "0x2170eb5ea3d781680dae6a5658712ccc5bada7519e222b7f7e5deee8d7c760f7",
+        "timestamp": "2025-10-22 21:26:29"
+      },
+      "registeredAt": "2025-10-22 21:26:29"
+    },
+    "0xfAE272f908903342D6EFf191Ec81fe5b25331907": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 27,
+      "activation": {
+        "usd": 197,
+        "ramaWei": "19700000000000000",
+        "txHash": "0xef9c45d3ac6de9cd1bd6e89f813e9b3cda9527563dc15247c1311a08b09fcb86",
+        "timestamp": "2025-10-22 21:26:36"
+      },
+      "registeredAt": "2025-10-22 21:26:36"
+    },
+    "0x1e1C84177bc8929c70180a2f87d35081849E27E3": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 28,
+      "activation": {
+        "usd": 126,
+        "ramaWei": "12600000000000000",
+        "txHash": "0x6859afedc43998e1336601e0d7bb220902e82f2219643ff670aa66932c8cbead",
+        "timestamp": "2025-10-22 21:26:43"
+      },
+      "registeredAt": "2025-10-22 21:26:43"
+    },
+    "0x5c214aC9f9dBE3161e931E5b33c38d927c7A82da": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 29,
+      "activation": {
+        "usd": 40,
+        "ramaWei": "4000000000000000",
+        "txHash": "0x4c34a627e5acdf80d7b8c7d5872710e59695fea1dc2222bd514df7952bf2ec52",
+        "timestamp": "2025-10-22 21:26:50"
+      },
+      "registeredAt": "2025-10-22 21:26:50"
+    },
+    "0x39c5dB4c9F9BEDBc28AB5200e970D34297B0e95E": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 30,
+      "activation": {
+        "usd": 52,
+        "ramaWei": "5200000000000000",
+        "txHash": "0xfb036036412c7c30ae5d1310e488075dd3dd752abfba64809373867365634cfb",
+        "timestamp": "2025-10-22 21:26:56"
+      },
+      "registeredAt": "2025-10-22 21:26:56"
+    },
+    "0x86D851547Cd9FD4FcB901c3f87Cb47d1b9CF647C": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 31,
+      "activation": {
+        "usd": 200,
+        "ramaWei": "20000000000000000",
+        "txHash": "0xceb2e7cc15073f061d169a5fc93e0b0d07367eac4acaf02874b5bd0fc87d06ba",
+        "timestamp": "2025-10-22 21:27:07"
+      },
+      "registeredAt": "2025-10-22 21:27:07"
+    },
+    "0xeF9A4b0ca968f29B7cdFd19D691a1Fb29b48A4A0": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 32,
+      "activation": {
+        "usd": 61,
+        "ramaWei": "6100000000000000",
+        "txHash": "0xfd2b6c3ac4e2d656bd7d15b25fe6b9983674d3c2c85a3fee0c5b685d728864b1",
+        "timestamp": "2025-10-22 21:27:14"
+      },
+      "registeredAt": "2025-10-22 21:27:14"
+    },
+    "0x29cA8E2b88e5CBDa900a79950cE1699fFB468FA8": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 33,
+      "activation": {
+        "usd": 46,
+        "ramaWei": "4600000000000000",
+        "txHash": "0x78212dd776d4bdb79bb1cc577687ee79e6e5598d6077a9feced8df083380a56c",
+        "timestamp": "2025-10-22 21:27:21"
+      },
+      "registeredAt": "2025-10-22 21:27:21"
+    },
+    "0xd7df554e710a53C84670107191fAD56F8B012e6B": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 34,
+      "activation": {
+        "usd": 144,
+        "ramaWei": "14400000000000000",
+        "txHash": "0x4bbfa5db752c588fbf8cb3dcdd3e0c2d2ffb42334933e52e1c59132d95b69ef4",
+        "timestamp": "2025-10-22 21:27:28"
+      },
+      "registeredAt": "2025-10-22 21:27:28"
+    },
+    "0x81BFBb19f14952be2f7455071631E5580262e6A4": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 35,
+      "activation": {
+        "usd": 123,
+        "ramaWei": "12300000000000000",
+        "txHash": "0x08953a7b486b617a334572a8badcfae63306a57090f508fb84d2b992d7f4ef28",
+        "timestamp": "2025-10-22 21:27:39"
+      },
+      "registeredAt": "2025-10-22 21:27:39"
+    },
+    "0x75597E012c038032887EACB1a7EF85A050c2c4EA": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 36,
+      "activation": {
+        "usd": 261,
+        "ramaWei": "26100000000000000",
+        "txHash": "0xca9eade07e8fe50dfa06f770b60af115e8ce85cfb502fc9ce455445593582525",
+        "timestamp": "2025-10-22 21:27:45"
+      },
+      "registeredAt": "2025-10-22 21:27:45"
+    },
+    "0xc21920435850AC5EfF3ee25aB923Afd4f0a4935C": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 37,
+      "activation": {
+        "usd": 114,
+        "ramaWei": "11400000000000000",
+        "txHash": "0x16ddac720a31e3a33773159e797b07a1d0060b0729af7d38148d6173b48a8a9d",
+        "timestamp": "2025-10-22 21:27:52"
+      },
+      "registeredAt": "2025-10-22 21:27:52"
+    },
+    "0x0FdD3Bb3005f503dDc95B911fCAec57b7451d195": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 38,
+      "activation": {
+        "usd": 111,
+        "ramaWei": "11100000000000000",
+        "txHash": "0x5253cbdc3b1a7b138a74531e53a55c18499cd94333cd2762b4b4deb60f0e092e",
+        "timestamp": "2025-10-22 21:27:59"
+      },
+      "registeredAt": "2025-10-22 21:27:59"
+    },
+    "0x0B08a8cC854804a5BB11050837BBeF195fa63475": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 39,
+      "activation": {
+        "usd": 81,
+        "ramaWei": "8100000000000000",
+        "txHash": "0xe3907850e317f8f19a55117ab30a57621bb1fc681ca6d63fc10eb8a0c9c34cc7",
+        "timestamp": "2025-10-22 21:28:06"
+      },
+      "registeredAt": "2025-10-22 21:28:06"
+    },
+    "0x0C47Fa129cd0aE5Ba86d262EFA7a68E837e3e28e": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 40,
+      "activation": {
+        "usd": 214,
+        "ramaWei": "21400000000000000",
+        "txHash": "0x75f45f44e8164fcf66f76ba04b04aaa1a4d6f2163fa607326c4c01ebf124062a",
+        "timestamp": "2025-10-22 21:28:13"
+      },
+      "registeredAt": "2025-10-22 21:28:13"
+    },
+    "0x2A626Bdee6bfb477FD96D21cEd654eDCE17e4E84": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 41,
+      "activation": {
+        "usd": 118,
+        "ramaWei": "11800000000000000",
+        "txHash": "0x5d930c53df090b84b9078339642c1da3846acd61a2afd2af334364728b2bdf5a",
+        "timestamp": "2025-10-22 21:28:20"
+      },
+      "registeredAt": "2025-10-22 21:28:20"
+    },
+    "0xCAE814221B5DAd27F3430dFc9ecCe91c2803FD35": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 42,
+      "activation": {
+        "usd": 166,
+        "ramaWei": "16600000000000000",
+        "txHash": "0x3703c5d4c78047e71aed29bbecd9cd6bc2d98bff945c1d1c150719534482320f",
+        "timestamp": "2025-10-22 21:28:31"
+      },
+      "registeredAt": "2025-10-22 21:28:31"
+    },
+    "0x21e53ABC1C498DE633102c8295AC8B4eEEE4E9E7": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 43,
+      "activation": {
+        "usd": 26,
+        "ramaWei": "2600000000000000",
+        "txHash": "0x9e296c4577e3241d9222e80fa4ecd0b0ffa5936c3ba5f54ae48f75c4d267442a",
+        "timestamp": "2025-10-22 21:28:38"
+      },
+      "registeredAt": "2025-10-22 21:28:38"
+    },
+    "0xf4F8B6d88892E9ab2ECF3cf55445e313bB237B9B": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 44,
+      "activation": {
+        "usd": 107,
+        "ramaWei": "10700000000000000",
+        "txHash": "0x03d73dcef49e7d4af16a1993f699fcdb9fc699c423d775c4751142bd8e34069c",
+        "timestamp": "2025-10-22 21:28:45"
+      },
+      "registeredAt": "2025-10-22 21:28:45"
+    },
+    "0x7556773FFB859828DaF5182FEf5558c7505c0B59": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 45,
+      "activation": {
+        "usd": 45,
+        "ramaWei": "4500000000000000",
+        "txHash": "0x3c53e2d2178c9343a0c0f1f89be5b1bfe7a0b0364fc680304017e4419cf07b95",
+        "timestamp": "2025-10-22 21:28:52"
+      },
+      "registeredAt": "2025-10-22 21:28:52"
+    },
+    "0x05B29cAcCf8CcC94B620cCAB3B6A80DDa5Bed1EC": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 46,
+      "activation": {
+        "usd": 22,
+        "ramaWei": "2200000000000000",
+        "txHash": "0xedf4e28cb58ffc3c351daf3af4a4cf124af64a7be3c64e2e706f56ae84420cfa",
+        "timestamp": "2025-10-22 21:29:03"
+      },
+      "registeredAt": "2025-10-22 21:29:03"
+    },
+    "0x0f22e0a6d362BccE511DD4F6057AD64112fb5Ccc": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 47,
+      "activation": {
+        "usd": 155,
+        "ramaWei": "15500000000000000",
+        "txHash": "0x0723613aeacb6a34f34e50a255c7d9827568a44886f56c12d08082dbcc31194b",
+        "timestamp": "2025-10-22 21:29:09"
+      },
+      "registeredAt": "2025-10-22 21:29:09"
+    },
+    "0x6E2fCFB9453a030074Cb182b68d979C1D80Be8eE": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 48,
+      "activation": {
+        "usd": 77,
+        "ramaWei": "7700000000000000",
+        "txHash": "0x78156291880864147993367b79c296b7e951a244ba716ead3a7c36feaaf9569a",
+        "timestamp": "2025-10-22 21:29:16"
+      },
+      "registeredAt": "2025-10-22 21:29:16"
+    },
+    "0x439e2dcD6C5753F51e1aa28d6e481b80D0c0b1e1": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 49,
+      "activation": {
+        "usd": 274,
+        "ramaWei": "27400000000000000",
+        "txHash": "0x0e8e6ec18878046e1ff43b8fde55fa910b5377ec5bf3d669e882b6421cccae21",
+        "timestamp": "2025-10-22 21:29:23"
+      },
+      "registeredAt": "2025-10-22 21:29:23"
+    },
+    "0xFc6012430AD6295390D9E34447DE837e4F0663DB": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 50,
+      "activation": {
+        "usd": 105,
+        "ramaWei": "10500000000000000",
+        "txHash": "0xda89842f75f2355f556e50ae048e36666dff86da3123ead44290837afc7ba899",
+        "timestamp": "2025-10-22 21:29:30"
+      },
+      "registeredAt": "2025-10-22 21:29:30"
+    },
+    "0xaa9746A7f114f2f8C868db33ACa4710eFe6C2d94": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 51,
+      "activation": {
+        "usd": 197,
+        "ramaWei": "19700000000000000",
+        "txHash": "0x03204ebdf52f33602a550e75add906b398150ab1b8b9f3881e593c6295a36bf9",
+        "timestamp": "2025-10-22 21:29:37"
+      },
+      "registeredAt": "2025-10-22 21:29:37"
+    },
+    "0xb891EE85Bad08c2975ED1E7031a3337F6e5011b8": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 52,
+      "activation": {
+        "usd": 12,
+        "ramaWei": "1200000000000000",
+        "txHash": "0x8663f79001ae738034afa9ffad91bd396e8edb462ddfd8774d60f3ffbc419f42",
+        "timestamp": "2025-10-22 21:29:44"
+      },
+      "registeredAt": "2025-10-22 21:29:44"
+    },
+    "0x7C344d254fb10f9d66ea2842dE74b322D9597689": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 53,
+      "activation": {
+        "usd": 67,
+        "ramaWei": "6700000000000000",
+        "txHash": "0x743675d8ab09d457f4b17d800cc628a2040d4357e1586b3156c405150cd82544",
+        "timestamp": "2025-10-22 21:29:55"
+      },
+      "registeredAt": "2025-10-22 21:29:55"
+    },
+    "0x5dD70E3A4e5Cd4005E0E06aC95eb75f8374c5084": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 54,
+      "activation": {
+        "usd": 34,
+        "ramaWei": "3400000000000000",
+        "txHash": "0x78ff6b8172a88eef12ac107f784c1efcffbee97d8ec3363972ee694cf933273d",
+        "timestamp": "2025-10-22 21:30:01"
+      },
+      "registeredAt": "2025-10-22 21:30:01"
+    },
+    "0x1D87b6Be9018b3c63E02Ff526ead1e6dE3e7C154": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 55,
+      "activation": {
+        "usd": 223,
+        "ramaWei": "22300000000000000",
+        "txHash": "0x815818b1febe41b54e8bee95d6fc96c9d9906d4bae6c5039cd424969d4e1dd95",
+        "timestamp": "2025-10-22 21:30:08"
+      },
+      "registeredAt": "2025-10-22 21:30:08"
+    },
+    "0xc00d470c3f1d986d97D8F1E5ebb215612Ea6F6C2": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 56,
+      "activation": {
+        "usd": 280,
+        "ramaWei": "28000000000000000",
+        "txHash": "0x1f18eb734fb95d1403fde2d9eadb3743ba54ecc3a00a3713e123803fb0aada93",
+        "timestamp": "2025-10-22 21:30:15"
+      },
+      "registeredAt": "2025-10-22 21:30:15"
+    },
+    "0xB3c51ee1647AA3cC3887Bd9bbDd7B9c0fE97Ee10": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 57,
+      "activation": {
+        "usd": 214,
+        "ramaWei": "21400000000000000",
+        "txHash": "0x7112b4e503fea3e8c8279beaa2db1202085e1453db12809a65bfaf2c9b55b6d0",
+        "timestamp": "2025-10-22 21:30:26"
+      },
+      "registeredAt": "2025-10-22 21:30:26"
+    },
+    "0xf758fEC45D1F0ffF4dbf1bB7D16E245fD82C8f6F": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 58,
+      "activation": {
+        "usd": 20,
+        "ramaWei": "2000000000000000",
+        "txHash": "0x2e25b3c0df2156c1fd724c8145cd39547e277cca800aa3ddb00d730c6c471692",
+        "timestamp": "2025-10-22 21:30:33"
+      },
+      "registeredAt": "2025-10-22 21:30:33"
+    },
+    "0x1785fcce0E9859274fBD00D0cb1ceeb43FF24504": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 59,
+      "activation": {
+        "usd": 273,
+        "ramaWei": "27300000000000000",
+        "txHash": "0x4329e1496172a41e50cd5616cb2003b9e424f14c546f2002065c3e873d59707b",
+        "timestamp": "2025-10-22 21:30:40"
+      },
+      "registeredAt": "2025-10-22 21:30:40"
+    },
+    "0xCFC1FCB34111C27b847a3EcF8FCC28868c3B6870": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 60,
+      "activation": {
+        "usd": 122,
+        "ramaWei": "12200000000000000",
+        "txHash": "0x850e1cb3b6579b4e665d36e8f5a041b934eff121f16785b420c2ada892632f0c",
+        "timestamp": "2025-10-22 21:30:51"
+      },
+      "registeredAt": "2025-10-22 21:30:51"
+    },
+    "0xd14F2EBF372f04B6E21146c8b46CF473aA77585D": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 61,
+      "activation": {
+        "usd": 110,
+        "ramaWei": "11000000000000000",
+        "txHash": "0x83e1b4ae1611a47ba197c48cae288240b4819dc6a23023b2b5462a90475774ff",
+        "timestamp": "2025-10-22 21:30:57"
+      },
+      "registeredAt": "2025-10-22 21:30:57"
+    },
+    "0x354Ae3e6FC616fDA5807e9762DA6592011e0aE40": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 62,
+      "activation": {
+        "usd": 264,
+        "ramaWei": "26400000000000000",
+        "txHash": "0x04e36b6041f3dafef0805217cf35d15ce1c7cd4aca9b54eb80c5ea266ccf1f7e",
+        "timestamp": "2025-10-22 21:31:04"
+      },
+      "registeredAt": "2025-10-22 21:31:04"
+    },
+    "0x8aA38363cf5D0F21b1bAe13947443c0d4D8aDA2e": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 63,
+      "activation": {
+        "usd": 135,
+        "ramaWei": "13500000000000000",
+        "txHash": "0x8855e88dce37ee2d62145ffe7c2cc368e4a569b4069461de527d7da1b526e6b6",
+        "timestamp": "2025-10-22 21:31:15"
+      },
+      "registeredAt": "2025-10-22 21:31:15"
+    },
+    "0xeC1bb650830eef2826910a2CC610AfDD452bbBf9": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 64,
+      "activation": {
+        "usd": 17,
+        "ramaWei": "1700000000000000",
+        "txHash": "0x6320f1c00dd37f87dce6cbede4587efcfc2fbbfd08ae0d2ef29f9ec300e9e2f6",
+        "timestamp": "2025-10-22 21:31:26"
+      },
+      "registeredAt": "2025-10-22 21:31:26"
+    },
+    "0x693e44636cB2C0a019b4B9C6C67F820bd78D4EDB": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 65,
+      "activation": {
+        "usd": 39,
+        "ramaWei": "3900000000000000",
+        "txHash": "0x536d29c6c17d835a924fb45ae796ab786b7bc4a91bde6a6b55f9f362a895b75f",
+        "timestamp": "2025-10-22 21:31:37"
+      },
+      "registeredAt": "2025-10-22 21:31:37"
+    },
+    "0x50D5be9BeC4fD41993B320B032B4F07ab238309D": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 66,
+      "activation": {
+        "usd": 229,
+        "ramaWei": "22900000000000000",
+        "txHash": "0xf8bc844622895498c06415306ed3dacf641b0231878c781b38dea71c40908db0",
+        "timestamp": "2025-10-22 21:31:44"
+      },
+      "registeredAt": "2025-10-22 21:31:44"
+    },
+    "0xEe6D4BCAF105139e7a310091f688f212CDcC4247": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 67,
+      "activation": {
+        "usd": 94,
+        "ramaWei": "9400000000000000",
+        "txHash": "0x33b2b15b6fc51a21307d38ff2c3714c9668e1309f18dff20e9784428c63a39f8",
+        "timestamp": "2025-10-22 21:31:51"
+      },
+      "registeredAt": "2025-10-22 21:31:51"
+    },
+    "0xE1aAe7D46e4277c779a484C6D6FF8753B0Da668B": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 68,
+      "activation": {
+        "usd": 70,
+        "ramaWei": "7000000000000000",
+        "txHash": "0xc13d19993a211fcae42170f04b4a1e9a6b50a5c905c4675051efdb154cca1d7d",
+        "timestamp": "2025-10-22 21:31:57"
+      },
+      "registeredAt": "2025-10-22 21:31:57"
+    },
+    "0x292952ACB862957b55b39789F3Caeb851e0aE3c7": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 69,
+      "activation": {
+        "usd": 115,
+        "ramaWei": "11500000000000000",
+        "txHash": "0x95d812ea54ce4ef30c6e71ad9cf064021546a761a32ab6155eccc69bb49ad6c1",
+        "timestamp": "2025-10-22 21:32:04"
+      },
+      "registeredAt": "2025-10-22 21:32:04"
+    },
+    "0x09717924417e809518220014B7F257C45bEFf837": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 70,
+      "activation": {
+        "usd": 100,
+        "ramaWei": "10000000000000000",
+        "txHash": "0x28ba18d9e023f12d7ba5fa798ceae5dd09b852ce8fc383081b506119c7ae1fdd",
+        "timestamp": "2025-10-22 21:32:11"
+      },
+      "registeredAt": "2025-10-22 21:32:11"
+    },
+    "0x55116710Da282A51Ad46A4082B4ABb6D49541FC9": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 71,
+      "activation": {
+        "usd": 47,
+        "ramaWei": "4700000000000000",
+        "txHash": "0x0a8024cb22813e877df2116dac50432defa6303dbcf461ca725655faab52cc82",
+        "timestamp": "2025-10-22 21:32:18"
+      },
+      "registeredAt": "2025-10-22 21:32:18"
+    },
+    "0x6922D93679E7d9d113c251dae2F68637a93DBcc4": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 72,
+      "activation": {
+        "usd": 271,
+        "ramaWei": "27100000000000000",
+        "txHash": "0x0f36fc4cdaa39eb5237de5e674674b53add17d20c0f32a47bdb337d844b273cb",
+        "timestamp": "2025-10-22 21:32:25"
+      },
+      "registeredAt": "2025-10-22 21:32:25"
+    },
+    "0xAF2cD1c8719127601B8226cb4d554b237d7457F9": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 73,
+      "activation": {
+        "usd": 155,
+        "ramaWei": "15500000000000000",
+        "txHash": "0x89f94ca439573f4410332dce7b76d18f564127b694042a95276272f8fee719d6",
+        "timestamp": "2025-10-22 21:32:32"
+      },
+      "registeredAt": "2025-10-22 21:32:32"
+    },
+    "0xc6f42721e9d9F9bf7FBf44093ac760C7e2268598": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 74,
+      "activation": {
+        "usd": 17,
+        "ramaWei": "1700000000000000",
+        "txHash": "0xaade084879574ceb04de1c7102248d37baed479a49d00e707fb3af99da4daafe",
+        "timestamp": "2025-10-22 21:32:39"
+      },
+      "registeredAt": "2025-10-22 21:32:39"
+    },
+    "0xaC558BcD9D39b0F7e473EAE5F899339419eF39c2": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 75,
+      "activation": {
+        "usd": 68,
+        "ramaWei": "6800000000000000",
+        "txHash": "0x6d87bffc2bdc0bed307cdc4722952ce1d67c5eecbcc7485d30bb7eb351f691f7",
+        "timestamp": "2025-10-22 21:32:46"
+      },
+      "registeredAt": "2025-10-22 21:32:46"
+    },
+    "0x30EB6A55ea104763144655735dEB08D9dC42Bd93": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 76,
+      "activation": {
+        "usd": 287,
+        "ramaWei": "28700000000000000",
+        "txHash": "0x3594c896f08a8e0518ca47afd8c6c95419b04b60bd1098f413a96e758ee0d534",
+        "timestamp": "2025-10-22 21:32:52"
+      },
+      "registeredAt": "2025-10-22 21:32:52"
+    },
+    "0x074EB26796d0D235353116C3827B422D256dff24": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 77,
+      "activation": {
+        "usd": 113,
+        "ramaWei": "11300000000000000",
+        "txHash": "0x4774092d1121b5fa400420b80319b545a2024d83db84fba63e67513ea2c60dd9",
+        "timestamp": "2025-10-22 21:32:59"
+      },
+      "registeredAt": "2025-10-22 21:32:59"
+    },
+    "0xd3F708bdb2562A88d32F0a395Ad347E9B1F8196e": {
+      "referrer": "0xaaAB907479D1Bd9E1503210d48cB220c5D0e0CaC",
+      "keyIndex": 78,
+      "activation": {
+        "usd": 210,
+        "ramaWei": "21000000000000000",
+        "txHash": "0x21ca76b6087468fddf3d01ef363bb6dc76c9717bec0cabc2a57b2271ac6a9f78",
+        "timestamp": "2025-10-22 21:33:06"
+      },
+      "registeredAt": "2025-10-22 21:33:06"
+    },
+    "0x031BdF29b25EDBc481D406b606C329c5ec8aAA92": {
+      "referrer": "0xaaAB907479D1Bd9E1503210d48cB220c5D0e0CaC",
+      "keyIndex": 79,
+      "activation": {
+        "usd": 249,
+        "ramaWei": "24900000000000000",
+        "txHash": "0xdef82b3743e4a56aa8a7138542e18ac39947689a1d48cb9232304c75f46fe75c",
+        "timestamp": "2025-10-22 21:33:17"
+      },
+      "registeredAt": "2025-10-22 21:33:17"
+    },
+    "0x4785A556cDf901b46B4F12Ec6b58CAE3d957a193": {
+      "referrer": "0xaaAB907479D1Bd9E1503210d48cB220c5D0e0CaC",
+      "keyIndex": 80,
+      "activation": {
+        "usd": 100,
+        "ramaWei": "10000000000000000",
+        "txHash": "0x6b4d8aa024c383ce6b87042e8bb3d3452755ce1988cd518e0e0ad019ed152564",
+        "timestamp": "2025-10-22 21:33:24"
+      },
+      "registeredAt": "2025-10-22 21:33:24"
+    },
+    "0x4B9915B095eC424fcf2B824abEbf9D311e016717": {
+      "referrer": "0xaaAB907479D1Bd9E1503210d48cB220c5D0e0CaC",
+      "keyIndex": 81,
+      "activation": {
+        "usd": 184,
+        "ramaWei": "18400000000000000",
+        "txHash": "0xbc590b16af04e7a2d4b8759b1b5f0d8d210e426013b0f682a9b28c377f250c50",
+        "timestamp": "2025-10-22 21:33:31"
+      },
+      "registeredAt": "2025-10-22 21:33:31"
+    },
+    "0xFb826f0950AE1336507DaE9bDEF06C372132911c": {
+      "referrer": "0xaaAB907479D1Bd9E1503210d48cB220c5D0e0CaC",
+      "keyIndex": 82,
+      "activation": {
+        "usd": 234,
+        "ramaWei": "23400000000000000",
+        "txHash": "0xfc81d9da63d1500543567851743972aa27912c37cea5e0468c5831625de84d31",
+        "timestamp": "2025-10-22 21:33:38"
+      },
+      "registeredAt": "2025-10-22 21:33:38"
+    },
+    "0x634100d1a3587376a8aE670f2Bbcf2E73e32B7f3": {
+      "referrer": "0x3E4fD4E07c373469C097A0d6eF75c35Fd8118935",
+      "keyIndex": 83,
+      "activation": {
+        "usd": 195,
+        "ramaWei": "19500000000000000",
+        "txHash": "0x3556acedc0dd72226e8806c7631202a610364c5bfd474de1e5030b0911e5cb01",
+        "timestamp": "2025-10-22 21:33:45"
+      },
+      "registeredAt": "2025-10-22 21:33:45"
+    },
+    "0x8Ddb6d92de92d6E8440f3D6dE8a8e109069042F9": {
+      "referrer": "0x3E4fD4E07c373469C097A0d6eF75c35Fd8118935",
+      "keyIndex": 84,
+      "activation": {
+        "usd": 18,
+        "ramaWei": "1800000000000000",
+        "txHash": "0x4601c36acba9fd2e4194e02fe8e2fb7bfddebf02897bf9ccfa9bdb199598a9b7",
+        "timestamp": "2025-10-22 21:33:51"
+      },
+      "registeredAt": "2025-10-22 21:33:51"
+    },
+    "0x53CaA5782f1E528BBC2D0611c5c94D048431d0d6": {
+      "referrer": "0x3E4fD4E07c373469C097A0d6eF75c35Fd8118935",
+      "keyIndex": 85,
+      "activation": {
+        "usd": 45,
+        "ramaWei": "4500000000000000",
+        "txHash": "0xfb789fe7e96431bf1e73e9e4716b45f99afce5ce4da6a50e95522aa1356c35b9",
+        "timestamp": "2025-10-22 21:33:58"
+      },
+      "registeredAt": "2025-10-22 21:33:58"
+    },
+    "0x88A3a51cFAFf49e69b402B3b08474c555B4A7306": {
+      "referrer": "0x3E4fD4E07c373469C097A0d6eF75c35Fd8118935",
+      "keyIndex": 86,
+      "activation": {
+        "usd": 283,
+        "ramaWei": "28300000000000000",
+        "txHash": "0xee39413b90ea002834fdd685f1e66f11b6e6c118fc27e315294ecdcc830fbfa7",
+        "timestamp": "2025-10-22 21:34:05"
+      },
+      "registeredAt": "2025-10-22 21:34:05"
+    },
+    "0x770e3640B0C4036b0eC0158F78466b60b6D7D0D6": {
+      "referrer": "0x3E4fD4E07c373469C097A0d6eF75c35Fd8118935",
+      "keyIndex": 87,
+      "activation": {
+        "usd": 256,
+        "ramaWei": "25600000000000000",
+        "txHash": "0xeed7cfef5d9fd0c44ff4c235b730348961dba414a9a8c7ec6c0882df9d3765c5",
+        "timestamp": "2025-10-22 21:34:12"
+      },
+      "registeredAt": "2025-10-22 21:34:12"
+    },
+    "0x420b5A8961BC01A4D991e7a2350bc6203ff98815": {
+      "referrer": "0x66Ca0FA32481a97cF67ff397ce8C4930BC5e88C3",
+      "keyIndex": 88,
+      "activation": {
+        "usd": 166,
+        "ramaWei": "16600000000000000",
+        "txHash": "0xe5cc93accf631324b56dd0bc48cb532ae65c8149d30f4581d29d7bc2b153caf2",
+        "timestamp": "2025-10-22 21:34:19"
+      },
+      "registeredAt": "2025-10-22 21:34:19"
+    },
+    "0x8Ef2aCD69f3763d0759355338D05Fc86E36015f4": {
+      "referrer": "0x66Ca0FA32481a97cF67ff397ce8C4930BC5e88C3",
+      "keyIndex": 89,
+      "activation": {
+        "usd": 98,
+        "ramaWei": "9800000000000000",
+        "txHash": "0xa2d1e7d7f6e0b1ae0c6d9a8b3d752fe8319f1f8cade6c2b94e4b4b8fafef948d",
+        "timestamp": "2025-10-22 21:34:26"
+      },
+      "registeredAt": "2025-10-22 21:34:26"
+    },
+    "0x7dCD22eB00Ce3c8eFCc1d2A0017393D51158989c": {
+      "referrer": "0x66Ca0FA32481a97cF67ff397ce8C4930BC5e88C3",
+      "keyIndex": 90,
+      "activation": {
+        "usd": 186,
+        "ramaWei": "18600000000000000",
+        "txHash": "0xf7de7cbe9fe9a696752eb84bf930e18b05fa0a9abe823152bfa90136c3a1402f",
+        "timestamp": "2025-10-22 21:34:32"
+      },
+      "registeredAt": "2025-10-22 21:34:32"
+    },
+    "0xa16d3E42D20601d5A60f12aD6aD50B33F99FC0D9": {
+      "referrer": "0x66Ca0FA32481a97cF67ff397ce8C4930BC5e88C3",
+      "keyIndex": 91,
+      "activation": {
+        "usd": 194,
+        "ramaWei": "19400000000000000",
+        "txHash": "0x2a05c9fd0d65acc13797c56ecc763dc3a0fcc314d9b31e7ef5497bd0d41ae62e",
+        "timestamp": "2025-10-22 21:34:39"
+      },
+      "registeredAt": "2025-10-22 21:34:39"
+    },
+    "0x2561C62F51627a74ca368f877f97281Ef2aBe6c5": {
+      "referrer": "0x66Ca0FA32481a97cF67ff397ce8C4930BC5e88C3",
+      "keyIndex": 92,
+      "activation": {
+        "usd": 57,
+        "ramaWei": "5700000000000000",
+        "txHash": "0x119bbf4c2127fca958a92bb74c9d97f8286fdf3cc6b4b4ff5e55236b4b0e5eda",
+        "timestamp": "2025-10-22 21:34:46"
+      },
+      "registeredAt": "2025-10-22 21:34:46"
+    },
+    "0x76104D0f77cC83e8f94f1d41C17DeC72e9E85fC2": {
+      "referrer": "0xE5E45e109035fb370B84C910fae6B111B71bd96c",
+      "keyIndex": 93,
+      "activation": {
+        "usd": 248,
+        "ramaWei": "24800000000000000",
+        "txHash": "0xce4a0c395220ae06d3a417ea75adaddc5583db7bd9ce9bc3eb60599fb938e482",
+        "timestamp": "2025-10-22 21:34:53"
+      },
+      "registeredAt": "2025-10-22 21:34:53"
+    },
+    "0xc1Bd2ED9DeF6b6754Cd44344E5aC6D4976415286": {
+      "referrer": "0xE5E45e109035fb370B84C910fae6B111B71bd96c",
+      "keyIndex": 94,
+      "activation": {
+        "usd": 57,
+        "ramaWei": "5700000000000000",
+        "txHash": "0x29153c81f42bae05a5f560313afa9db64a71055f54bdfc06ffce460eaeb78277",
+        "timestamp": "2025-10-22 21:35:00"
+      },
+      "registeredAt": "2025-10-22 21:35:00"
+    },
+    "0x82EecCE0b1c45698C7169B77E746DF7B1782F457": {
+      "referrer": "0xE5E45e109035fb370B84C910fae6B111B71bd96c",
+      "keyIndex": 96,
+      "activation": {
+        "usd": 211,
+        "ramaWei": "21100000000000000",
+        "txHash": "0xf63c387a2fd57bd6147c043ac43f721f1ae4c89afff8ea78ca19c140542246a0",
+        "timestamp": "2025-10-22 21:35:16"
+      },
+      "registeredAt": "2025-10-22 21:35:16"
+    },
+    "0xE6DD3a12E00664C4d9502b7cA92F8c8e5Ac8E75C": {
+      "referrer": "0xE5E45e109035fb370B84C910fae6B111B71bd96c",
+      "keyIndex": 97,
+      "activation": {
+        "usd": 127,
+        "ramaWei": "12700000000000000",
+        "txHash": "0xe8ec90c504221804d61c16e96a08deb31ce27d24ac72f900f07a13786c1c1388",
+        "timestamp": "2025-10-22 21:35:23"
+      },
+      "registeredAt": "2025-10-22 21:35:23"
+    },
+    "0x4abC3E5D7f1842614F951A2721f1BE9E015c0FD4": {
+      "referrer": "0xE5E45e109035fb370B84C910fae6B111B71bd96c",
+      "keyIndex": 98,
+      "activation": {
+        "usd": 286,
+        "ramaWei": "28600000000000000",
+        "txHash": "0x200de463bdd511db00c1e37800ffee0f43357e3d9ac729ff5776f9086fd7c185",
+        "timestamp": "2025-10-22 21:35:30"
+      },
+      "registeredAt": "2025-10-22 21:35:30"
+    },
+    "0xCe8217D3C7380f73D43c6b8F4242E97ED96E395f": {
+      "referrer": "0xf5f76c769C658c348b3B8542cd7fcCdaFC693302",
+      "keyIndex": 99,
+      "activation": {
+        "usd": 125,
+        "ramaWei": "12500000000000000",
+        "txHash": "0xff859e86a860bf4f1c77b425e885fc57ee23c528abb6c3a479c5507d7af3fd5a",
+        "timestamp": "2025-10-22 21:35:37"
+      },
+      "registeredAt": "2025-10-22 21:35:37"
+    },
+    "0xC92225B223e063297087dC3Ed04A2E7Dc099eBb0": {
+      "referrer": "0xf5f76c769C658c348b3B8542cd7fcCdaFC693302",
+      "keyIndex": 100,
+      "activation": {
+        "usd": 37,
+        "ramaWei": "3700000000000000",
+        "txHash": "0xa2ece580bb3e8c1481949706a4e8571f60f3495c55eec183ee992337bd65612d",
+        "timestamp": "2025-10-22 21:35:44"
+      },
+      "registeredAt": "2025-10-22 21:35:44"
+    },
+    "0xF20A9B1f78cF8c33bF2fe6e49c15BF448c4B0AE3": {
+      "referrer": "0xf5f76c769C658c348b3B8542cd7fcCdaFC693302",
+      "keyIndex": 101,
+      "activation": {
+        "usd": 133,
+        "ramaWei": "13300000000000000",
+        "txHash": "0x22c2457d73d8daa4d91cf50e6560b4e3bfc9cffc87465ffc4cdb3e6b61ada709",
+        "timestamp": "2025-10-22 21:35:51"
+      },
+      "registeredAt": "2025-10-22 21:35:51"
+    },
+    "0x090C95cc637b00F70AA6DFB351bb250C59E8601b": {
+      "referrer": "0xf5f76c769C658c348b3B8542cd7fcCdaFC693302",
+      "keyIndex": 102,
+      "activation": {
+        "usd": 218,
+        "ramaWei": "21800000000000000",
+        "txHash": "0xfd92b17024d5a063cee149b409437a9eace3a0de66390d481ace4684b71743c0",
+        "timestamp": "2025-10-22 21:35:57"
+      },
+      "registeredAt": "2025-10-22 21:35:57"
+    },
+    "0x6bfd2b3335B5aAD5291ca13450A7e957dF74Fa76": {
+      "referrer": "0xf5f76c769C658c348b3B8542cd7fcCdaFC693302",
+      "keyIndex": 103,
+      "activation": {
+        "usd": 246,
+        "ramaWei": "24600000000000000",
+        "txHash": "0xb0398598dd87c2e7aa5328b0f5a21560dc34a75c53a79c7396b1b6ecd4ea2059",
+        "timestamp": "2025-10-22 21:36:04"
+      },
+      "registeredAt": "2025-10-22 21:36:04"
+    },
+    "0x9C00f1f7f698f889dbF8B6CAD03EBb246605a628": {
+      "referrer": "0x8144942f14865CE30F9C501a0FFD316a636971E4",
+      "keyIndex": 104,
+      "activation": {
+        "usd": 77,
+        "ramaWei": "7700000000000000",
+        "txHash": "0x0013f74fb072cb54cd642f2d008289823611ccae646a64804ba09218c202131b",
+        "timestamp": "2025-10-22 21:36:11"
+      },
+      "registeredAt": "2025-10-22 21:36:11"
+    },
+    "0xB333Ad20B5E77DC27f6a5AfFc2f9E150BC63155d": {
+      "referrer": "0x8144942f14865CE30F9C501a0FFD316a636971E4",
+      "keyIndex": 105,
+      "activation": {
+        "usd": 299,
+        "ramaWei": "29900000000000000",
+        "txHash": "0x664d83d57c5f1c32bce1d1fbc8bdbd2901c3706eda19aae25580d729d481e4ad",
+        "timestamp": "2025-10-22 21:36:18"
+      },
+      "registeredAt": "2025-10-22 21:36:18"
+    },
+    "0xc3Cc42f34D574af60fA0646454B350ca854A5656": {
+      "referrer": "0x8144942f14865CE30F9C501a0FFD316a636971E4",
+      "keyIndex": 106,
+      "activation": {
+        "usd": 24,
+        "ramaWei": "2400000000000000",
+        "txHash": "0x08054ec8eca465d95524347ce38b048c2d9abe6096d3acc8e1f110f2ccfcd2c3",
+        "timestamp": "2025-10-22 21:36:25"
+      },
+      "registeredAt": "2025-10-22 21:36:25"
+    },
+    "0x965432Bb5CD48303e5C5101A95782cD6027DF19e": {
+      "referrer": "0x8144942f14865CE30F9C501a0FFD316a636971E4",
+      "keyIndex": 107,
+      "activation": {
+        "usd": 227,
+        "ramaWei": "22700000000000000",
+        "txHash": "0x0945fe9df8887b8b7e443064f9492e6e83bd56d1540a677c3b8b658cc885dd92",
+        "timestamp": "2025-10-22 21:36:32"
+      },
+      "registeredAt": "2025-10-22 21:36:32"
+    },
+    "0x78ea29E2560c7E57eE37e4F34F03EB72C7908587": {
+      "referrer": "0x8144942f14865CE30F9C501a0FFD316a636971E4",
+      "keyIndex": 108,
+      "activation": {
+        "usd": 259,
+        "ramaWei": "25900000000000000",
+        "txHash": "0x40011ed7c748cf2ad1b0d271cfd4363fabb85f2b6f23728220bf531c09683ce2",
+        "timestamp": "2025-10-22 21:36:39"
+      },
+      "registeredAt": "2025-10-22 21:36:39"
+    },
+    "0xB6dCBd8B8122A94E650e932807E1F61390267C4d": {
+      "referrer": "0x5648497c54a4e5d91f1e7729De963AcF007B8a5c",
+      "keyIndex": 109,
+      "activation": {
+        "usd": 134,
+        "ramaWei": "13400000000000000",
+        "txHash": "0x6c36d653cfc5ec410c53f1a89b482c6151f6155ee8f0034bba135daf0c314af9",
+        "timestamp": "2025-10-22 21:36:46"
+      },
+      "registeredAt": "2025-10-22 21:36:46"
+    },
+    "0x472dE1af01858dd686E4Ccf601648C98f16D676D": {
+      "referrer": "0x5648497c54a4e5d91f1e7729De963AcF007B8a5c",
+      "keyIndex": 110,
+      "activation": {
+        "usd": 104,
+        "ramaWei": "10400000000000000",
+        "txHash": "0x0d29f3eeed1eb08808110236cb7bccc51607eb3180e94e403c1325c999829ac2",
+        "timestamp": "2025-10-22 21:36:53"
+      },
+      "registeredAt": "2025-10-22 21:36:53"
+    },
+    "0x06258ee9Db3d32Df21aef218d93CCE9B6563cfca": {
+      "referrer": "0x5648497c54a4e5d91f1e7729De963AcF007B8a5c",
+      "keyIndex": 111,
+      "activation": {
+        "usd": 55,
+        "ramaWei": "5500000000000000",
+        "txHash": "0xdba5e0ffde0d567dafda83343cafc9b81601088e8bb2aa7065557177a0ff8cbf",
+        "timestamp": "2025-10-22 21:36:59"
+      },
+      "registeredAt": "2025-10-22 21:36:59"
+    },
+    "0x7F8177B0A16fdc0A5791Cb6f4356a90f5aFC0cc7": {
+      "referrer": "0x5648497c54a4e5d91f1e7729De963AcF007B8a5c",
+      "keyIndex": 112,
+      "activation": {
+        "usd": 175,
+        "ramaWei": "17500000000000000",
+        "txHash": "0x71c86b7c431d770858477a1cbb92422767aa17d7391d878ab80b3fee11e7becf",
+        "timestamp": "2025-10-22 21:37:06"
+      },
+      "registeredAt": "2025-10-22 21:37:06"
+    },
+    "0x061BF5a82feDf68ee64ef607F01EaaD628bF065c": {
+      "referrer": "0x5648497c54a4e5d91f1e7729De963AcF007B8a5c",
+      "keyIndex": 113,
+      "activation": {
+        "usd": 291,
+        "ramaWei": "29100000000000000",
+        "txHash": "0x0541b2b213af374cf73068cfd75ec41347ea4db11b87b1f18ae5cc2521e652e4",
+        "timestamp": "2025-10-22 21:37:13"
+      },
+      "registeredAt": "2025-10-22 21:37:13"
+    },
+    "0x787b670F06D6d97f987c65EE6bf044a9CBA5FA97": {
+      "referrer": "0xbBf3A124fB8bB3276659B573D65a5016517437c4",
+      "keyIndex": 114,
+      "activation": {
+        "usd": 284,
+        "ramaWei": "28400000000000000",
+        "txHash": "0x73c6bb1f4756d1136049fb49b0fe081b3a2a86861feacca1b68350e09f372aa1",
+        "timestamp": "2025-10-22 21:37:20"
+      },
+      "registeredAt": "2025-10-22 21:37:20"
+    },
+    "0xCd0D97C552c47CC13FB8207376f0666C2B35E809": {
+      "referrer": "0xbBf3A124fB8bB3276659B573D65a5016517437c4",
+      "keyIndex": 115,
+      "activation": {
+        "usd": 22,
+        "ramaWei": "2200000000000000",
+        "txHash": "0xe44b2259a0db2ac897f8e790f6fec59df5c06f9a9ba089536cbae2e16b4aa5c3",
+        "timestamp": "2025-10-22 21:37:31"
+      },
+      "registeredAt": "2025-10-22 21:37:31"
+    },
+    "0x390469338c0CcdedA6021dF6a0d1D10cB754209C": {
+      "referrer": "0xbBf3A124fB8bB3276659B573D65a5016517437c4",
+      "keyIndex": 116,
+      "activation": {
+        "usd": 223,
+        "ramaWei": "22300000000000000",
+        "txHash": "0x9222e4cc2f79696fb67f99a1b1008314b257747ed6fbb1ade352a8e38b7f5793",
+        "timestamp": "2025-10-22 21:37:38"
+      },
+      "registeredAt": "2025-10-22 21:37:38"
+    },
+    "0xCB12fef3224581D9462784E392220aa6C037Cb1d": {
+      "referrer": "0xbBf3A124fB8bB3276659B573D65a5016517437c4",
+      "keyIndex": 117,
+      "activation": {
+        "usd": 225,
+        "ramaWei": "22500000000000000",
+        "txHash": "0x7071f5af579154cdf7fd4420c80753061b93268fa725827db5cc3199f56136e4",
+        "timestamp": "2025-10-22 21:37:44"
+      },
+      "registeredAt": "2025-10-22 21:37:44"
+    },
+    "0xD961dfD9E7D7c8f48454080293E05a1bAEf4Ce5e": {
+      "referrer": "0xbBf3A124fB8bB3276659B573D65a5016517437c4",
+      "keyIndex": 118,
+      "activation": {
+        "usd": 107,
+        "ramaWei": "10700000000000000",
+        "txHash": "0x84d68b7ca79ae588dfed2512c091c48eb84124b317b9b97e3bc118a53a2fb113",
+        "timestamp": "2025-10-22 21:37:55"
+      },
+      "registeredAt": "2025-10-22 21:37:55"
+    },
+    "0x022F6E7F67f704009C80c0f7C5D45CD922d859e6": {
+      "referrer": "0x26726810231E87B09eEA30347e6B8417d2E258f0",
+      "keyIndex": 119,
+      "activation": {
+        "usd": 110,
+        "ramaWei": "11000000000000000",
+        "txHash": "0x2df900b446ec19b648be05ac2adc87252a0316f471a932efb46f94031308db06",
+        "timestamp": "2025-10-22 21:38:02"
+      },
+      "registeredAt": "2025-10-22 21:38:02"
+    },
+    "0x52D66a796145aafb3474E8b4427D722Bb3c3Fd3a": {
+      "referrer": "0x26726810231E87B09eEA30347e6B8417d2E258f0",
+      "keyIndex": 120,
+      "activation": {
+        "usd": 151,
+        "ramaWei": "15100000000000000",
+        "txHash": "0x266245332e8d245acdd34263332753a8d425865596a17d83ec45b4b360d161d3",
+        "timestamp": "2025-10-22 21:38:09"
+      },
+      "registeredAt": "2025-10-22 21:38:09"
+    },
+    "0x83F87aBd8E35668744e2896cAaEbF51A23F1B97B": {
+      "referrer": "0x26726810231E87B09eEA30347e6B8417d2E258f0",
+      "keyIndex": 121,
+      "activation": {
+        "usd": 11,
+        "ramaWei": "1100000000000000",
+        "txHash": "0x5eb1f422fb735bd6a9cb8a22868c2184b594ccea0ffe9b53cbd3942014dc1593",
+        "timestamp": "2025-10-22 21:38:16"
+      },
+      "registeredAt": "2025-10-22 21:38:16"
+    },
+    "0xCbfc11589419f923d7E336D270E9C5708bcC29e7": {
+      "referrer": "0x26726810231E87B09eEA30347e6B8417d2E258f0",
+      "keyIndex": 122,
+      "activation": {
+        "usd": 276,
+        "ramaWei": "27600000000000000",
+        "txHash": "0x7539b0663ec5cd79b1725a52aabcd3a2f6918955550255c9d67835e33825cc3d",
+        "timestamp": "2025-10-22 21:38:27"
+      },
+      "registeredAt": "2025-10-22 21:38:27"
+    },
+    "0xEeEF6673b7b29FFCEB378f6Ba22AaCd6adA15441": {
+      "referrer": "0x26726810231E87B09eEA30347e6B8417d2E258f0",
+      "keyIndex": 123,
+      "activation": {
+        "usd": 194,
+        "ramaWei": "19400000000000000",
+        "txHash": "0xa6702972742871e9f6db0593893d7aab188ef70d523125217ae64a08a550c543",
+        "timestamp": "2025-10-22 21:38:33"
+      },
+      "registeredAt": "2025-10-22 21:38:33"
+    },
+    "0x9C6e7B292d194d26911AF170f83D560ac1B15C0C": {
+      "referrer": "0x74D2b538537962336771bA258165343C87015908",
+      "keyIndex": 124,
+      "activation": {
+        "usd": 272,
+        "ramaWei": "27200000000000000",
+        "txHash": "0x3149f1d93fa1e4b30e8062485a3962643afe0bfe17b4c4390e5dc7140dca7d35",
+        "timestamp": "2025-10-22 21:38:40"
+      },
+      "registeredAt": "2025-10-22 21:38:40"
+    },
+    "0x3661eeD404158A3EbdB785c1210e036A927B242d": {
+      "referrer": "0x74D2b538537962336771bA258165343C87015908",
+      "keyIndex": 125,
+      "activation": {
+        "usd": 227,
+        "ramaWei": "22700000000000000",
+        "txHash": "0x33cb4951bfd780290a80633acb96c81d01a05a7b026970f79c31f89dcc9129c5",
+        "timestamp": "2025-10-22 21:38:47"
+      },
+      "registeredAt": "2025-10-22 21:38:47"
+    },
+    "0x4Cd5C6866DdF061Db4920866d4AcB5Ea31Bb3405": {
+      "referrer": "0x74D2b538537962336771bA258165343C87015908",
+      "keyIndex": 126,
+      "activation": {
+        "usd": 270,
+        "ramaWei": "27000000000000000",
+        "txHash": "0x74e9dce83a26fb0e1e927bf3e41eaf304a03536f351a26a2d81cf1a953bc13d7",
+        "timestamp": "2025-10-22 21:38:58"
+      },
+      "registeredAt": "2025-10-22 21:38:58"
+    },
+    "0xE706ab534b2A2083663C1d0e5853d4AB76C56453": {
+      "referrer": "0x74D2b538537962336771bA258165343C87015908",
+      "keyIndex": 127,
+      "activation": {
+        "usd": 169,
+        "ramaWei": "16900000000000000",
+        "txHash": "0x5d1a33a33546a5940af50b01deb098c803a418ae56e9ac30941a97bfa36e5db8",
+        "timestamp": "2025-10-22 21:39:05"
+      },
+      "registeredAt": "2025-10-22 21:39:05"
+    },
+    "0x3B1700499CEEF51881622E28E5068b87890F1daC": {
+      "referrer": "0x74D2b538537962336771bA258165343C87015908",
+      "keyIndex": 128,
+      "activation": {
+        "usd": 145,
+        "ramaWei": "14500000000000000",
+        "txHash": "0x678635166b8cc905a89ae0e1303df358e7f1b873e775999884140138dc351823",
+        "timestamp": "2025-10-22 21:39:12"
+      },
+      "registeredAt": "2025-10-22 21:39:12"
+    },
+    "0x3ddD4fd8b38D2b96e6bBf1F44B699d27b9190565": {
+      "referrer": "0xfAE272f908903342D6EFf191Ec81fe5b25331907",
+      "keyIndex": 129,
+      "activation": {
+        "usd": 254,
+        "ramaWei": "25400000000000000",
+        "txHash": "0x77856fee152355f571eec8e022e0faba376e2c27a3b50dac20e32f55a595276b",
+        "timestamp": "2025-10-22 21:39:23"
+      },
+      "registeredAt": "2025-10-22 21:39:23"
+    },
+    "0xdad7f50ECA4FCe80a1568eDA1e4C771D6848714C": {
+      "referrer": "0xfAE272f908903342D6EFf191Ec81fe5b25331907",
+      "keyIndex": 130,
+      "activation": {
+        "usd": 195,
+        "ramaWei": "19500000000000000",
+        "txHash": "0xdb1ce7725bab5521fbb50fdd963b409e1118ef5963a2de85fe55f5fdfd5f7c67",
+        "timestamp": "2025-10-22 21:39:29"
+      },
+      "registeredAt": "2025-10-22 21:39:29"
+    },
+    "0x3d68cA1a307DfcDdA44a4D7Bd635a27b6AE13449": {
+      "referrer": "0xfAE272f908903342D6EFf191Ec81fe5b25331907",
+      "keyIndex": 131,
+      "activation": {
+        "usd": 98,
+        "ramaWei": "9800000000000000",
+        "txHash": "0x04dd6a7da9b554ae76d4ab13c10e7b93c3627657bfeb312b919ca6510928929d",
+        "timestamp": "2025-10-22 21:39:36"
+      },
+      "registeredAt": "2025-10-22 21:39:36"
+    },
+    "0xF2617A60C884C2C5733AfeCaa0FB4c443d030ddF": {
+      "referrer": "0xfAE272f908903342D6EFf191Ec81fe5b25331907",
+      "keyIndex": 132,
+      "activation": {
+        "usd": 147,
+        "ramaWei": "14700000000000000",
+        "txHash": "0xf79e27277a0592ac231b253dd84935f97b8b53eed93597ee4cc8b9b951127811",
+        "timestamp": "2025-10-22 21:39:47"
+      },
+      "registeredAt": "2025-10-22 21:39:47"
+    },
+    "0x16e4B81E5E1246cd6fC3AE9Fee414F38C4605862": {
+      "referrer": "0xfAE272f908903342D6EFf191Ec81fe5b25331907",
+      "keyIndex": 133,
+      "activation": {
+        "usd": 232,
+        "ramaWei": "23200000000000000",
+        "txHash": "0x7d1f99836d7eaef3eba69d37f475937ba6d72609957a39fba554e4adaa47d111",
+        "timestamp": "2025-10-22 21:39:58"
+      },
+      "registeredAt": "2025-10-22 21:39:58"
+    },
+    "0x25AeC408D9Bf80C17e840877B8c63Cea2Ac75450": {
+      "referrer": "0x1e1C84177bc8929c70180a2f87d35081849E27E3",
+      "keyIndex": 134,
+      "activation": {
+        "usd": 147,
+        "ramaWei": "14700000000000000",
+        "txHash": "0x7aaaa48cc574a642956215025bb14729c9d932732c647660873e2f7722d11d73",
+        "timestamp": "2025-10-22 21:40:05"
+      },
+      "registeredAt": "2025-10-22 21:40:05"
+    },
+    "0xE3c6556F55725245f2544b94836575ac2eA59E51": {
+      "referrer": "0x1e1C84177bc8929c70180a2f87d35081849E27E3",
+      "keyIndex": 135,
+      "activation": {
+        "usd": 166,
+        "ramaWei": "16600000000000000",
+        "txHash": "0x3f321e9105248cd7cbb1f0635760d4c0f271cb848361b0b07c10f5fadf72f934",
+        "timestamp": "2025-10-22 21:40:12"
+      },
+      "registeredAt": "2025-10-22 21:40:12"
+    },
+    "0x8b586238D2c9727974FB62A578663C111dA5Ca1E": {
+      "referrer": "0x1e1C84177bc8929c70180a2f87d35081849E27E3",
+      "keyIndex": 136,
+      "activation": {
+        "usd": 249,
+        "ramaWei": "24900000000000000",
+        "txHash": "0xacbd81dd78ef290dfe0fc979e4aa81632ef46548487c08df42134d352ec52895",
+        "timestamp": "2025-10-22 21:40:23"
+      },
+      "registeredAt": "2025-10-22 21:40:23"
+    },
+    "0xb742C64430438CEB8C593600f2cB2214467efe9b": {
+      "referrer": "0x1e1C84177bc8929c70180a2f87d35081849E27E3",
+      "keyIndex": 137,
+      "activation": {
+        "usd": 103,
+        "ramaWei": "10300000000000000",
+        "txHash": "0x67ddafe9eefbb4ba9a46e7b526cd4624406dc67a3d2e23a7faac0cd2ff1c8e42",
+        "timestamp": "2025-10-22 21:40:29"
+      },
+      "registeredAt": "2025-10-22 21:40:29"
+    },
+    "0x69422A907CB90981D23Ab04d325092a4ab8a3211": {
+      "referrer": "0x1e1C84177bc8929c70180a2f87d35081849E27E3",
+      "keyIndex": 138,
+      "activation": {
+        "usd": 221,
+        "ramaWei": "22100000000000000",
+        "txHash": "0xcce836bdebfdaf67ea0c3e3cd4bfec8360dc426d9051de3efa651e764f98d05e",
+        "timestamp": "2025-10-22 21:40:36"
+      },
+      "registeredAt": "2025-10-22 21:40:36"
+    },
+    "0xC0dc71EC7A3E811978e85a8aC27cCad47909428F": {
+      "referrer": "0x5c214aC9f9dBE3161e931E5b33c38d927c7A82da",
+      "keyIndex": 139,
+      "activation": {
+        "usd": 88,
+        "ramaWei": "8800000000000000",
+        "txHash": "0xf9b584900be8444dcf3ef9ae690d60be8e2b7e861918ee0742f57e1353cbdd34",
+        "timestamp": "2025-10-22 21:40:47"
+      },
+      "registeredAt": "2025-10-22 21:40:47"
+    },
+    "0xeB35F9D09f476A2306A7974563497688199FDD6C": {
+      "referrer": "0x5c214aC9f9dBE3161e931E5b33c38d927c7A82da",
+      "keyIndex": 140,
+      "activation": {
+        "usd": 220,
+        "ramaWei": "22000000000000000",
+        "txHash": "0xe823734e74df18734b73e20f3c07097bc3403fdde72d38acbd96898542f657f0",
+        "timestamp": "2025-10-22 21:40:54"
+      },
+      "registeredAt": "2025-10-22 21:40:54"
+    },
+    "0xd268E92d83902bb1fE11b3261E261659F2AE76DB": {
+      "referrer": "0x5c214aC9f9dBE3161e931E5b33c38d927c7A82da",
+      "keyIndex": 141,
+      "activation": {
+        "usd": 245,
+        "ramaWei": "24500000000000000",
+        "txHash": "0x5d13c3415752879f33b6ed7bea61bf71fb3787698703f3225fd5b7314eb59029",
+        "timestamp": "2025-10-22 21:41:01"
+      },
+      "registeredAt": "2025-10-22 21:41:01"
+    },
+    "0x89C0574326847D70978B492893f0aFEdA93d1fAB": {
+      "referrer": "0x5c214aC9f9dBE3161e931E5b33c38d927c7A82da",
+      "keyIndex": 142,
+      "activation": {
+        "usd": 134,
+        "ramaWei": "13400000000000000",
+        "txHash": "0x6432bb8057f810d3a9dbbacaaccec822a684ea00252c6d5dc95116db7f3cfbdc",
+        "timestamp": "2025-10-22 21:41:08"
+      },
+      "registeredAt": "2025-10-22 21:41:08"
+    },
+    "0xa3457E00F6f94E4992AD8A5A5C3301435C37A944": {
+      "referrer": "0x5c214aC9f9dBE3161e931E5b33c38d927c7A82da",
+      "keyIndex": 143,
+      "activation": {
+        "usd": 151,
+        "ramaWei": "15100000000000000",
+        "txHash": "0xb0f72f84f25a105b25a3cf271ccdb1689c0fdbae8985632788314dde1d73817b",
+        "timestamp": "2025-10-22 21:41:19"
+      },
+      "registeredAt": "2025-10-22 21:41:19"
+    },
+    "0xE43f9c2F45ADc4D076CCbFEC61ebB4DbBF2F6bF9": {
+      "referrer": "0x39c5dB4c9F9BEDBc28AB5200e970D34297B0e95E",
+      "keyIndex": 144,
+      "activation": {
+        "usd": 34,
+        "ramaWei": "3400000000000000",
+        "txHash": "0x357800e950437cb9bdd0fa5782c184b41204413d927ec324d537133f511fed2d",
+        "timestamp": "2025-10-22 21:41:25"
+      },
+      "registeredAt": "2025-10-22 21:41:25"
+    },
+    "0xcc7bEdfA70F5481F35ccd0DDE507C472d5a5A463": {
+      "referrer": "0x39c5dB4c9F9BEDBc28AB5200e970D34297B0e95E",
+      "keyIndex": 145,
+      "activation": {
+        "usd": 135,
+        "ramaWei": "13500000000000000",
+        "txHash": "0x2279f4b88fb63050c1648f6318e8aa4281b841d6d04290e18cd5e96d8c10758f",
+        "timestamp": "2025-10-22 21:41:32"
+      },
+      "registeredAt": "2025-10-22 21:41:32"
+    },
+    "0x3B15a7b88C2de08BfCd27F09B06A52E544fa0067": {
+      "referrer": "0x39c5dB4c9F9BEDBc28AB5200e970D34297B0e95E",
+      "keyIndex": 146,
+      "activation": {
+        "usd": 117,
+        "ramaWei": "11700000000000000",
+        "txHash": "0xf36f9ca54895f8b2a7478110aa85acf17f8235ae473b3c483070c28a2274fb61",
+        "timestamp": "2025-10-22 21:41:43"
+      },
+      "registeredAt": "2025-10-22 21:41:43"
+    },
+    "0xf468BC1ADa91d2b10C846dA7880701A31caBD447": {
+      "referrer": "0x39c5dB4c9F9BEDBc28AB5200e970D34297B0e95E",
+      "keyIndex": 147,
+      "activation": {
+        "usd": 261,
+        "ramaWei": "26100000000000000",
+        "txHash": "0x439c8def34c5ab6c6905aec7748d9b30df064d06a0a517209bc5837e2bac3700",
+        "timestamp": "2025-10-22 21:41:50"
+      },
+      "registeredAt": "2025-10-22 21:41:50"
+    },
+    "0x2CDd4e4dD3454dfAe876fD330496ddacd376edDa": {
+      "referrer": "0x39c5dB4c9F9BEDBc28AB5200e970D34297B0e95E",
+      "keyIndex": 148,
+      "activation": {
+        "usd": 90,
+        "ramaWei": "9000000000000000",
+        "txHash": "0x9ff69cfe7c27002df25768a4146ba919d783e5d19b6e9e3e3887e81a8fac1aca",
+        "timestamp": "2025-10-22 21:41:57"
+      },
+      "registeredAt": "2025-10-22 21:41:57"
+    },
+    "0xFF6cF63bAca9c3c174d64Ecc587BB74856E6C1Bd": {
+      "referrer": "0x86D851547Cd9FD4FcB901c3f87Cb47d1b9CF647C",
+      "keyIndex": 149,
+      "activation": {
+        "usd": 189,
+        "ramaWei": "18900000000000000",
+        "txHash": "0x4eb2838f2c0395186df935c4ed1ae27235028613c8d3199cec07e19a7f3f81d9",
+        "timestamp": "2025-10-22 21:42:04"
+      },
+      "registeredAt": "2025-10-22 21:42:04"
+    },
+    "0xB5D0B12C866D8469F11DEAAebd3e8583aBE93B8d": {
+      "referrer": "0x86D851547Cd9FD4FcB901c3f87Cb47d1b9CF647C",
+      "keyIndex": 150,
+      "activation": {
+        "usd": 137,
+        "ramaWei": "13700000000000000",
+        "txHash": "0xcddac6843631ac68d49796b528eb348b91126c265c46b9caaaa8c6bd92b1c0ff",
+        "timestamp": "2025-10-22 21:42:15"
+      },
+      "registeredAt": "2025-10-22 21:42:15"
+    },
+    "0xd82a399DA6fEdCF7a98A3371eA8A2Ce73cfb2b78": {
+      "referrer": "0x86D851547Cd9FD4FcB901c3f87Cb47d1b9CF647C",
+      "keyIndex": 151,
+      "activation": {
+        "usd": 45,
+        "ramaWei": "4500000000000000",
+        "txHash": "0x9b44d9f02bcc2ba3ca9285b7ad67f43b0c9709cf29cc0ad88c41c740900e89f7",
+        "timestamp": "2025-10-22 21:42:21"
+      },
+      "registeredAt": "2025-10-22 21:42:21"
+    },
+    "0x73d003d8c8e136601392bdd6D594529C412626f2": {
+      "referrer": "0x86D851547Cd9FD4FcB901c3f87Cb47d1b9CF647C",
+      "keyIndex": 152,
+      "activation": {
+        "usd": 102,
+        "ramaWei": "10200000000000000",
+        "txHash": "0x8cca24bd01f47918b6c6886a410ed878c7aca36fe18bccca56963fb2dbebae7d",
+        "timestamp": "2025-10-22 21:42:33"
+      },
+      "registeredAt": "2025-10-22 21:42:33"
+    },
+    "0xa8A0a391B66C0089956966a00717F53f1FE64fD8": {
+      "referrer": "0x86D851547Cd9FD4FcB901c3f87Cb47d1b9CF647C",
+      "keyIndex": 153,
+      "activation": {
+        "usd": 194,
+        "ramaWei": "19400000000000000",
+        "txHash": "0xc7e085746a7347bee9da28bbaa7c60e142997db1ac1abfea4a1dad52fb483ef7",
+        "timestamp": "2025-10-22 21:42:40"
+      },
+      "registeredAt": "2025-10-22 21:42:40"
+    },
+    "0xc7C1832Ffa845268C45bfDF2a37586254c462fb6": {
+      "referrer": "0xeF9A4b0ca968f29B7cdFd19D691a1Fb29b48A4A0",
+      "keyIndex": 154,
+      "activation": {
+        "usd": 170,
+        "ramaWei": "17000000000000000",
+        "txHash": "0x39a45d9717ed0f268bfe6764d9286276c744d8927b7923b623de7c2171b567bb",
+        "timestamp": "2025-10-22 21:42:51"
+      },
+      "registeredAt": "2025-10-22 21:42:51"
+    },
+    "0x6Cf06ef034af7927d576A8E1001BC2d900c041C9": {
+      "referrer": "0xeF9A4b0ca968f29B7cdFd19D691a1Fb29b48A4A0",
+      "keyIndex": 155,
+      "activation": {
+        "usd": 91,
+        "ramaWei": "9100000000000000",
+        "txHash": "0x12d62e76e98cca7f4ae0ea1d3f78cd102f1a831a7685607adda4e375243fcf70",
+        "timestamp": "2025-10-22 21:42:58"
+      },
+      "registeredAt": "2025-10-22 21:42:58"
+    },
+    "0x75bD5D890533f053468eF6CC70E555E049859655": {
+      "referrer": "0xeF9A4b0ca968f29B7cdFd19D691a1Fb29b48A4A0",
+      "keyIndex": 156,
+      "activation": {
+        "usd": 238,
+        "ramaWei": "23800000000000000",
+        "txHash": "0x092ae914d080cb086ccce1769b3b6c7cf8788a9f92328bc45a6e189fd727fb55",
+        "timestamp": "2025-10-22 21:43:09"
+      },
+      "registeredAt": "2025-10-22 21:43:09"
+    },
+    "0x0aDAcfbE87240B38540038f69930760d94D57F15": {
+      "referrer": "0xeF9A4b0ca968f29B7cdFd19D691a1Fb29b48A4A0",
+      "keyIndex": 157,
+      "activation": {
+        "usd": 273,
+        "ramaWei": "27300000000000000",
+        "txHash": "0x93081a14993790c6e9a8a2591384e7d343d629248e900a179b6f67d2a4f743f9",
+        "timestamp": "2025-10-22 21:43:16"
+      },
+      "registeredAt": "2025-10-22 21:43:16"
+    },
+    "0xf98b36FbBe02b385c1a339B65474BC19408BfbD6": {
+      "referrer": "0xeF9A4b0ca968f29B7cdFd19D691a1Fb29b48A4A0",
+      "keyIndex": 158,
+      "activation": {
+        "usd": 97,
+        "ramaWei": "9700000000000000",
+        "txHash": "0x30781386a7fb4280da59e989f4841f002985fac74af31360a0379ab119893fa0",
+        "timestamp": "2025-10-22 21:43:23"
+      },
+      "registeredAt": "2025-10-22 21:43:23"
+    },
+    "0x8a6aeCD150cc9731B042b9eD0BbE18D134FcD4B6": {
+      "referrer": "0x29cA8E2b88e5CBDa900a79950cE1699fFB468FA8",
+      "keyIndex": 159,
+      "activation": {
+        "usd": 237,
+        "ramaWei": "23700000000000000",
+        "txHash": "0x6270a6e7a99938205fb61e6a337168842901d550de593865e81aff2c16ce3b10",
+        "timestamp": "2025-10-22 21:43:30"
+      },
+      "registeredAt": "2025-10-22 21:43:30"
+    },
+    "0x8961ae3bdc26EA0224033e59Cf0aa7acE131a92a": {
+      "referrer": "0x29cA8E2b88e5CBDa900a79950cE1699fFB468FA8",
+      "keyIndex": 160,
+      "activation": {
+        "usd": 201,
+        "ramaWei": "20100000000000000",
+        "txHash": "0x40b7bc33f0552b03e9154c826cb8dc04b78a01d855e0ae47db89167c353ed988",
+        "timestamp": "2025-10-22 21:43:37"
+      },
+      "registeredAt": "2025-10-22 21:43:37"
+    },
+    "0x46EcDf7A03f5530B98038E3Ea20710f3CA411e53": {
+      "referrer": "0x29cA8E2b88e5CBDa900a79950cE1699fFB468FA8",
+      "keyIndex": 161,
+      "activation": {
+        "usd": 214,
+        "ramaWei": "21400000000000000",
+        "txHash": "0x9d351ddff7bb8990e2928a59b2d7774db9af51c011c1a049d59480d0cd6c362f",
+        "timestamp": "2025-10-22 21:43:44"
+      },
+      "registeredAt": "2025-10-22 21:43:44"
+    },
+    "0x7eD4C037e497CB17327567406D8250aEa7025daE": {
+      "referrer": "0x29cA8E2b88e5CBDa900a79950cE1699fFB468FA8",
+      "keyIndex": 162,
+      "activation": {
+        "usd": 194,
+        "ramaWei": "19400000000000000",
+        "txHash": "0x6dfcd8e75a649b35c125c330580d7f06f89687535c9ae7acc0d7d5fccc14a1d0",
+        "timestamp": "2025-10-22 21:43:51"
+      },
+      "registeredAt": "2025-10-22 21:43:51"
+    },
+    "0x66Dc75c1E389bd1254E5500c453A555833f9e6b5": {
+      "referrer": "0x29cA8E2b88e5CBDa900a79950cE1699fFB468FA8",
+      "keyIndex": 163,
+      "activation": {
+        "usd": 261,
+        "ramaWei": "26100000000000000",
+        "txHash": "0x9a3907c1334c64e0e2dcd0c96a64f8c662766f399227a4c32375b8c2dfecba65",
+        "timestamp": "2025-10-22 21:43:57"
+      },
+      "registeredAt": "2025-10-22 21:43:57"
+    },
+    "0x64807717c6e3e7A8b17B1f519Dba659600365372": {
+      "referrer": "0xd7df554e710a53C84670107191fAD56F8B012e6B",
+      "keyIndex": 164,
+      "activation": {
+        "usd": 45,
+        "ramaWei": "4500000000000000",
+        "txHash": "0xbd903fba48c76d3729b5c23e3a31e8984776e3deb15b0d21f18fc66f5bb9a7f1",
+        "timestamp": "2025-10-22 21:44:04"
+      },
+      "registeredAt": "2025-10-22 21:44:04"
+    },
+    "0x8B318B9ae4b3b4B2F97cE03892835F99D6fbf120": {
+      "referrer": "0xd7df554e710a53C84670107191fAD56F8B012e6B",
+      "keyIndex": 165,
+      "activation": {
+        "usd": 134,
+        "ramaWei": "13400000000000000",
+        "txHash": "0x248a727eb66f311412db77171921b769f3206f3efdcf68c9cd5710d54475f500",
+        "timestamp": "2025-10-22 21:44:11"
+      },
+      "registeredAt": "2025-10-22 21:44:11"
+    },
+    "0x9e128Eb9E5bE90C7e10a83ca2C6118A19C72575d": {
+      "referrer": "0xd7df554e710a53C84670107191fAD56F8B012e6B",
+      "keyIndex": 166,
+      "activation": {
+        "usd": 298,
+        "ramaWei": "29800000000000000",
+        "txHash": "0xb6711d2b88aac5799927dcf36fb9018f2898a4d573a07e602670058f8f3f1528",
+        "timestamp": "2025-10-22 21:44:18"
+      },
+      "registeredAt": "2025-10-22 21:44:18"
+    },
+    "0x9E491cCaFd1748518558d59e55CE8B046b980b1C": {
+      "referrer": "0xd7df554e710a53C84670107191fAD56F8B012e6B",
+      "keyIndex": 167,
+      "activation": {
+        "usd": 105,
+        "ramaWei": "10500000000000000",
+        "txHash": "0xb1c8fa71bd880676f82a22e497676dd9fc66b4cc455115bcb3b183b69e2129ee",
+        "timestamp": "2025-10-22 21:44:29"
+      },
+      "registeredAt": "2025-10-22 21:44:29"
+    },
+    "0x8a1917b176b1c06Ce2e7bEB9f39db93d5A2F7294": {
+      "referrer": "0xd7df554e710a53C84670107191fAD56F8B012e6B",
+      "keyIndex": 168,
+      "activation": {
+        "usd": 206,
+        "ramaWei": "20600000000000000",
+        "txHash": "0xc680e19de41b20823338171c93934a27334462df74f706fc490b40b8aac77969",
+        "timestamp": "2025-10-22 21:44:36"
+      },
+      "registeredAt": "2025-10-22 21:44:36"
+    },
+    "0xE14BAC1131C861fBc195a1e126167b9c6f848a7e": {
+      "referrer": "0x81BFBb19f14952be2f7455071631E5580262e6A4",
+      "keyIndex": 169,
+      "activation": {
+        "usd": 21,
+        "ramaWei": "2100000000000000",
+        "txHash": "0xe7176c903e302b8dcd403b23028b8f3f5a541bae1917130c369ae5e1f4b3eaa3",
+        "timestamp": "2025-10-22 21:44:47"
+      },
+      "registeredAt": "2025-10-22 21:44:47"
+    },
+    "0xC181ecfa874Fb535aE058E3c4BBD74fa6d2De93F": {
+      "referrer": "0x81BFBb19f14952be2f7455071631E5580262e6A4",
+      "keyIndex": 170,
+      "activation": {
+        "usd": 248,
+        "ramaWei": "24800000000000000",
+        "txHash": "0x5b96019ae7bb97dcf6bf3352467be9f935fd5fe1386e4ee07330479ee09b1aaf",
+        "timestamp": "2025-10-22 21:44:54"
+      },
+      "registeredAt": "2025-10-22 21:44:54"
+    },
+    "0xeD45E31A1027474bf9924fb52a6FE2aBb12219d3": {
+      "referrer": "0x81BFBb19f14952be2f7455071631E5580262e6A4",
+      "keyIndex": 171,
+      "activation": {
+        "usd": 89,
+        "ramaWei": "8900000000000000",
+        "txHash": "0xd5bcb9f4e5e83e5b490a6a96894d4b8b727d285c5249b02d479921cd3d16add3",
+        "timestamp": "2025-10-22 21:45:01"
+      },
+      "registeredAt": "2025-10-22 21:45:01"
+    },
+    "0x016E3D86992E5cC3ea60B97f2fe2C792ed511752": {
+      "referrer": "0x81BFBb19f14952be2f7455071631E5580262e6A4",
+      "keyIndex": 172,
+      "activation": {
+        "usd": 139,
+        "ramaWei": "13900000000000000",
+        "txHash": "0x7768d929fa9528162ca8ea0c7ff3b6384799f52b2a84c04594cdc445b3205c03",
+        "timestamp": "2025-10-22 21:45:07"
+      },
+      "registeredAt": "2025-10-22 21:45:07"
+    },
+    "0xee7A56D851eDE6517AeD9707d671458E2f0947f1": {
+      "referrer": "0x81BFBb19f14952be2f7455071631E5580262e6A4",
+      "keyIndex": 173,
+      "activation": {
+        "usd": 263,
+        "ramaWei": "26300000000000000",
+        "txHash": "0xf51880e83e141d75c253db64e413b476c2069238b75ad4aedc90ddaa4db0708a",
+        "timestamp": "2025-10-22 21:45:14"
+      },
+      "registeredAt": "2025-10-22 21:45:14"
+    },
+    "0xF5297e8EB174B6C246180BcA5dDBa7A3F121b98F": {
+      "referrer": "0x75597E012c038032887EACB1a7EF85A050c2c4EA",
+      "keyIndex": 174,
+      "activation": {
+        "usd": 101,
+        "ramaWei": "10100000000000000",
+        "txHash": "0x6c143840995155159c11120a0a1675eb120fd7dbbcdfd20eb4788a6bc32314ed",
+        "timestamp": "2025-10-22 21:45:21"
+      },
+      "registeredAt": "2025-10-22 21:45:21"
+    },
+    "0xCf1a63CC79b7fAbFdb10bE7457d590fAf264CfCB": {
+      "referrer": "0x75597E012c038032887EACB1a7EF85A050c2c4EA",
+      "keyIndex": 175,
+      "activation": {
+        "usd": 216,
+        "ramaWei": "21600000000000000",
+        "txHash": "0x9d6c63beca6cd879cdfe2d4275147d11dfbff01cb26677f3aba73eada7020d4b",
+        "timestamp": "2025-10-22 21:45:28"
+      },
+      "registeredAt": "2025-10-22 21:45:28"
+    },
+    "0xa88e33305f4DFd55B91E3F0703469A61312b7a32": {
+      "referrer": "0x75597E012c038032887EACB1a7EF85A050c2c4EA",
+      "keyIndex": 176,
+      "activation": {
+        "usd": 36,
+        "ramaWei": "3600000000000000",
+        "txHash": "0xe0edeb9b8c9f914782a01df4066e03cf77ca28f796819891f0a6074e95be2e08",
+        "timestamp": "2025-10-22 21:45:35"
+      },
+      "registeredAt": "2025-10-22 21:45:35"
+    },
+    "0x3A586891d4a90b779F59B9D6D4254aF06a0a743F": {
+      "referrer": "0x75597E012c038032887EACB1a7EF85A050c2c4EA",
+      "keyIndex": 177,
+      "activation": {
+        "usd": 248,
+        "ramaWei": "24800000000000000",
+        "txHash": "0xd84e1b8a428833637465ed46124d0acdcec62fd94d4bb80b3e338f7d1af38c16",
+        "timestamp": "2025-10-22 21:45:42"
+      },
+      "registeredAt": "2025-10-22 21:45:42"
+    },
+    "0x1F98827224611762eC3fEd923f8C36495b76Ba91": {
+      "referrer": "0x75597E012c038032887EACB1a7EF85A050c2c4EA",
+      "keyIndex": 178,
+      "activation": {
+        "usd": 245,
+        "ramaWei": "24500000000000000",
+        "txHash": "0xd2139f6e6b421e280d48f3b9cdf4b871678e10c41c890b835efc9234ed87d990",
+        "timestamp": "2025-10-22 21:45:49"
+      },
+      "registeredAt": "2025-10-22 21:45:49"
+    },
+    "0x8FdAD047Fc9C828b1714c6c9D51eC7689Fb2BA90": {
+      "referrer": "0xc21920435850AC5EfF3ee25aB923Afd4f0a4935C",
+      "keyIndex": 179,
+      "activation": {
+        "usd": 168,
+        "ramaWei": "16800000000000000",
+        "txHash": "0xe35547ec65f70b39d670c98515ac23e52ffcb87adf75cf0dbd7788fff4262ed6",
+        "timestamp": "2025-10-22 21:45:56"
+      },
+      "registeredAt": "2025-10-22 21:45:56"
+    },
+    "0x97Da5616Cea72F1480E1E43DA868C74019B8E340": {
+      "referrer": "0xc21920435850AC5EfF3ee25aB923Afd4f0a4935C",
+      "keyIndex": 180,
+      "activation": {
+        "usd": 165,
+        "ramaWei": "16500000000000000",
+        "txHash": "0xe93cd6199a18526a8ea24364d64ff558a9f5dafcc33aa6a32b16ead3afc1b47b",
+        "timestamp": "2025-10-22 21:46:07"
+      },
+      "registeredAt": "2025-10-22 21:46:07"
+    },
+    "0x25134e67A113b5080843a42BC935c55948B65230": {
+      "referrer": "0xc21920435850AC5EfF3ee25aB923Afd4f0a4935C",
+      "keyIndex": 181,
+      "activation": {
+        "usd": 27,
+        "ramaWei": "2700000000000000",
+        "txHash": "0x6c304373d5514ac51cf704b489a9366e1ca13913cc80cd43370d9143e24d942b",
+        "timestamp": "2025-10-22 21:46:14"
+      },
+      "registeredAt": "2025-10-22 21:46:14"
+    },
+    "0x388DF1A73ccD9Cb111d232Fbc721F88f8F0a48Ac": {
+      "referrer": "0xc21920435850AC5EfF3ee25aB923Afd4f0a4935C",
+      "keyIndex": 182,
+      "activation": {
+        "usd": 91,
+        "ramaWei": "9100000000000000",
+        "txHash": "0x03832aa9cd0688a95483b4e05a349a88d3df0724e7d31679370b29558560dcac",
+        "timestamp": "2025-10-22 21:46:21"
+      },
+      "registeredAt": "2025-10-22 21:46:21"
+    },
+    "0xb4d590cF344b93CaAE180088F57F3C97FC183B2c": {
+      "referrer": "0xc21920435850AC5EfF3ee25aB923Afd4f0a4935C",
+      "keyIndex": 183,
+      "activation": {
+        "usd": 112,
+        "ramaWei": "11200000000000000",
+        "txHash": "0x0665f4dfd6abfb8dfff1b25ea9e7d7206ded8ca893054d0df097e7a83a2646da",
+        "timestamp": "2025-10-22 21:46:28"
+      },
+      "registeredAt": "2025-10-22 21:46:28"
+    },
+    "0x3CB22a8E3bb178116D95787339B238317332Dd86": {
+      "referrer": "0x0FdD3Bb3005f503dDc95B911fCAec57b7451d195",
+      "keyIndex": 184,
+      "activation": {
+        "usd": 254,
+        "ramaWei": "25400000000000000",
+        "txHash": "0x203673dc99110b183002c7e6b2511f3b47015be316afaaf8c367b6bfe789b804",
+        "timestamp": "2025-10-22 21:46:35"
+      },
+      "registeredAt": "2025-10-22 21:46:35"
+    },
+    "0xd707Df47Fd221eF3214148A8A301bFe1de7fEcc5": {
+      "referrer": "0x0FdD3Bb3005f503dDc95B911fCAec57b7451d195",
+      "keyIndex": 185,
+      "activation": {
+        "usd": 36,
+        "ramaWei": "3600000000000000",
+        "txHash": "0xb5efed348fa902ea061527d0c11e99ab0120c30a98abf4b2a139cfe1a84e9b09",
+        "timestamp": "2025-10-22 21:46:41"
+      },
+      "registeredAt": "2025-10-22 21:46:41"
+    },
+    "0xecB5b6f4AcBd692b94E3A4626b3aa012B5bf25aa": {
+      "referrer": "0x0FdD3Bb3005f503dDc95B911fCAec57b7451d195",
+      "keyIndex": 186,
+      "activation": {
+        "usd": 100,
+        "ramaWei": "10000000000000000",
+        "txHash": "0xbd5a4c9d6cc8f573102a8b466df27cdf0e8ca2fbee64e69fb65e720b831f4a2f",
+        "timestamp": "2025-10-22 21:46:48"
+      },
+      "registeredAt": "2025-10-22 21:46:48"
+    },
+    "0xB045bC13C7Ff12332dD3E54Ee01da5E1caF5371d": {
+      "referrer": "0x0FdD3Bb3005f503dDc95B911fCAec57b7451d195",
+      "keyIndex": 187,
+      "activation": {
+        "usd": 258,
+        "ramaWei": "25800000000000000",
+        "txHash": "0x32e9c8f906fc992c0bbcec00ae3be797b775c8632fd5678f291cda656693761d",
+        "timestamp": "2025-10-22 21:46:55"
+      },
+      "registeredAt": "2025-10-22 21:46:55"
+    },
+    "0xEf96D4d098a1e317b6BE7d7358c598b361646cf8": {
+      "referrer": "0x0FdD3Bb3005f503dDc95B911fCAec57b7451d195",
+      "keyIndex": 188,
+      "activation": {
+        "usd": 224,
+        "ramaWei": "22400000000000000",
+        "txHash": "0x176ea830d07b14c56cba63945d973c0001a7f6d28802d60d18b2f16a2cc8fc05",
+        "timestamp": "2025-10-22 21:47:02"
+      },
+      "registeredAt": "2025-10-22 21:47:02"
+    },
+    "0x3cbACF29281d3cb84F57C3796a90D6eDD46b3d0D": {
+      "referrer": "0x0B08a8cC854804a5BB11050837BBeF195fa63475",
+      "keyIndex": 189,
+      "activation": {
+        "usd": 213,
+        "ramaWei": "21300000000000000",
+        "txHash": "0xdf91ed6465740ccb17f8dfc12a6038711856d783559315513a739f6092a2d96f",
+        "timestamp": "2025-10-22 21:47:13"
+      },
+      "registeredAt": "2025-10-22 21:47:13"
+    },
+    "0xFFc6f6189384Edb8E19d34b1184e61b7DEC1F418": {
+      "referrer": "0x0B08a8cC854804a5BB11050837BBeF195fa63475",
+      "keyIndex": 190,
+      "activation": {
+        "usd": 112,
+        "ramaWei": "11200000000000000",
+        "txHash": "0xe3b97c1cea7b8f9c3976fa663ab39c6def5599c1fba2bafcc877b27b17290032",
+        "timestamp": "2025-10-22 21:47:20"
+      },
+      "registeredAt": "2025-10-22 21:47:20"
+    },
+    "0x4de1F88Da625E762ad51FB2331C18B3165729D67": {
+      "referrer": "0x0B08a8cC854804a5BB11050837BBeF195fa63475",
+      "keyIndex": 191,
+      "activation": {
+        "usd": 146,
+        "ramaWei": "14600000000000000",
+        "txHash": "0x596900108581a93d061cd2a829bfcfdfc0a4b373239108276584f099c0855764",
+        "timestamp": "2025-10-22 21:47:27"
+      },
+      "registeredAt": "2025-10-22 21:47:27"
+    },
+    "0x39aD352420311703D6d6Ec8F40B1533D2185dE33": {
+      "referrer": "0x0B08a8cC854804a5BB11050837BBeF195fa63475",
+      "keyIndex": 192,
+      "activation": {
+        "usd": 133,
+        "ramaWei": "13300000000000000",
+        "txHash": "0x56cce730dfbc7a4b88e9305ce9395261ce59aefe74958a00a605648dacef6dde",
+        "timestamp": "2025-10-22 21:47:34"
+      },
+      "registeredAt": "2025-10-22 21:47:34"
+    },
+    "0x7b90b8A916E0b06e33200Dd0C5767D01C094Cd1d": {
+      "referrer": "0x0B08a8cC854804a5BB11050837BBeF195fa63475",
+      "keyIndex": 193,
+      "activation": {
+        "usd": 133,
+        "ramaWei": "13300000000000000",
+        "txHash": "0x712987acb56f377efeb8f80525bbe6c366bf04269129902713c4b225621235ab",
+        "timestamp": "2025-10-22 21:47:41"
+      },
+      "registeredAt": "2025-10-22 21:47:41"
+    },
+    "0xb2694e7175f509Eac113197E9b59a468d783ACFa": {
+      "referrer": "0x0C47Fa129cd0aE5Ba86d262EFA7a68E837e3e28e",
+      "keyIndex": 194,
+      "activation": {
+        "usd": 111,
+        "ramaWei": "11100000000000000",
+        "txHash": "0x59accc8f5fb509c8ec25ac1f862030176450eca28eaf3cc74ffbc8097ba45d2a",
+        "timestamp": "2025-10-22 21:47:48"
+      },
+      "registeredAt": "2025-10-22 21:47:48"
+    },
+    "0xEe030442291FC81e4a101C3B2cE1372fec2183Cf": {
+      "referrer": "0x0C47Fa129cd0aE5Ba86d262EFA7a68E837e3e28e",
+      "keyIndex": 195,
+      "activation": {
+        "usd": 14,
+        "ramaWei": "1400000000000000",
+        "txHash": "0xb92a626a7c91a42d90df3e82cf94d1e80c64cb702b531dae8967fb30997d014b",
+        "timestamp": "2025-10-22 21:47:54"
+      },
+      "registeredAt": "2025-10-22 21:47:54"
+    },
+    "0x19d7A64Afffc5074199814a29169e9651a423af2": {
+      "referrer": "0x0C47Fa129cd0aE5Ba86d262EFA7a68E837e3e28e",
+      "keyIndex": 196,
+      "activation": {
+        "usd": 172,
+        "ramaWei": "17200000000000000",
+        "txHash": "0xb9a4ac94e000f82ab0900073602427a272cf7c03758d78595139814843d1e69b",
+        "timestamp": "2025-10-22 21:48:01"
+      },
+      "registeredAt": "2025-10-22 21:48:01"
+    },
+    "0x4BD8E2efadF6f84B7ff3350A29193B21B998e3cd": {
+      "referrer": "0x0C47Fa129cd0aE5Ba86d262EFA7a68E837e3e28e",
+      "keyIndex": 197,
+      "activation": {
+        "usd": 251,
+        "ramaWei": "25100000000000000",
+        "txHash": "0xb0ba6743772db060132bed2e39470541b6ec8921df0ed7c2ff638ee277115741",
+        "timestamp": "2025-10-22 21:48:08"
+      },
+      "registeredAt": "2025-10-22 21:48:08"
+    },
+    "0xD2FD59a8546C8b5b63B17df9C7A3D72159AB0039": {
+      "referrer": "0x0C47Fa129cd0aE5Ba86d262EFA7a68E837e3e28e",
+      "keyIndex": 198,
+      "activation": {
+        "usd": 117,
+        "ramaWei": "11700000000000000",
+        "txHash": "0xf6a08d34be39e4b9b835966a1e43f61d0fffea92e2e751076e27256a1e4d789c",
+        "timestamp": "2025-10-22 21:48:15"
+      },
+      "registeredAt": "2025-10-22 21:48:15"
+    },
+    "0x4e50786b95455b26248Ebe5557D32f11694dC048": {
+      "referrer": "0x2A626Bdee6bfb477FD96D21cEd654eDCE17e4E84",
+      "keyIndex": 199,
+      "activation": {
+        "usd": 273,
+        "ramaWei": "27300000000000000",
+        "txHash": "0x9294ef272444c5fde8330282b61ff3e473a43aa95ae09f1547841df60a57fea7",
+        "timestamp": "2025-10-22 21:48:22"
+      },
+      "registeredAt": "2025-10-22 21:48:22"
+    },
+    "0x2877bC064c79173928093bd7D517FF7f25dD54B5": {
+      "referrer": "0x2A626Bdee6bfb477FD96D21cEd654eDCE17e4E84",
+      "keyIndex": 200,
+      "activation": {
+        "usd": 246,
+        "ramaWei": "24600000000000000",
+        "txHash": "0xe6c388a33e2589daede717d447c78d0566c02dd6a9af2d8f13547847fa7d9804",
+        "timestamp": "2025-10-22 21:48:33"
+      },
+      "registeredAt": "2025-10-22 21:48:33"
+    },
+    "0x7d96e7c23340b786a0cac9670D122e84C0E8eE32": {
+      "referrer": "0x2A626Bdee6bfb477FD96D21cEd654eDCE17e4E84",
+      "keyIndex": 201,
+      "activation": {
+        "usd": 174,
+        "ramaWei": "17400000000000000",
+        "txHash": "0x27aba876dfbff02a9eac6fa7aca4fd94b949657a18451950d23fd0d835bf8dc7",
+        "timestamp": "2025-10-22 21:48:44"
+      },
+      "registeredAt": "2025-10-22 21:48:44"
+    },
+    "0x22413d5eDa968eE5D2885610e26e17284e0b21c7": {
+      "referrer": "0x2A626Bdee6bfb477FD96D21cEd654eDCE17e4E84",
+      "keyIndex": 202,
+      "activation": {
+        "usd": 229,
+        "ramaWei": "22900000000000000",
+        "txHash": "0x6e53485334bab8ed7ae3c024b3c3a44ecb81a44829ab71e3a1b805a7c9f9ed27",
+        "timestamp": "2025-10-22 21:48:55"
+      },
+      "registeredAt": "2025-10-22 21:48:55"
+    },
+    "0xc52b5Fa9EFe2B581417f89762E37b97a2818bb03": {
+      "referrer": "0x2A626Bdee6bfb477FD96D21cEd654eDCE17e4E84",
+      "keyIndex": 203,
+      "activation": {
+        "usd": 259,
+        "ramaWei": "25900000000000000",
+        "txHash": "0xe68f1f9f639a2063e3c8f0a36bed80b927dbfb569e778d22769c1cb411e87501",
+        "timestamp": "2025-10-22 21:49:02"
+      },
+      "registeredAt": "2025-10-22 21:49:02"
+    },
+    "0xf286Acc091ce24e6B9907aACef4C310d48AE2c6A": {
+      "referrer": "0xCAE814221B5DAd27F3430dFc9ecCe91c2803FD35",
+      "keyIndex": 204,
+      "activation": {
+        "usd": 218,
+        "ramaWei": "21800000000000000",
+        "txHash": "0x331af06324db5fd8223b1231c155b2f2b86f829c6d296bc2e4667ac6d9515f8a",
+        "timestamp": "2025-10-22 21:49:09"
+      },
+      "registeredAt": "2025-10-22 21:49:09"
+    },
+    "0x1B581556D82997528f791804450EDCFF370c49c3": {
+      "referrer": "0xCAE814221B5DAd27F3430dFc9ecCe91c2803FD35",
+      "keyIndex": 205,
+      "activation": {
+        "usd": 137,
+        "ramaWei": "13700000000000000",
+        "txHash": "0x5a910fa8fb557fcee6d03c110a8179c4d061baf1aa86ca87a761a3df53f76ff7",
+        "timestamp": "2025-10-22 21:49:15"
+      },
+      "registeredAt": "2025-10-22 21:49:15"
+    },
+    "0xd41C6e5f6197c0Ac33d4311266Ad0A7016A9d005": {
+      "referrer": "0xCAE814221B5DAd27F3430dFc9ecCe91c2803FD35",
+      "keyIndex": 206,
+      "activation": {
+        "usd": 274,
+        "ramaWei": "27400000000000000",
+        "txHash": "0x7cc9dbfe42b82af050ea6ac98e274a3878b6f79af63d6ec06a13bebce2d2b6bf",
+        "timestamp": "2025-10-22 21:49:26"
+      },
+      "registeredAt": "2025-10-22 21:49:26"
+    },
+    "0x13FdbC7cE4243AE094f5EE2d3a8047D4004d14E9": {
+      "referrer": "0xCAE814221B5DAd27F3430dFc9ecCe91c2803FD35",
+      "keyIndex": 207,
+      "activation": {
+        "usd": 163,
+        "ramaWei": "16300000000000000",
+        "txHash": "0xb5e667ae01cb6056c19525e897a68b2b8a4f4ce6e06401e85662ec337321f451",
+        "timestamp": "2025-10-22 21:49:33"
+      },
+      "registeredAt": "2025-10-22 21:49:33"
+    },
+    "0xed7e3a0918ca581963814f2cF606e8d6B2aB06FB": {
+      "referrer": "0xCAE814221B5DAd27F3430dFc9ecCe91c2803FD35",
+      "keyIndex": 208,
+      "activation": {
+        "usd": 215,
+        "ramaWei": "21500000000000000",
+        "txHash": "0xb5985217ca8b04dadfe37ee2cad529b1f0ce38d916242612f62c3ddcead72bb5",
+        "timestamp": "2025-10-22 21:49:40"
+      },
+      "registeredAt": "2025-10-22 21:49:40"
+    },
+    "0x3A87BEE059a5738FEfA75cF7190C7Cb9A6D929e0": {
+      "referrer": "0x21e53ABC1C498DE633102c8295AC8B4eEEE4E9E7",
+      "keyIndex": 209,
+      "activation": {
+        "usd": 247,
+        "ramaWei": "24700000000000000",
+        "txHash": "0xb04907ee5a3c176fbc1cc38e3b4d2ef618230f2fe757af5bf6c833121340ded8",
+        "timestamp": "2025-10-22 21:49:51"
+      },
+      "registeredAt": "2025-10-22 21:49:51"
+    },
+    "0x09ddb0E1bef837c662152F0BBf0c4B4B0F6B155C": {
+      "referrer": "0x21e53ABC1C498DE633102c8295AC8B4eEEE4E9E7",
+      "keyIndex": 210,
+      "activation": {
+        "usd": 190,
+        "ramaWei": "19000000000000000",
+        "txHash": "0xcef69007b5885020c37b2d37c2cc66a31247c67e241ddc6aac049f78bfffb31b",
+        "timestamp": "2025-10-22 21:50:02"
+      },
+      "registeredAt": "2025-10-22 21:50:02"
+    },
+    "0x54fb53745f23A5221d9831720EDf03CF151b3e36": {
+      "referrer": "0x21e53ABC1C498DE633102c8295AC8B4eEEE4E9E7",
+      "keyIndex": 211,
+      "activation": {
+        "usd": 18,
+        "ramaWei": "1800000000000000",
+        "txHash": "0xea98f3d215c613c48bde3166cf76a8c99ba538a57059a070fc67712365dc33e1",
+        "timestamp": "2025-10-22 21:50:09"
+      },
+      "registeredAt": "2025-10-22 21:50:09"
+    },
+    "0x5b43c37e53274F69C142d3EfEbCa3254d5bDc2AF": {
+      "referrer": "0x21e53ABC1C498DE633102c8295AC8B4eEEE4E9E7",
+      "keyIndex": 212,
+      "activation": {
+        "usd": 229,
+        "ramaWei": "22900000000000000",
+        "txHash": "0x5402b991de512f541f65de91928357f2d15132934e4c794e58348334d3e6622d",
+        "timestamp": "2025-10-22 21:50:16"
+      },
+      "registeredAt": "2025-10-22 21:50:16"
+    },
+    "0x2451d4544aF5a79F9a558dB30E05bf1A54C5FAF2": {
+      "referrer": "0x21e53ABC1C498DE633102c8295AC8B4eEEE4E9E7",
+      "keyIndex": 213,
+      "activation": {
+        "usd": 173,
+        "ramaWei": "17300000000000000",
+        "txHash": "0xa1eaea5dabd928e85fb5f163247222d8708e5211eed2ac9194545c310537bb5c",
+        "timestamp": "2025-10-22 21:50:27"
+      },
+      "registeredAt": "2025-10-22 21:50:27"
+    },
+    "0x5D3306B09eCfDEE83b5B550ff392f58BB4A6f5A1": {
+      "referrer": "0xf4F8B6d88892E9ab2ECF3cf55445e313bB237B9B",
+      "keyIndex": 214,
+      "activation": {
+        "usd": 65,
+        "ramaWei": "6500000000000000",
+        "txHash": "0xe9ab0657bf972c056c950f737002c9dab40bfb33a3ea05f9cdece9fe41c21af6",
+        "timestamp": "2025-10-22 21:50:38"
+      },
+      "registeredAt": "2025-10-22 21:50:38"
+    },
+    "0x9be050d4949b1370f05a355BB691447edf1733dC": {
+      "referrer": "0xf4F8B6d88892E9ab2ECF3cf55445e313bB237B9B",
+      "keyIndex": 215,
+      "activation": {
+        "usd": 115,
+        "ramaWei": "11500000000000000",
+        "txHash": "0xc1f1c79cb5735d8d7b26a1910bc7148bb20cc036dd16fab5d5b6350b56ccbf02",
+        "timestamp": "2025-10-22 21:50:45"
+      },
+      "registeredAt": "2025-10-22 21:50:45"
+    },
+    "0x45b62421003E8f75666daef8F1731DD170D80FC4": {
+      "referrer": "0xf4F8B6d88892E9ab2ECF3cf55445e313bB237B9B",
+      "keyIndex": 216,
+      "activation": {
+        "usd": 282,
+        "ramaWei": "28200000000000000",
+        "txHash": "0x56042ec3cc2da1d213cd53923007a51fbcfe0ec23e2aa33098c18adf6c59cad2",
+        "timestamp": "2025-10-22 21:50:52"
+      },
+      "registeredAt": "2025-10-22 21:50:52"
+    },
+    "0x6ab2b1f1FFB366B9f914CcAB81C2Ff19842EB314": {
+      "referrer": "0xf4F8B6d88892E9ab2ECF3cf55445e313bB237B9B",
+      "keyIndex": 217,
+      "activation": {
+        "usd": 256,
+        "ramaWei": "25600000000000000",
+        "txHash": "0xb745c90c3dfc0ab213c592e486bf17e15268de7d25dfa9d00cce769899f46f12",
+        "timestamp": "2025-10-22 21:51:03"
+      },
+      "registeredAt": "2025-10-22 21:51:03"
+    },
+    "0x906F4cDE74EDba18eb14Cdd0e5D4A43e27CeC051": {
+      "referrer": "0xf4F8B6d88892E9ab2ECF3cf55445e313bB237B9B",
+      "keyIndex": 218,
+      "activation": {
+        "usd": 83,
+        "ramaWei": "8300000000000000",
+        "txHash": "0x6075e63cf727c5b8f26e63fd750b32f6284532cff734ab791a370086d5e2d1dc",
+        "timestamp": "2025-10-22 21:51:10"
+      },
+      "registeredAt": "2025-10-22 21:51:10"
+    },
+    "0xC7f1210c131913f3970D3765F7F2069F787e94E9": {
+      "referrer": "0x7556773FFB859828DaF5182FEf5558c7505c0B59",
+      "keyIndex": 219,
+      "activation": {
+        "usd": 75,
+        "ramaWei": "7500000000000000",
+        "txHash": "0x4a3d71431fb253ab4ff7eb96a6d69f6fd1c6d1c92c7697cc231abb6ed7b3ea1f",
+        "timestamp": "2025-10-22 21:51:17"
+      },
+      "registeredAt": "2025-10-22 21:51:17"
+    },
+    "0x62a8f9384581Bc501904122809017A64Db1B80a9": {
+      "referrer": "0x7556773FFB859828DaF5182FEf5558c7505c0B59",
+      "keyIndex": 220,
+      "activation": {
+        "usd": 160,
+        "ramaWei": "16000000000000000",
+        "txHash": "0xf6b09469dfb26e025b81a4a1b39f8de76233fb18b756e78c36a02f500a810707",
+        "timestamp": "2025-10-22 21:51:24"
+      },
+      "registeredAt": "2025-10-22 21:51:24"
+    },
+    "0x9982913b9C62bb26472a191F077b41230002F489": {
+      "referrer": "0x7556773FFB859828DaF5182FEf5558c7505c0B59",
+      "keyIndex": 221,
+      "activation": {
+        "usd": 280,
+        "ramaWei": "28000000000000000",
+        "txHash": "0x551391a7312b7a9f459eba1e3e33566c1084458bc8d8a964bc40ea862c8b4ba8",
+        "timestamp": "2025-10-22 21:51:35"
+      },
+      "registeredAt": "2025-10-22 21:51:35"
+    },
+    "0x979E70250f6bbCb4fa027c652D09Dff6E3ee866A": {
+      "referrer": "0x7556773FFB859828DaF5182FEf5558c7505c0B59",
+      "keyIndex": 222,
+      "activation": {
+        "usd": 123,
+        "ramaWei": "12300000000000000",
+        "txHash": "0xe86b26c16ad2c52aa49bac2096a287548cd4daf90a8b834b75c7d346f05856c8",
+        "timestamp": "2025-10-22 21:51:41"
+      },
+      "registeredAt": "2025-10-22 21:51:41"
+    },
+    "0x9a27FbDf7F761DFD6ef096e4490DeAC3e8dDF205": {
+      "referrer": "0x7556773FFB859828DaF5182FEf5558c7505c0B59",
+      "keyIndex": 223,
+      "activation": {
+        "usd": 215,
+        "ramaWei": "21500000000000000",
+        "txHash": "0xd159b5d707d076566da2b9b484de905c62d12585ccf582ecc3722f962bfdd27f",
+        "timestamp": "2025-10-22 21:51:48"
+      },
+      "registeredAt": "2025-10-22 21:51:48"
+    },
+    "0x7EEba57021388bA6F837852029A69c5B32D0fef4": {
+      "referrer": "0x05B29cAcCf8CcC94B620cCAB3B6A80DDa5Bed1EC",
+      "keyIndex": 224,
+      "activation": {
+        "usd": 180,
+        "ramaWei": "18000000000000000",
+        "txHash": "0xa465745f079ae5d781c200b0c89493fa49fc134b6fdf1e8d1aade89cddba91a6",
+        "timestamp": "2025-10-22 21:51:55"
+      },
+      "registeredAt": "2025-10-22 21:51:55"
+    },
+    "0x1Cb27F14E83eABC88d2c0985838eD721F441Bb0D": {
+      "referrer": "0x05B29cAcCf8CcC94B620cCAB3B6A80DDa5Bed1EC",
+      "keyIndex": 225,
+      "activation": {
+        "usd": 193,
+        "ramaWei": "19300000000000000",
+        "txHash": "0x31868399f8a04f8ddd256f09486c327fd8af03031ba6abd0394b8606a3e3f850",
+        "timestamp": "2025-10-22 21:52:04"
+      },
+      "registeredAt": "2025-10-22 21:52:04"
+    },
+    "0x458eE240FaaDb7d4a2484478052aA5d1a61e527b": {
+      "referrer": "0x05B29cAcCf8CcC94B620cCAB3B6A80DDa5Bed1EC",
+      "keyIndex": 226,
+      "activation": {
+        "usd": 25,
+        "ramaWei": "2500000000000000",
+        "txHash": "0xa99150fb1982e040aa96ecf4b8de1b35d6712a5d62035c8f3c86503b97a8b34d",
+        "timestamp": "2025-10-22 21:52:15"
+      },
+      "registeredAt": "2025-10-22 21:52:15"
+    },
+    "0xB63B8b89E3a4991f76d8011A17F287195cA79683": {
+      "referrer": "0x05B29cAcCf8CcC94B620cCAB3B6A80DDa5Bed1EC",
+      "keyIndex": 227,
+      "activation": {
+        "usd": 70,
+        "ramaWei": "7000000000000000",
+        "txHash": "0x2583db67ef6a5c1ba2490da182d656c2f675d86dccdf12d27fbaa5f45ac3c167",
+        "timestamp": "2025-10-22 21:52:26"
+      },
+      "registeredAt": "2025-10-22 21:52:26"
+    },
+    "0x12697dDf914d4b65b7D401216E495EA962F15b9A": {
+      "referrer": "0x05B29cAcCf8CcC94B620cCAB3B6A80DDa5Bed1EC",
+      "keyIndex": 228,
+      "activation": {
+        "usd": 248,
+        "ramaWei": "24800000000000000",
+        "txHash": "0xec1049c01f724d2d563a4dfb31de526727b690005ee883984ac84d599651a975",
+        "timestamp": "2025-10-22 21:52:33"
+      },
+      "registeredAt": "2025-10-22 21:52:33"
+    },
+    "0xEC3503678730Ece448378B7b5bca7db465B8b2A8": {
+      "referrer": "0x0f22e0a6d362BccE511DD4F6057AD64112fb5Ccc",
+      "keyIndex": 229,
+      "activation": {
+        "usd": 171,
+        "ramaWei": "17100000000000000",
+        "txHash": "0x96f403d24ee2e46e28b884ab847bbb3a26446556872c18cb160c6c96dfce16e3",
+        "timestamp": "2025-10-22 21:52:40"
+      },
+      "registeredAt": "2025-10-22 21:52:40"
+    },
+    "0xa8e76f761F0cD577F5815763f897B2B4da9F015e": {
+      "referrer": "0x0f22e0a6d362BccE511DD4F6057AD64112fb5Ccc",
+      "keyIndex": 230,
+      "activation": {
+        "usd": 260,
+        "ramaWei": "26000000000000000",
+        "txHash": "0x80863a685fd855ad3dab4c7022324a47ad8cecc1c69e7c2902ce3b630a4f1ce3",
+        "timestamp": "2025-10-22 21:52:50"
+      },
+      "registeredAt": "2025-10-22 21:52:50"
+    },
+    "0xb3a8B698c2A36f1B044b2A9762115f80B92985A0": {
+      "referrer": "0x0f22e0a6d362BccE511DD4F6057AD64112fb5Ccc",
+      "keyIndex": 231,
+      "activation": {
+        "usd": 147,
+        "ramaWei": "14700000000000000",
+        "txHash": "0x748c3dc1514c3bcbabdb3b51fe4c81302442f8875e3248c1610cd75a45bd9808",
+        "timestamp": "2025-10-22 21:52:57"
+      },
+      "registeredAt": "2025-10-22 21:52:57"
+    },
+    "0xbEFDB488F0b19c99824cb35246B866706f32798f": {
+      "referrer": "0x0f22e0a6d362BccE511DD4F6057AD64112fb5Ccc",
+      "keyIndex": 232,
+      "activation": {
+        "usd": 48,
+        "ramaWei": "4800000000000000",
+        "txHash": "0x5b4df3555c3e5dac0583bf9b7b613e9acc01a3dfa7001b563d82d0f6e83ab99b",
+        "timestamp": "2025-10-22 21:53:04"
+      },
+      "registeredAt": "2025-10-22 21:53:04"
+    },
+    "0x822BeF6007B4eD0336fa30A1FACFB1F03587B4f4": {
+      "referrer": "0x0f22e0a6d362BccE511DD4F6057AD64112fb5Ccc",
+      "keyIndex": 233,
+      "activation": {
+        "usd": 139,
+        "ramaWei": "13900000000000000",
+        "txHash": "0x2f80d0e9f96f628faa072261b9f40e4086f90b1d57a0e3c0fc22ba5116f4aa3b",
+        "timestamp": "2025-10-22 21:53:11"
+      },
+      "registeredAt": "2025-10-22 21:53:11"
+    },
+    "0x96Cc56f0f7c2a09323FEa8Fb093A57f58E0B73A9": {
+      "referrer": "0x6E2fCFB9453a030074Cb182b68d979C1D80Be8eE",
+      "keyIndex": 234,
+      "activation": {
+        "usd": 73,
+        "ramaWei": "7300000000000000",
+        "txHash": "0x1ff4f93e04e6dd5d7fb0a4cc769add6dced8ce69a0047abc2d5d8ed811616156",
+        "timestamp": "2025-10-22 21:53:18"
+      },
+      "registeredAt": "2025-10-22 21:53:18"
+    },
+    "0x64A1087958C2F13746fC178DDC8c6b31ae11C1D3": {
+      "referrer": "0x6E2fCFB9453a030074Cb182b68d979C1D80Be8eE",
+      "keyIndex": 235,
+      "activation": {
+        "usd": 205,
+        "ramaWei": "20500000000000000",
+        "txHash": "0xad1cb741152effba382ab9cc39e9f8bfabd551463399f3863c5f7ce9f1a4a359",
+        "timestamp": "2025-10-22 21:53:29"
+      },
+      "registeredAt": "2025-10-22 21:53:29"
+    },
+    "0x1b9563cD843112b1333f8DCf02c05C9D6749Fa6e": {
+      "referrer": "0x6E2fCFB9453a030074Cb182b68d979C1D80Be8eE",
+      "keyIndex": 236,
+      "activation": {
+        "usd": 178,
+        "ramaWei": "17800000000000000",
+        "txHash": "0xdd1e69a6dd7563907582fdcaf02d5c59ea3c53a2de023aeaf994c6c68ac19cd9",
+        "timestamp": "2025-10-22 21:53:36"
+      },
+      "registeredAt": "2025-10-22 21:53:36"
+    },
+    "0xa1b1cf3c4ec421AEA78C505c1Fbdb1182dF478e2": {
+      "referrer": "0x6E2fCFB9453a030074Cb182b68d979C1D80Be8eE",
+      "keyIndex": 237,
+      "activation": {
+        "usd": 16,
+        "ramaWei": "1600000000000000",
+        "txHash": "0x81cb020bb5053fb5ba39130007b9dea41b22865952724293c9e5d2ecf21e0500",
+        "timestamp": "2025-10-22 21:53:47"
+      },
+      "registeredAt": "2025-10-22 21:53:47"
+    },
+    "0x114b715F0a49c83ac0895a56CFC42E4982499362": {
+      "referrer": "0x6E2fCFB9453a030074Cb182b68d979C1D80Be8eE",
+      "keyIndex": 238,
+      "activation": {
+        "usd": 149,
+        "ramaWei": "14900000000000000",
+        "txHash": "0x0f2c3d8fd5c143e627128dd5b42f92dd87fe13c3fc64bf9bfe6f6abba1c9f511",
+        "timestamp": "2025-10-22 21:53:54"
+      },
+      "registeredAt": "2025-10-22 21:53:54"
+    },
+    "0xc1DE0e676C16150496bECD7884781F9E6175bAa2": {
+      "referrer": "0x439e2dcD6C5753F51e1aa28d6e481b80D0c0b1e1",
+      "keyIndex": 239,
+      "activation": {
+        "usd": 59,
+        "ramaWei": "5900000000000000",
+        "txHash": "0x419f6e77dd4441c0c4255a507d62fc640a3728a299401e710880406ddb8fd94e",
+        "timestamp": "2025-10-22 21:54:00"
+      },
+      "registeredAt": "2025-10-22 21:54:00"
+    },
+    "0x8EDE94FF764b8100EEDffeE943e2597A9a6633D2": {
+      "referrer": "0x439e2dcD6C5753F51e1aa28d6e481b80D0c0b1e1",
+      "keyIndex": 240,
+      "activation": {
+        "usd": 186,
+        "ramaWei": "18600000000000000",
+        "txHash": "0x35b2c9279cb437506148ee9633d2277c9cb5ff30787bd20b3d2c88f3150f7e9d",
+        "timestamp": "2025-10-22 21:54:07"
+      },
+      "registeredAt": "2025-10-22 21:54:07"
+    },
+    "0x6C8566835A868A8ca7d1c15dD70449C775774265": {
+      "referrer": "0x439e2dcD6C5753F51e1aa28d6e481b80D0c0b1e1",
+      "keyIndex": 241,
+      "activation": {
+        "usd": 28,
+        "ramaWei": "2800000000000000",
+        "txHash": "0x9703eb9263364ba955bf2607826954268ce01f09d6e61e13458a88d7e2fb2c22",
+        "timestamp": "2025-10-22 21:54:14"
+      },
+      "registeredAt": "2025-10-22 21:54:14"
+    },
+    "0xDcF234f50aC2D60e6Fcc97bd1542f86C48637fCE": {
+      "referrer": "0x439e2dcD6C5753F51e1aa28d6e481b80D0c0b1e1",
+      "keyIndex": 242,
+      "activation": {
+        "usd": 130,
+        "ramaWei": "13000000000000000",
+        "txHash": "0x64f4aa994fa5c23b5d18532d23c8a608f68f402cfb29e3bbba11a60fb93cdca9",
+        "timestamp": "2025-10-22 21:54:21"
+      },
+      "registeredAt": "2025-10-22 21:54:21"
+    },
+    "0x2b1078eA6b1A3D51A952B60c87dA6873B3601451": {
+      "referrer": "0x439e2dcD6C5753F51e1aa28d6e481b80D0c0b1e1",
+      "keyIndex": 243,
+      "activation": {
+        "usd": 10,
+        "ramaWei": "1000000000000000",
+        "txHash": "0xaa57faa29f762772fc70fdb7e9afac87f39fb408a7ca79c002a4d73b94505fc2",
+        "timestamp": "2025-10-22 21:54:28"
+      },
+      "registeredAt": "2025-10-22 21:54:28"
+    },
+    "0xbd71b9474e51658a35246872858B54898cB8f52c": {
+      "referrer": "0xFc6012430AD6295390D9E34447DE837e4F0663DB",
+      "keyIndex": 244,
+      "activation": {
+        "usd": 113,
+        "ramaWei": "11300000000000000",
+        "txHash": "0x898483b05a0527fc1fe6563d65e05fb91c34ee49ee0cd7f592564053d651593d",
+        "timestamp": "2025-10-22 21:54:35"
+      },
+      "registeredAt": "2025-10-22 21:54:35"
+    },
+    "0xf0cA615a6b3cbe0Da79eAe1c273DcD4371a06268": {
+      "referrer": "0xFc6012430AD6295390D9E34447DE837e4F0663DB",
+      "keyIndex": 245,
+      "activation": {
+        "usd": 284,
+        "ramaWei": "28400000000000000",
+        "txHash": "0x0a2581e0303d05b736bb09610bb6bb08587c03065c71115f061b50e68e69f140",
+        "timestamp": "2025-10-22 21:54:42"
+      },
+      "registeredAt": "2025-10-22 21:54:42"
+    },
+    "0x26c59BE2C7867A28Ab499E34e9e9A387057bF2ca": {
+      "referrer": "0xFc6012430AD6295390D9E34447DE837e4F0663DB",
+      "keyIndex": 246,
+      "activation": {
+        "usd": 142,
+        "ramaWei": "14200000000000000",
+        "txHash": "0x717fa0f62c97656420329172de0b2a81ee202f72691138744508ce43ec652ec8",
+        "timestamp": "2025-10-22 21:54:48"
+      },
+      "registeredAt": "2025-10-22 21:54:48"
+    },
+    "0xCD533e7fB5B3ECD69BCa5bD045909905a8ff1b6D": {
+      "referrer": "0xFc6012430AD6295390D9E34447DE837e4F0663DB",
+      "keyIndex": 247,
+      "activation": {
+        "usd": 204,
+        "ramaWei": "20400000000000000",
+        "txHash": "0x84a4be7b73c98b7542bfa16d3a8541df384e742ab8e50de17643906b841c3ccc",
+        "timestamp": "2025-10-22 21:54:55"
+      },
+      "registeredAt": "2025-10-22 21:54:55"
+    },
+    "0x06a9031C1afd164A753f2b87b679f2135C1EFB39": {
+      "referrer": "0xFc6012430AD6295390D9E34447DE837e4F0663DB",
+      "keyIndex": 248,
+      "activation": {
+        "usd": 290,
+        "ramaWei": "29000000000000000",
+        "txHash": "0x5ca280a44fca3c05995c01de012906b9e8a3dac1b39b39161345683189692cf2",
+        "timestamp": "2025-10-22 21:55:02"
+      },
+      "registeredAt": "2025-10-22 21:55:02"
+    },
+    "0xC52DcEc3AE761829F194BA32258E34fa7f688C65": {
+      "referrer": "0xaa9746A7f114f2f8C868db33ACa4710eFe6C2d94",
+      "keyIndex": 249,
+      "activation": {
+        "usd": 202,
+        "ramaWei": "20200000000000000",
+        "txHash": "0x087dc2ea5cb349600e1a76737b309a73a085bd195849cc483a613a5e249ee382",
+        "timestamp": "2025-10-22 21:55:09"
+      },
+      "registeredAt": "2025-10-22 21:55:09"
+    },
+    "0x63a7B9cF8d794ED5d79b2b2D0D8394B63255a967": {
+      "referrer": "0xaa9746A7f114f2f8C868db33ACa4710eFe6C2d94",
+      "keyIndex": 250,
+      "activation": {
+        "usd": 192,
+        "ramaWei": "19200000000000000",
+        "txHash": "0xcb0fa12ff54f9c6c5a1b463c792d466e9edce59aedf43ea5abdd40b7ebe5117a",
+        "timestamp": "2025-10-22 21:55:16"
+      },
+      "registeredAt": "2025-10-22 21:55:16"
+    },
+    "0x50A8AB2445c182aF5ED4215F8d32747e7ecCA89A": {
+      "referrer": "0xaa9746A7f114f2f8C868db33ACa4710eFe6C2d94",
+      "keyIndex": 251,
+      "activation": {
+        "usd": 68,
+        "ramaWei": "6800000000000000",
+        "txHash": "0x735d8d729908135b12e3b41df21ffc9ff21ece919023857ab202ca067988321a",
+        "timestamp": "2025-10-22 21:55:27"
+      },
+      "registeredAt": "2025-10-22 21:55:27"
+    },
+    "0xE4a99578076c4866d8Ab123Eaa6173B154dA318C": {
+      "referrer": "0xaa9746A7f114f2f8C868db33ACa4710eFe6C2d94",
+      "keyIndex": 252,
+      "activation": {
+        "usd": 139,
+        "ramaWei": "13900000000000000",
+        "txHash": "0xc3110bbfe54e7063e20b0c078883b8d0bc7dee943acccace46465c603b2049f9",
+        "timestamp": "2025-10-22 21:55:34"
+      },
+      "registeredAt": "2025-10-22 21:55:34"
+    },
+    "0x79E850C6F6c773c44A14E46E2b09Fc3fdbdb46ef": {
+      "referrer": "0xaa9746A7f114f2f8C868db33ACa4710eFe6C2d94",
+      "keyIndex": 253,
+      "activation": {
+        "usd": 214,
+        "ramaWei": "21400000000000000",
+        "txHash": "0x7cb0f564f0bb234724867b884b5900037ba4f0e7066710ea3993427a4db20649",
+        "timestamp": "2025-10-22 21:55:45"
+      },
+      "registeredAt": "2025-10-22 21:55:45"
+    },
+    "0xbF9E5ECc2509DDAae11b1fE9302CB2dE18fCB369": {
+      "referrer": "0xb891EE85Bad08c2975ED1E7031a3337F6e5011b8",
+      "keyIndex": 254,
+      "activation": {
+        "usd": 169,
+        "ramaWei": "16900000000000000",
+        "txHash": "0xf3b280e2fc444f4343fcdb2181a7bd776f0c6ecaeb22f302160e610661553328",
+        "timestamp": "2025-10-22 21:55:52"
+      },
+      "registeredAt": "2025-10-22 21:55:52"
+    },
+    "0x96629c56BF2c9DF016C2287a61C5875a195fD582": {
+      "referrer": "0xb891EE85Bad08c2975ED1E7031a3337F6e5011b8",
+      "keyIndex": 255,
+      "activation": {
+        "usd": 225,
+        "ramaWei": "22500000000000000",
+        "txHash": "0x0d6844d5084b65d189f1e0d7418bde1dcd16b21113f2b2b2cd243e08e497c090",
+        "timestamp": "2025-10-22 21:55:59"
+      },
+      "registeredAt": "2025-10-22 21:55:59"
+    },
+    "0xA21DdC69A8846725708C6E0034410A320B702020": {
+      "referrer": "0xb891EE85Bad08c2975ED1E7031a3337F6e5011b8",
+      "keyIndex": 256,
+      "activation": {
+        "usd": 73,
+        "ramaWei": "7300000000000000",
+        "txHash": "0x03087f7a7a23562e42c224c346a0f3bcc64af044f0e8042a431e5c695a14ec37",
+        "timestamp": "2025-10-22 21:56:06"
+      },
+      "registeredAt": "2025-10-22 21:56:06"
+    },
+    "0xCe288FC2F81b919F63E08176B588616c637A4fD7": {
+      "referrer": "0xb891EE85Bad08c2975ED1E7031a3337F6e5011b8",
+      "keyIndex": 257,
+      "activation": {
+        "usd": 267,
+        "ramaWei": "26700000000000000",
+        "txHash": "0x726ab0bb7f2f4d30d8ea8165cb27274acde17203b1fc4db774bfb13c4bdac1d3",
+        "timestamp": "2025-10-22 21:56:12"
+      },
+      "registeredAt": "2025-10-22 21:56:12"
+    },
+    "0x6943ab846d2d52CE64b8B4a8C97B76a5338D50BA": {
+      "referrer": "0xb891EE85Bad08c2975ED1E7031a3337F6e5011b8",
+      "keyIndex": 258,
+      "activation": {
+        "usd": 123,
+        "ramaWei": "12300000000000000",
+        "txHash": "0xeee0950ed108be67a119e4a130957452334aecc175459b3f12b12510778817af",
+        "timestamp": "2025-10-22 21:56:19"
+      },
+      "registeredAt": "2025-10-22 21:56:19"
+    },
+    "0x79859B07B15Ad7694fB7C8cd0b33306f807baD0C": {
+      "referrer": "0x7C344d254fb10f9d66ea2842dE74b322D9597689",
+      "keyIndex": 259,
+      "activation": {
+        "usd": 154,
+        "ramaWei": "15400000000000000",
+        "txHash": "0x5bce936eed14d3ea9902b91a864d7497c34474c6f3377b42cd0e1e7c54827c23",
+        "timestamp": "2025-10-22 21:56:26"
+      },
+      "registeredAt": "2025-10-22 21:56:26"
+    },
+    "0x761C4285137B863C9Af6153a2CB15609B51437F0": {
+      "referrer": "0x7C344d254fb10f9d66ea2842dE74b322D9597689",
+      "keyIndex": 260,
+      "activation": {
+        "usd": 168,
+        "ramaWei": "16800000000000000",
+        "txHash": "0xb1679ea2e4aeb8c84a8e12766896439609ac64921d27fb3f75400d20f3701a11",
+        "timestamp": "2025-10-22 21:56:33"
+      },
+      "registeredAt": "2025-10-22 21:56:33"
+    },
+    "0x6e0d969899aBBCaFF5c9317527461Fc8a76cB2CB": {
+      "referrer": "0x7C344d254fb10f9d66ea2842dE74b322D9597689",
+      "keyIndex": 261,
+      "activation": {
+        "usd": 166,
+        "ramaWei": "16600000000000000",
+        "txHash": "0xb0ac5f922b56736cc02bdee255326bf5b855be69d4acfa03ef393aea87709ac9",
+        "timestamp": "2025-10-22 21:56:40"
+      },
+      "registeredAt": "2025-10-22 21:56:40"
+    },
+    "0x9a98B959e6066A74c6c1291163d4a09e5e860f4E": {
+      "referrer": "0x7C344d254fb10f9d66ea2842dE74b322D9597689",
+      "keyIndex": 262,
+      "activation": {
+        "usd": 126,
+        "ramaWei": "12600000000000000",
+        "txHash": "0x4a75ef5b1faf0d78d97fe530f061cfc4fabdab7eab46e4d626bcca2e3648ad20",
+        "timestamp": "2025-10-22 21:56:47"
+      },
+      "registeredAt": "2025-10-22 21:56:47"
+    },
+    "0x3Ae77100B5Cf0e42C1acFE24EDEAeE0618541B29": {
+      "referrer": "0x7C344d254fb10f9d66ea2842dE74b322D9597689",
+      "keyIndex": 263,
+      "activation": {
+        "usd": 199,
+        "ramaWei": "19900000000000000",
+        "txHash": "0xa937efaa168984128612c4ed152a4c0c56dba272202d95161bfea1cfdd963081",
+        "timestamp": "2025-10-22 21:56:54"
+      },
+      "registeredAt": "2025-10-22 21:56:54"
+    },
+    "0x380CD8581fc24D2d39F36e37cf1A95595905A878": {
+      "referrer": "0x5dD70E3A4e5Cd4005E0E06aC95eb75f8374c5084",
+      "keyIndex": 264,
+      "activation": {
+        "usd": 280,
+        "ramaWei": "28000000000000000",
+        "txHash": "0xea19506bd0da026c16748b287d53655d261e941327e941e210bff0850f95a82c",
+        "timestamp": "2025-10-22 21:57:05"
+      },
+      "registeredAt": "2025-10-22 21:57:05"
+    },
+    "0x5489bD3438f760C6515ec5A2e5E3d4d55E15F975": {
+      "referrer": "0x5dD70E3A4e5Cd4005E0E06aC95eb75f8374c5084",
+      "keyIndex": 265,
+      "activation": {
+        "usd": 275,
+        "ramaWei": "27500000000000000",
+        "txHash": "0xf119a3cec12efaf7d207332ad13786637d45696c499be219f16c23be5dce5621",
+        "timestamp": "2025-10-22 21:57:12"
+      },
+      "registeredAt": "2025-10-22 21:57:12"
+    },
+    "0x80bF0852079A50505B0AC3e409bc7EB7FA260B2c": {
+      "referrer": "0x5dD70E3A4e5Cd4005E0E06aC95eb75f8374c5084",
+      "keyIndex": 266,
+      "activation": {
+        "usd": 127,
+        "ramaWei": "12700000000000000",
+        "txHash": "0x7ddae28e25c139e731b9985c19764c5eb6bdcba12607aa59aaa644654c68e8a9",
+        "timestamp": "2025-10-22 21:57:23"
+      },
+      "registeredAt": "2025-10-22 21:57:23"
+    },
+    "0x65D49588e946aC9C97968F9a39c9470979141675": {
+      "referrer": "0x5dD70E3A4e5Cd4005E0E06aC95eb75f8374c5084",
+      "keyIndex": 267,
+      "activation": {
+        "usd": 281,
+        "ramaWei": "28100000000000000",
+        "txHash": "0xc57082dff285b46d621404e1037472aca48848862c55b49da534201997e797e7",
+        "timestamp": "2025-10-22 21:57:30"
+      },
+      "registeredAt": "2025-10-22 21:57:30"
+    },
+    "0xb0818f3EF42C7893F2ed38201bb69D1f02F75c7B": {
+      "referrer": "0x5dD70E3A4e5Cd4005E0E06aC95eb75f8374c5084",
+      "keyIndex": 268,
+      "activation": {
+        "usd": 37,
+        "ramaWei": "3700000000000000",
+        "txHash": "0x7598110a0f88a392075e8cf6961f3ecfb9a86820da0468add61a4b4d0a2800e2",
+        "timestamp": "2025-10-22 21:57:36"
+      },
+      "registeredAt": "2025-10-22 21:57:36"
+    },
+    "0xdfB0Df18168D064e16C3656bAEB264d22c6B249E": {
+      "referrer": "0x1D87b6Be9018b3c63E02Ff526ead1e6dE3e7C154",
+      "keyIndex": 269,
+      "activation": {
+        "usd": 83,
+        "ramaWei": "8300000000000000",
+        "txHash": "0x360e2c5051bedcc3e5761314bb7b66f23cab2e24f61c12ee4cf95a411bf8ca6f",
+        "timestamp": "2025-10-22 21:57:43"
+      },
+      "registeredAt": "2025-10-22 21:57:43"
+    },
+    "0x0FddD59f5727C445C97A6db9b79A8Bb018B0d9B3": {
+      "referrer": "0x1D87b6Be9018b3c63E02Ff526ead1e6dE3e7C154",
+      "keyIndex": 270,
+      "activation": {
+        "usd": 271,
+        "ramaWei": "27100000000000000",
+        "txHash": "0x69a817b1f4c5316db3167f6847aea2811ea0a8d77d57d68df5cd8547d060ece3",
+        "timestamp": "2025-10-22 21:57:50"
+      },
+      "registeredAt": "2025-10-22 21:57:50"
+    },
+    "0xd30426c1AE911Ec4eD72FA974A9C45288e0Aa910": {
+      "referrer": "0x1D87b6Be9018b3c63E02Ff526ead1e6dE3e7C154",
+      "keyIndex": 271,
+      "activation": {
+        "usd": 212,
+        "ramaWei": "21200000000000000",
+        "txHash": "0x355c1015ac17946f7817cc58faee6be0f487b5fad77049030c0b1fdf7de47668",
+        "timestamp": "2025-10-22 21:58:01"
+      },
+      "registeredAt": "2025-10-22 21:58:01"
+    },
+    "0x5B4Fd6b3e17d724f52f6054918ff8Dd443cE9aA8": {
+      "referrer": "0x1D87b6Be9018b3c63E02Ff526ead1e6dE3e7C154",
+      "keyIndex": 272,
+      "activation": {
+        "usd": 34,
+        "ramaWei": "3400000000000000",
+        "txHash": "0xabc902bcf62bc595b26de230af3055c43b96fd9623f918709346d684a3c7df46",
+        "timestamp": "2025-10-22 21:58:08"
+      },
+      "registeredAt": "2025-10-22 21:58:08"
+    },
+    "0xe198CE0D08f8825A6Dba50aaF563218135aFEBeC": {
+      "referrer": "0x1D87b6Be9018b3c63E02Ff526ead1e6dE3e7C154",
+      "keyIndex": 273,
+      "activation": {
+        "usd": 25,
+        "ramaWei": "2500000000000000",
+        "txHash": "0x3b3f51aa05edd181b80bfa0f9e2d1f961a81cad68c2f337121c461f49fba884b",
+        "timestamp": "2025-10-22 21:58:15"
+      },
+      "registeredAt": "2025-10-22 21:58:15"
+    },
+    "0x2Db7d6211340a4E07820A9Fd41147721EFAe69B9": {
+      "referrer": "0xc00d470c3f1d986d97D8F1E5ebb215612Ea6F6C2",
+      "keyIndex": 274,
+      "activation": {
+        "usd": 155,
+        "ramaWei": "15500000000000000",
+        "txHash": "0xc18ccd702efa8dd92b69941f0ec579f05865da3f930baf798f86c9bfbbcb516c",
+        "timestamp": "2025-10-22 21:58:22"
+      },
+      "registeredAt": "2025-10-22 21:58:22"
+    },
+    "0xBCdc8927C743925ccbeC89B3DBa0a8f8E38cd6df": {
+      "referrer": "0xc00d470c3f1d986d97D8F1E5ebb215612Ea6F6C2",
+      "keyIndex": 275,
+      "activation": {
+        "usd": 161,
+        "ramaWei": "16100000000000000",
+        "txHash": "0x16856325cfe7d6f56bc5a3ccababb17987f7c522edf77dee3539470263df42ce",
+        "timestamp": "2025-10-22 21:58:33"
+      },
+      "registeredAt": "2025-10-22 21:58:33"
+    },
+    "0x423aeA780E3113c399343d46ea3a0a0D833eed7c": {
+      "referrer": "0xc00d470c3f1d986d97D8F1E5ebb215612Ea6F6C2",
+      "keyIndex": 276,
+      "activation": {
+        "usd": 14,
+        "ramaWei": "1400000000000000",
+        "txHash": "0xe9958dfc5ea9499d672b7c5de1d0b365a8b64b3b98fc98b563aec1e910dbe420",
+        "timestamp": "2025-10-22 21:58:40"
+      },
+      "registeredAt": "2025-10-22 21:58:40"
+    },
+    "0xcD9677A2099972064fA66a27c50b311DD0757ACc": {
+      "referrer": "0xc00d470c3f1d986d97D8F1E5ebb215612Ea6F6C2",
+      "keyIndex": 277,
+      "activation": {
+        "usd": 296,
+        "ramaWei": "29600000000000000",
+        "txHash": "0x477949bcbb35382bd17c986ae3ecc1ba954d106dbc9d2eab9c3e34e29db6be20",
+        "timestamp": "2025-10-22 21:58:46"
+      },
+      "registeredAt": "2025-10-22 21:58:46"
+    },
+    "0xeD6ab511A7f6EF3a93250F5E1d6A6b730F9a3C5d": {
+      "referrer": "0xc00d470c3f1d986d97D8F1E5ebb215612Ea6F6C2",
+      "keyIndex": 278,
+      "activation": {
+        "usd": 294,
+        "ramaWei": "29400000000000000",
+        "txHash": "0x16d0e09d9aaa04b909c75bb629e7e199520465c4219ffca8e47781b54bc1c8c8",
+        "timestamp": "2025-10-22 21:58:53"
+      },
+      "registeredAt": "2025-10-22 21:58:53"
+    },
+    "0xc062B38Cd8ba7105c0bbDd2EC5674bb3f2ae82d2": {
+      "referrer": "0xB3c51ee1647AA3cC3887Bd9bbDd7B9c0fE97Ee10",
+      "keyIndex": 279,
+      "activation": {
+        "usd": 150,
+        "ramaWei": "15000000000000000",
+        "txHash": "0x2517ee66e487f78f65df264bbe651a3c3f0dea5b86286c8a51a8b83cd868c429",
+        "timestamp": "2025-10-22 21:59:00"
+      },
+      "registeredAt": "2025-10-22 21:59:00"
+    },
+    "0xFf2177De789Ef0CAfcff35BCfcd06F0Bb01a427D": {
+      "referrer": "0xB3c51ee1647AA3cC3887Bd9bbDd7B9c0fE97Ee10",
+      "keyIndex": 280,
+      "activation": {
+        "usd": 219,
+        "ramaWei": "21900000000000000",
+        "txHash": "0x0a0df73bef1791bad5c4c7d8b762a84db8d5d50e41b3d47643521220f7ced6a8",
+        "timestamp": "2025-10-22 21:59:07"
+      },
+      "registeredAt": "2025-10-22 21:59:07"
+    },
+    "0xfcA82Ad604687a7Bd12775a4B183F2eC9f6D3F82": {
+      "referrer": "0xB3c51ee1647AA3cC3887Bd9bbDd7B9c0fE97Ee10",
+      "keyIndex": 281,
+      "activation": {
+        "usd": 187,
+        "ramaWei": "18700000000000000",
+        "txHash": "0xf61e85b923436582fa5efa7b7cfde6680ffc54d481712c2e98ca6c3c01f32d79",
+        "timestamp": "2025-10-22 21:59:14"
+      },
+      "registeredAt": "2025-10-22 21:59:14"
+    },
+    "0x95668e1Cf031F60750D46eBbF8b3d42DC3777615": {
+      "referrer": "0xB3c51ee1647AA3cC3887Bd9bbDd7B9c0fE97Ee10",
+      "keyIndex": 282,
+      "activation": {
+        "usd": 166,
+        "ramaWei": "16600000000000000",
+        "txHash": "0xb527d97496b7bb449437b1b3ea0a165180ce467e80a3d459a195d6d5c79f9c90",
+        "timestamp": "2025-10-22 21:59:25"
+      },
+      "registeredAt": "2025-10-22 21:59:25"
+    },
+    "0x6579faACdFdE3d58725a77b5c9B6A44c336Cc099": {
+      "referrer": "0xB3c51ee1647AA3cC3887Bd9bbDd7B9c0fE97Ee10",
+      "keyIndex": 283,
+      "activation": {
+        "usd": 105,
+        "ramaWei": "10500000000000000",
+        "txHash": "0x7922cf6b81057f1dd8e390b88d34c864ed62fa780b52db68849ae597a084a05f",
+        "timestamp": "2025-10-22 21:59:32"
+      },
+      "registeredAt": "2025-10-22 21:59:32"
+    },
+    "0x72FB5D4B2dA4206b1D6171c6Ad79AD475FD5E4eb": {
+      "referrer": "0xf758fEC45D1F0ffF4dbf1bB7D16E245fD82C8f6F",
+      "keyIndex": 284,
+      "activation": {
+        "usd": 186,
+        "ramaWei": "18600000000000000",
+        "txHash": "0x2c20119d16c4b9fe8e6404739626a45dfc2e08353495e5b3cbe2561ee1978860",
+        "timestamp": "2025-10-22 21:59:43"
+      },
+      "registeredAt": "2025-10-22 21:59:43"
+    },
+    "0xe11de34A0104A5a40C87d81c529682b4cf40c969": {
+      "referrer": "0xf758fEC45D1F0ffF4dbf1bB7D16E245fD82C8f6F",
+      "keyIndex": 285,
+      "activation": {
+        "usd": 199,
+        "ramaWei": "19900000000000000",
+        "txHash": "0xfbbec113c9b0d5ce67949af59462dde5b35022a45acf8826e6d6ca45f6245e6b",
+        "timestamp": "2025-10-22 21:59:49"
+      },
+      "registeredAt": "2025-10-22 21:59:49"
+    },
+    "0x1a98C111F3C4b6b09b17B3d7B8AF842C43b65dDC": {
+      "referrer": "0xf758fEC45D1F0ffF4dbf1bB7D16E245fD82C8f6F",
+      "keyIndex": 286,
+      "activation": {
+        "usd": 44,
+        "ramaWei": "4400000000000000",
+        "txHash": "0xc13f959bdab0236e1c79af3d87e7b3f5c7e879a9d2dd59f04ca5327ab4751fc2",
+        "timestamp": "2025-10-22 21:59:56"
+      },
+      "registeredAt": "2025-10-22 21:59:56"
+    },
+    "0x484158Fa81919A16699Ee9e9D5a442912cCC9b99": {
+      "referrer": "0xf758fEC45D1F0ffF4dbf1bB7D16E245fD82C8f6F",
+      "keyIndex": 287,
+      "activation": {
+        "usd": 59,
+        "ramaWei": "5900000000000000",
+        "txHash": "0xb4e429a0e1060bb2e7c4778eb553a7099686e46e578e0f2298c65c978a35edf6",
+        "timestamp": "2025-10-22 22:00:03"
+      },
+      "registeredAt": "2025-10-22 22:00:03"
+    },
+    "0x3B146c807e64E23fD8f2d5BF0EC063FdE0D1bB16": {
+      "referrer": "0xf758fEC45D1F0ffF4dbf1bB7D16E245fD82C8f6F",
+      "keyIndex": 288,
+      "activation": {
+        "usd": 148,
+        "ramaWei": "14800000000000000",
+        "txHash": "0x66672a30add605b94bec6dcb334e016721adcbac9a7e86c4bd637370c300d921",
+        "timestamp": "2025-10-22 22:00:14"
+      },
+      "registeredAt": "2025-10-22 22:00:14"
+    },
+    "0x7a8C5dBa2109f9Bf2D79Ceb29C95c4B150108878": {
+      "referrer": "0x1785fcce0E9859274fBD00D0cb1ceeb43FF24504",
+      "keyIndex": 289,
+      "activation": {
+        "usd": 154,
+        "ramaWei": "15400000000000000",
+        "txHash": "0x935ece0000bf3e6531f54f531fcd96ba0dac63f89326f67686edde7cbc540967",
+        "timestamp": "2025-10-22 22:00:21"
+      },
+      "registeredAt": "2025-10-22 22:00:21"
+    },
+    "0x3E23ecFeb8Aa02d5D362901BA2FC774c2E6F9E08": {
+      "referrer": "0x1785fcce0E9859274fBD00D0cb1ceeb43FF24504",
+      "keyIndex": 290,
+      "activation": {
+        "usd": 289,
+        "ramaWei": "28900000000000000",
+        "txHash": "0xa9e5b12806d3750265dfa748f28b96f7a17e6083e27031469a1d5b2771eb6c61",
+        "timestamp": "2025-10-22 22:00:28"
+      },
+      "registeredAt": "2025-10-22 22:00:28"
+    },
+    "0xA55076dE99972d51632982144f4377B13aa45906": {
+      "referrer": "0x1785fcce0E9859274fBD00D0cb1ceeb43FF24504",
+      "keyIndex": 291,
+      "activation": {
+        "usd": 164,
+        "ramaWei": "16400000000000000",
+        "txHash": "0xae0643b14fc0a58ee4e4a84c353726dc118933f60e63b0e922c09115f390c67c",
+        "timestamp": "2025-10-22 22:00:39"
+      },
+      "registeredAt": "2025-10-22 22:00:39"
+    },
+    "0xE542EC1796eCc2DB19FE18325c452c4fdfB6182F": {
+      "referrer": "0x1785fcce0E9859274fBD00D0cb1ceeb43FF24504",
+      "keyIndex": 292,
+      "activation": {
+        "usd": 178,
+        "ramaWei": "17800000000000000",
+        "txHash": "0xbfcf8baed4af37b91da7281dad567543702a25bc869f65133d837d8c6767e031",
+        "timestamp": "2025-10-22 22:00:46"
+      },
+      "registeredAt": "2025-10-22 22:00:46"
+    },
+    "0x756f790AACb5069bEB6f66FE9F41213bFA8B0B36": {
+      "referrer": "0x1785fcce0E9859274fBD00D0cb1ceeb43FF24504",
+      "keyIndex": 293,
+      "activation": {
+        "usd": 238,
+        "ramaWei": "23800000000000000",
+        "txHash": "0xde215ff7bfe7657bc096108a2a5918cf5e4c6996fcbd64485e97f85c7c2f890d",
+        "timestamp": "2025-10-22 22:00:53"
+      },
+      "registeredAt": "2025-10-22 22:00:53"
+    },
+    "0x9C2091F6829CbE5f1Fe5413f3295A053F762cBB7": {
+      "referrer": "0xCFC1FCB34111C27b847a3EcF8FCC28868c3B6870",
+      "keyIndex": 294,
+      "activation": {
+        "usd": 129,
+        "ramaWei": "12900000000000000",
+        "txHash": "0xcaf122222622042a735b0d30debb32d2ae9618c44e935df50752708c4c70e17a",
+        "timestamp": "2025-10-22 22:00:59"
+      },
+      "registeredAt": "2025-10-22 22:00:59"
+    },
+    "0x3b658126CFEe4d1D935EC2B2C3C25bfe96F17C2e": {
+      "referrer": "0xCFC1FCB34111C27b847a3EcF8FCC28868c3B6870",
+      "keyIndex": 295,
+      "activation": {
+        "usd": 50,
+        "ramaWei": "5000000000000000",
+        "txHash": "0x4dfa6106dbf8aea07bfe58994e6137babcaabb4c79aafa2b360abb6d8b720560",
+        "timestamp": "2025-10-22 22:01:10"
+      },
+      "registeredAt": "2025-10-22 22:01:10"
+    },
+    "0x0eD4d5379A21e08E53F5590237aA043BfB360aB7": {
+      "referrer": "0xCFC1FCB34111C27b847a3EcF8FCC28868c3B6870",
+      "keyIndex": 296,
+      "activation": {
+        "usd": 275,
+        "ramaWei": "27500000000000000",
+        "txHash": "0x23331d107ed0b5e22d8c5a7f8e0f03465204d0883ce2e7fd7a4527edf8d9325f",
+        "timestamp": "2025-10-22 22:01:17"
+      },
+      "registeredAt": "2025-10-22 22:01:17"
+    },
+    "0xB047656d3d794BC8E9D7BD215fbC098D6002E603": {
+      "referrer": "0xCFC1FCB34111C27b847a3EcF8FCC28868c3B6870",
+      "keyIndex": 297,
+      "activation": {
+        "usd": 121,
+        "ramaWei": "12100000000000000",
+        "txHash": "0x92acfe3bf6ce50475a33972c3f04613aab5cd6ee075bc9b377c8a2c4b91f08c2",
+        "timestamp": "2025-10-22 22:01:24"
+      },
+      "registeredAt": "2025-10-22 22:01:24"
+    },
+    "0x97E71787799115655d2E48e7eDc03eD498E3e70E": {
+      "referrer": "0xCFC1FCB34111C27b847a3EcF8FCC28868c3B6870",
+      "keyIndex": 298,
+      "activation": {
+        "usd": 117,
+        "ramaWei": "11700000000000000",
+        "txHash": "0xe7cabbce30956192cedf431952ef8d6e5532d24a56df66fb11bfbbdb42915c37",
+        "timestamp": "2025-10-22 22:01:35"
+      },
+      "registeredAt": "2025-10-22 22:01:35"
+    },
+    "0xFC1e595Feb9e65cC4f1a166fB7EE1F2549A5648D": {
+      "referrer": "0xd14F2EBF372f04B6E21146c8b46CF473aA77585D",
+      "keyIndex": 299,
+      "activation": {
+        "usd": 245,
+        "ramaWei": "24500000000000000",
+        "txHash": "0x2039782fa1321349e2a78c4b12fb7c5f1b5309a0b7336b8bb1f1132c38717893",
+        "timestamp": "2025-10-22 22:01:42"
+      },
+      "registeredAt": "2025-10-22 22:01:42"
+    },
+    "0xC56C9cbA7a924BEe9E1bC3EA57EFABfdc8f4488C": {
+      "referrer": "0xd14F2EBF372f04B6E21146c8b46CF473aA77585D",
+      "keyIndex": 300,
+      "activation": {
+        "usd": 77,
+        "ramaWei": "7700000000000000",
+        "txHash": "0xf14ede651ff3ca610e59363900b2e2960505c42c5d6063d1ec9017f59a7f0a49",
+        "timestamp": "2025-10-22 22:01:49"
+      },
+      "registeredAt": "2025-10-22 22:01:49"
+    },
+    "0x8F2cdF2C6535Cf35859817B57E7c75A0B1f7f249": {
+      "referrer": "0xd14F2EBF372f04B6E21146c8b46CF473aA77585D",
+      "keyIndex": 301,
+      "activation": {
+        "usd": 63,
+        "ramaWei": "6300000000000000",
+        "txHash": "0xdeea58cfa9a51704511c204291c6c25a09429e0cb4d04cf1ccec5095b9e39f38",
+        "timestamp": "2025-10-22 22:01:56"
+      },
+      "registeredAt": "2025-10-22 22:01:56"
+    },
+    "0xB823Ca1Ad4Ab9c4639d354918f144b05C67521C0": {
+      "referrer": "0xd14F2EBF372f04B6E21146c8b46CF473aA77585D",
+      "keyIndex": 302,
+      "activation": {
+        "usd": 298,
+        "ramaWei": "29800000000000000",
+        "txHash": "0x24d60cc5e2fa978f9dc3494727659103944453a5cc9c0022dd9c9cf6213523be",
+        "timestamp": "2025-10-22 22:02:07"
+      },
+      "registeredAt": "2025-10-22 22:02:07"
+    },
+    "0x67C9EC9889Fdfe8f659c569Ff46B736CFf274cf1": {
+      "referrer": "0xd14F2EBF372f04B6E21146c8b46CF473aA77585D",
+      "keyIndex": 303,
+      "activation": {
+        "usd": 236,
+        "ramaWei": "23600000000000000",
+        "txHash": "0x3978f8e05960c88a39255af52cd808161c6fcded907a3bbaf9b3255e02b4ac02",
+        "timestamp": "2025-10-22 22:02:14"
+      },
+      "registeredAt": "2025-10-22 22:02:14"
+    },
+    "0xD4C04d38eeFF1A56FD80ab44e9aF1351e47F42B9": {
+      "referrer": "0x354Ae3e6FC616fDA5807e9762DA6592011e0aE40",
+      "keyIndex": 304,
+      "activation": {
+        "usd": 56,
+        "ramaWei": "5600000000000000",
+        "txHash": "0xeee24f6a731f07a546e5f3a0143088015a20b7131e8a6ca8b758ac58d59f71cd",
+        "timestamp": "2025-10-22 22:02:20"
+      },
+      "registeredAt": "2025-10-22 22:02:20"
+    },
+    "0xf1234e46eB3fEB49823313Ab9f166fEA3B2aC6E0": {
+      "referrer": "0x354Ae3e6FC616fDA5807e9762DA6592011e0aE40",
+      "keyIndex": 305,
+      "activation": {
+        "usd": 67,
+        "ramaWei": "6700000000000000",
+        "txHash": "0x25e7f6767153117f2918ec54e3b91c794b05e7d405b8a82fde86aee887318362",
+        "timestamp": "2025-10-22 22:02:27"
+      },
+      "registeredAt": "2025-10-22 22:02:27"
+    },
+    "0x6102CE51fC5ebc431b3CA51f0Dbe4E154ced643b": {
+      "referrer": "0x354Ae3e6FC616fDA5807e9762DA6592011e0aE40",
+      "keyIndex": 306,
+      "activation": {
+        "usd": 227,
+        "ramaWei": "22700000000000000",
+        "txHash": "0x981288c32215d678241c712fec9d1cf42f33dca71462f8b76f859d083a4e01f7",
+        "timestamp": "2025-10-22 22:02:38"
+      },
+      "registeredAt": "2025-10-22 22:02:38"
+    },
+    "0x953B07d14A958443956dF3f129Eb11F11A65a5fC": {
+      "referrer": "0x354Ae3e6FC616fDA5807e9762DA6592011e0aE40",
+      "keyIndex": 307,
+      "activation": {
+        "usd": 299,
+        "ramaWei": "29900000000000000",
+        "txHash": "0x5991101e31a7c984189dc0c7347d284ee881187d9536008a3c951d051fc9e00a",
+        "timestamp": "2025-10-22 22:02:45"
+      },
+      "registeredAt": "2025-10-22 22:02:45"
+    },
+    "0x108355F13f02cD9DD649ffe7DBB37847B812C59E": {
+      "referrer": "0x354Ae3e6FC616fDA5807e9762DA6592011e0aE40",
+      "keyIndex": 308,
+      "activation": {
+        "usd": 215,
+        "ramaWei": "21500000000000000",
+        "txHash": "0x30ffece50a1b12dc7cd994aada164c0e3dcdd959e699b33641517a8d477110c4",
+        "timestamp": "2025-10-22 22:02:52"
+      },
+      "registeredAt": "2025-10-22 22:02:52"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "ocean-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "scripts/ocean_sim.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "sync:core": "node scripts/sync_coreconfig.js",
+    "ocean:sim": "node scripts/ocean_sim.js",
+    "ocean:report": "node scripts/ocean_team_report.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ethers": "^6.15.0"
+  }
+}

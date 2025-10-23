@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <defs>
+    <linearGradient id="ocean-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#11ffee" />
+      <stop offset="100%" stop-color="#0b4bff" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="#020617" />
+  <path
+    d="M32 16c-8.837 0-16 7.163-16 16s7.163 16 16 16c6.139 0 11.438-3.433 14.159-8.491l-5.357-3.085A9.998 9.998 0 0 1 32 43.998c-6.075 0-11-4.925-11-11s4.925-10.998 11-10.998c3.492 0 6.593 1.637 8.587 4.187l5.357-3.088C43.438 19.427 38.139 16 32 16Z"
+    fill="url(#ocean-gradient)"
+  />
+</svg>

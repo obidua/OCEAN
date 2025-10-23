@@ -1,0 +1,687 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      }
+    ],
+    "name": "BeaconUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "cfg",
+    "outputs": [
+      {
+        "internalType": "contract ICoreConfig",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getClaimStats",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "roiClaimed_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "directClaimable_RAMA",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "safeWalletBalance_RAMA",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Oceanicview.ClaimStats",
+        "name": "c",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getDirectIncome",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalUsdWad",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "claimableRamaWei",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "entries",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getDirectsList",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "directs",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getDirectsPortfolioBreakdown",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "directs",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "selfUsd",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "teamUsd",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "sumUsd",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalSelfUsd",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalTeamUsd",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalSumUsd",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getGrandTotalEarned",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "usdWad",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getIncomeTotals",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "totalROI_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "todayROI_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "boosterROI_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "directIncome_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "slabIncome_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royalty_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reward_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "growth_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "allIncomes_USD",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Oceanicview.IncomeTotals",
+        "name": "t",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getPortfolios",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "totalValue_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "boosterEligibleCount",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "pid",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "principal_RAMA",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "principal_USD",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint64",
+                "name": "createdAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "frozenUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bool",
+                "name": "booster",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "tier",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "capPct",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct Oceanicview.PortfolioCard[]",
+            "name": "cards",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct Oceanicview.PortfolioOverview",
+        "name": "p",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getRewards",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "lifetimeUsdWad",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ramaWei",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "thresholdsUsdWad",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "rewardsUsdWad",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "achieved",
+        "type": "bool[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRoiClaimHistory",
+    "outputs": [
+      {
+        "internalType": "uint32[]",
+        "name": "dayIds",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "usdWad",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "ramaWei",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getSafeWalletHistory",
+    "outputs": [
+      {
+        "internalType": "uint8[]",
+        "name": "kinds",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "isCredit",
+        "type": "bool[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "dayIds",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "usdWad",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "ramaWei",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getTeamStats",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "directTeam",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalTeamVolume_USD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "leg1PctBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "leg2PctBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "restPctBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "matches403030",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "currentSlabIdx",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct Oceanicview.TeamStats",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_cfg",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "roiDistributorOpt",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "a",
+        "type": "address"
+      }
+    ],
+    "name": "setRoiDistributor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]

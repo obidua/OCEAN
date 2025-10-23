@@ -1,0 +1,2181 @@
+{
+  "meta": {
+    "createdAt": "2025-10-22 21:27:26",
+    "lastUpdated": "2025-10-22 22:03:04",
+    "source": "ocean_registrations.json"
+  },
+  "users": {
+    "0x90E903158eB442478628cBD330aa385de873E466": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 2,
+      "portfolios": [
+        {
+          "usd": 693,
+          "ramaWei": "69300000000000000",
+          "txHash": "0x4f0870542725259882ba01ae2bb5c995eabbb11bc99d9a7bc7594badbee84aa6",
+          "timestamp": "2025-10-22 21:27:32"
+        },
+        {
+          "usd": 786,
+          "ramaWei": "78600000000000000",
+          "txHash": "0x5ac1946299e2fc4177d1a54fb61902e2707c2b6a0d353cef5b73f65ace8ba821",
+          "timestamp": "2025-10-22 21:27:43"
+        },
+        {
+          "usd": 278,
+          "ramaWei": "27800000000000000",
+          "txHash": "0x8e1b5640cf9727f4432123ec0286482f628ff300669bb2587e1f03ccb7cafb82",
+          "timestamp": "2025-10-22 21:27:49"
+        },
+        {
+          "usd": 687,
+          "ramaWei": "68700000000000000",
+          "txHash": "0x12ccf40360e318ba70a3e7ee0ad119b4303707ab99c2bd7d8ce9c249a808a4f6",
+          "timestamp": "2025-10-22 21:27:56"
+        }
+      ]
+    },
+    "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 3,
+      "portfolios": [
+        {
+          "usd": 96,
+          "ramaWei": "9600000000000000",
+          "txHash": "0xaf0309d3fef281d0395474ef9988985cd43b8f4bd2a0abf67cf4be0a82d8bfb9",
+          "timestamp": "2025-10-22 21:28:06"
+        },
+        {
+          "usd": 41,
+          "ramaWei": "4100000000000000",
+          "txHash": "0x9c1ce78fa592bb64ad77e88d5ad6c1bcad0ab31dcf76f71e3a5a03d702e6c363",
+          "timestamp": "2025-10-22 21:28:13"
+        },
+        {
+          "usd": 578,
+          "ramaWei": "57800000000000000",
+          "txHash": "0xc0b9d5775be8f9970396af919b1ea1997e13d4df7d7879970ebad523e9e29b78",
+          "timestamp": "2025-10-22 21:28:19"
+        },
+        {
+          "usd": 339,
+          "ramaWei": "33900000000000000",
+          "txHash": "0x1031af672ffe9920589ae71fab05ef91df0c2ba3d560bfc2afc8e7cf09f4524b",
+          "timestamp": "2025-10-22 21:28:30"
+        }
+      ]
+    },
+    "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 4,
+      "portfolios": [
+        {
+          "usd": 56,
+          "ramaWei": "5600000000000000",
+          "txHash": "0xb6acb08219cbc590b3ee9676701e9f7fc736228ac29f0815a310112b80be9d8a",
+          "timestamp": "2025-10-22 21:28:36"
+        },
+        {
+          "usd": 481,
+          "ramaWei": "48100000000000000",
+          "txHash": "0xb93fdbff1ad323736b6588f4b39172a29e0c34f2c876b868387096522021067b",
+          "timestamp": "2025-10-22 21:28:43"
+        },
+        {
+          "usd": 200,
+          "ramaWei": "20000000000000000",
+          "txHash": "0x8ee06615cf87e49eedac89c6f3d5925c6a2b54b9c4e4e01f8aa023b9601dd37c",
+          "timestamp": "2025-10-22 21:28:54"
+        },
+        {
+          "usd": 19,
+          "ramaWei": "1900000000000000",
+          "txHash": "0xb1fc929a6e0130d230e959efcc500f7a76f7ee2517e465bfe944cfe9842a3852",
+          "timestamp": "2025-10-22 21:29:00"
+        }
+      ]
+    },
+    "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 5,
+      "portfolios": [
+        {
+          "usd": 288,
+          "ramaWei": "28800000000000000",
+          "txHash": "0xe4ea07b7349d49bcc7dd9a2ca569f5b0630311431c20869820b9e0ae33e660bb",
+          "timestamp": "2025-10-22 21:29:11"
+        },
+        {
+          "usd": 177,
+          "ramaWei": "17700000000000000",
+          "txHash": "0x884537388d6c35fced5fec27c0187647c92a090d945b3db34e5fc14e76fc5da4",
+          "timestamp": "2025-10-22 21:29:17"
+        },
+        {
+          "usd": 192,
+          "ramaWei": "19200000000000000",
+          "txHash": "0x6a17b5586e2ceb08e37b3e65085acb35adbaf0b682a262d6b32169efd9bb7237",
+          "timestamp": "2025-10-22 21:29:24"
+        },
+        {
+          "usd": 474,
+          "ramaWei": "47400000000000000",
+          "txHash": "0x0b6fdb6edea754cfce8e3d875f83bbb70e3e320e4beb007ad60879e252d5aba0",
+          "timestamp": "2025-10-22 21:29:34"
+        }
+      ]
+    },
+    "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901": {
+      "referrer": "0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5",
+      "keyIndex": 6,
+      "portfolios": [
+        {
+          "usd": 236,
+          "ramaWei": "23600000000000000",
+          "txHash": "0x0ced03c5711f94168b40dd07719575cfe2893f8b8e61cb7696e72ce6c1678d63",
+          "timestamp": "2025-10-22 21:29:41"
+        },
+        {
+          "usd": 181,
+          "ramaWei": "18100000000000000",
+          "txHash": "0xe28d6dec242c915d9f81c15aebc7ce0c99d7e9fa0666069d8e382ab9aa63ad8a",
+          "timestamp": "2025-10-22 21:29:47"
+        },
+        {
+          "usd": 343,
+          "ramaWei": "34300000000000000",
+          "txHash": "0xfcd1ab0154980555bb7be0202c37b906c2953374f6fe2f2212ec56436bbc1381",
+          "timestamp": "2025-10-22 21:29:54"
+        },
+        {
+          "usd": 763,
+          "ramaWei": "76300000000000000",
+          "txHash": "0xb930954f23bcabb475af4c67d93a36714db666688aea3dac88bd1928500ff6b1",
+          "timestamp": "2025-10-22 21:30:00"
+        }
+      ]
+    },
+    "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 7,
+      "portfolios": [
+        {
+          "usd": 479,
+          "ramaWei": "47900000000000000",
+          "txHash": "0x6f73fa40909f86ce5bab4db95a15d8b2ac39f57e29071cc3bbb70319d20ca409",
+          "timestamp": "2025-10-22 21:30:07"
+        },
+        {
+          "usd": 748,
+          "ramaWei": "74800000000000000",
+          "txHash": "0x280e624da0775e6561cbb7600062a9d36e4803b056c34c21b0a2ba0eaf373376",
+          "timestamp": "2025-10-22 21:30:18"
+        },
+        {
+          "usd": 274,
+          "ramaWei": "27400000000000000",
+          "txHash": "0x68f19f84b1a824bddd2c5ec791f53689d6be3717b4ceacffa150a1287f005d5e",
+          "timestamp": "2025-10-22 21:30:24"
+        },
+        {
+          "usd": 30,
+          "ramaWei": "3000000000000000",
+          "txHash": "0xe6c5b08e5173a7d90875d3323023f3a8b1fdbeeb50c7d9e37b53ebaa8dcd9767",
+          "timestamp": "2025-10-22 21:30:35"
+        }
+      ]
+    },
+    "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 8,
+      "portfolios": [
+        {
+          "usd": 228,
+          "ramaWei": "22800000000000000",
+          "txHash": "0xfcd14171ecb4e7be92fe51634bee1ae613dc4a25759db3efd2ee964e46ab5187",
+          "timestamp": "2025-10-22 21:30:41"
+        },
+        {
+          "usd": 514,
+          "ramaWei": "51400000000000000",
+          "txHash": "0xe83b18163e9aebdad2a1c3da10e6931f017c196a5a373e83646306035ebd67d7",
+          "timestamp": "2025-10-22 21:30:48"
+        },
+        {
+          "usd": 677,
+          "ramaWei": "67700000000000000",
+          "txHash": "0x3d51660db4f60a5bacf2c832ef0e621fcffe983dd378e2769e2c7ed5fe71db5c",
+          "timestamp": "2025-10-22 21:30:59"
+        },
+        {
+          "usd": 511,
+          "ramaWei": "51100000000000000",
+          "txHash": "0x348c92730142785aebec42b51235dac6ceee02798a04b0f60dc5f319d86d885a",
+          "timestamp": "2025-10-22 21:31:05"
+        }
+      ]
+    },
+    "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 9,
+      "portfolios": [
+        {
+          "usd": 330,
+          "ramaWei": "33000000000000000",
+          "txHash": "0x4333ebee42e205a2b172e74f3bc8aaaa14521533037db663090667c80297024b",
+          "timestamp": "2025-10-22 21:31:12"
+        },
+        {
+          "usd": 559,
+          "ramaWei": "55900000000000000",
+          "txHash": "0x6f174720e0bb5da5ab8966ada0f8457a3b8e1a705d4ed6208efd6a581855424b",
+          "timestamp": "2025-10-22 21:31:22"
+        },
+        {
+          "usd": 103,
+          "ramaWei": "10300000000000000",
+          "txHash": "0x9712ba5c9aae1e5ec7c15aaae8d6cc2ba86b2dc30c3fd62d09b3a9a19b95bb73",
+          "timestamp": "2025-10-22 21:31:29"
+        },
+        {
+          "usd": 651,
+          "ramaWei": "65100000000000000",
+          "txHash": "0xe278aa7e941b51dca9cf06fad81eacf0ca1c31b3a4bb41f2c109252b3df246aa",
+          "timestamp": "2025-10-22 21:31:35"
+        }
+      ]
+    },
+    "0xC98D8650b07B53FD76450F035B29c869bE93B9e6": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 10,
+      "portfolios": [
+        {
+          "usd": 683,
+          "ramaWei": "68300000000000000",
+          "txHash": "0xb7b6f4a949a5bf563231822a2340783b058d6c20b1ef9c60ff89ad2558f54770",
+          "timestamp": "2025-10-22 21:31:42"
+        },
+        {
+          "usd": 264,
+          "ramaWei": "26400000000000000",
+          "txHash": "0x63cb33448b1ad49c05b55540baf34c9950d08d2466d0df20561ddd5c223385ed",
+          "timestamp": "2025-10-22 21:31:53"
+        },
+        {
+          "usd": 717,
+          "ramaWei": "71700000000000000",
+          "txHash": "0x0c5d446d0c8afdfd34c17180fddd2a193635124b646e1be3c54d120c03c594ca",
+          "timestamp": "2025-10-22 21:31:59"
+        },
+        {
+          "usd": 700,
+          "ramaWei": "70000000000000000",
+          "txHash": "0xbba986cb79386ecd0b43a8294b3bad63a7bd65a23ff0ed2240b609619ca2a075",
+          "timestamp": "2025-10-22 21:32:06"
+        }
+      ]
+    },
+    "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294": {
+      "referrer": "0x90E903158eB442478628cBD330aa385de873E466",
+      "keyIndex": 12,
+      "portfolios": [
+        {
+          "usd": 46,
+          "ramaWei": "4600000000000000",
+          "txHash": "0xf3c197b482b56e5e62f05dfcb52ecb0bebff458bc89f833c96e899d08820b271",
+          "timestamp": "2025-10-22 21:32:16"
+        },
+        {
+          "usd": 477,
+          "ramaWei": "47700000000000000",
+          "txHash": "0xc8ec3c4d849df5a7e03a762dfd172f2b6b5c3e902b3918455ba2bb82e5aa18eb",
+          "timestamp": "2025-10-22 21:32:23"
+        },
+        {
+          "usd": 695,
+          "ramaWei": "69500000000000000",
+          "txHash": "0x9d24ed57c784cedc04acb4f8e0b0b398bf7e75466094789321c009d4733af309",
+          "timestamp": "2025-10-22 21:32:30"
+        },
+        {
+          "usd": 445,
+          "ramaWei": "44500000000000000",
+          "txHash": "0x178097597917725975c60f0cd722bc530691b737468a997e2b48bdb4b3f2aa7c",
+          "timestamp": "2025-10-22 21:32:36"
+        }
+      ]
+    },
+    "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 13,
+      "portfolios": [
+        {
+          "usd": 45,
+          "ramaWei": "4500000000000000",
+          "txHash": "0x886b72d342c968fb51c69b749cfa1f5533b40b36566cc3a4caa0c8c8aeb10aaf",
+          "timestamp": "2025-10-22 21:32:47"
+        },
+        {
+          "usd": 209,
+          "ramaWei": "20900000000000000",
+          "txHash": "0xb0cdbb60873cec216ecf6c356a3875a01d8f951a65cc0adabfffd97c3f16f778",
+          "timestamp": "2025-10-22 21:32:53"
+        },
+        {
+          "usd": 609,
+          "ramaWei": "60900000000000000",
+          "txHash": "0x0e8ec6adce818a349c22fb3e24f27a510ed3da81d4c3f8e7d7cad5c981c5df29",
+          "timestamp": "2025-10-22 21:33:00"
+        },
+        {
+          "usd": 488,
+          "ramaWei": "48800000000000000",
+          "txHash": "0xc18330612376e3652f5b06efd274c201633e4dda96d9dea6c90e03b4444aad72",
+          "timestamp": "2025-10-22 21:33:07"
+        }
+      ]
+    },
+    "0xD089A76b50334839d91Ffd70132e41f047F11F8c": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 14,
+      "portfolios": [
+        {
+          "usd": 604,
+          "ramaWei": "60400000000000000",
+          "txHash": "0x06629d7ed8c3388dd4a732d53fca8b0fadfccc7ce2fd8cee588d361e3f92ff79",
+          "timestamp": "2025-10-22 21:33:13"
+        },
+        {
+          "usd": 785,
+          "ramaWei": "78500000000000000",
+          "txHash": "0xc10d50811b03ff154a1d1e869af324ec26645c4791a72c81ebb4806e593f3726",
+          "timestamp": "2025-10-22 21:33:20"
+        },
+        {
+          "usd": 318,
+          "ramaWei": "31800000000000000",
+          "txHash": "0x997ef20411cce3c41df872e04dc5beb5a9418e6e149f286012cd5a645c8c9043",
+          "timestamp": "2025-10-22 21:33:26"
+        },
+        {
+          "usd": 357,
+          "ramaWei": "35700000000000000",
+          "txHash": "0xd39eb87412022fb1e80b27c3d22ef4dd5e2fd9a82646cb481eb81de64b66cb04",
+          "timestamp": "2025-10-22 21:33:37"
+        }
+      ]
+    },
+    "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 15,
+      "portfolios": [
+        {
+          "usd": 333,
+          "ramaWei": "33300000000000000",
+          "txHash": "0x708e1eb020881112af6731c52035ef4ebb2bc34123e7e92655d4d88e159cf47b",
+          "timestamp": "2025-10-22 21:33:43"
+        },
+        {
+          "usd": 158,
+          "ramaWei": "15800000000000000",
+          "txHash": "0x03d905189d04ce197de572c8e89c088bc639beab3e909e7e6a9ebaca0008ef37",
+          "timestamp": "2025-10-22 21:33:50"
+        },
+        {
+          "usd": 125,
+          "ramaWei": "12500000000000000",
+          "txHash": "0x48cfaa89668694d81855eae92d0abedcc65d7e11dc81dc5212aa401e42ac969c",
+          "timestamp": "2025-10-22 21:34:01"
+        },
+        {
+          "usd": 501,
+          "ramaWei": "50100000000000000",
+          "txHash": "0x527b6e07687865029329c7ed197ec92e460bf81cbe104bdfdb1866afb1bdd6f8",
+          "timestamp": "2025-10-22 21:34:07"
+        }
+      ]
+    },
+    "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 16,
+      "portfolios": [
+        {
+          "usd": 340,
+          "ramaWei": "34000000000000000",
+          "txHash": "0x8c8b7444ae28db68ccdd2cf149cc1a7f5a857194a10ca180e0130a8f8ca61c38",
+          "timestamp": "2025-10-22 21:34:14"
+        },
+        {
+          "usd": 499,
+          "ramaWei": "49900000000000000",
+          "txHash": "0x39d6be5637ef04ea4dd0a1c7fbf0aca0cfeaca9d0e036672e6c50c7552bfed9c",
+          "timestamp": "2025-10-22 21:34:20"
+        },
+        {
+          "usd": 85,
+          "ramaWei": "8500000000000000",
+          "txHash": "0xa1d8f3b547deb6f804c9706ed226b8e93f5b85116786c1fc36f4595cdb1e0641",
+          "timestamp": "2025-10-22 21:34:27"
+        },
+        {
+          "usd": 364,
+          "ramaWei": "36400000000000000",
+          "txHash": "0xf1f147306bde4f3cd854b6bb184f6e5d79c22dc5b91bc09141ae79b212e3ab32",
+          "timestamp": "2025-10-22 21:34:33"
+        }
+      ]
+    },
+    "0xaaAB907479D1Bd9E1503210d48cB220c5D0e0CaC": {
+      "referrer": "0xc60C4dA46a9f44C403F2f99Db6502a210d0960Ca",
+      "keyIndex": 17,
+      "portfolios": [
+        {
+          "usd": 481,
+          "ramaWei": "48100000000000000",
+          "txHash": "0x57835921966687a6d92fd07f1115e58570583cc97bf2644a53915d407ed4dab8",
+          "timestamp": "2025-10-22 21:34:40"
+        },
+        {
+          "usd": 327,
+          "ramaWei": "32700000000000000",
+          "txHash": "0x1f90a9c6bdb97c5bbb684c9fcc8e89eb8bf41bd2625622a5e2444e6cb62f134b",
+          "timestamp": "2025-10-22 21:34:47"
+        },
+        {
+          "usd": 159,
+          "ramaWei": "15900000000000000",
+          "txHash": "0x5fe6a77048d1c02f59eb753a2c63f926b45fcd55c8b3892c8f5615488c011937",
+          "timestamp": "2025-10-22 21:34:53"
+        },
+        {
+          "usd": 655,
+          "ramaWei": "65500000000000000",
+          "txHash": "0x80b34105041cc75f034d670691b617fbd416b7791bb0d3cda733a8f1b920de31",
+          "timestamp": "2025-10-22 21:35:00"
+        }
+      ]
+    },
+    "0x3E4fD4E07c373469C097A0d6eF75c35Fd8118935": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 18,
+      "portfolios": [
+        {
+          "usd": 420,
+          "ramaWei": "42000000000000000",
+          "txHash": "0x0cc622a346aef6459219ead99525e137725bc1f2555a10de65dd40c915bc99ed",
+          "timestamp": "2025-10-22 21:35:06"
+        },
+        {
+          "usd": 544,
+          "ramaWei": "54400000000000000",
+          "txHash": "0x8915d8de4586ad773332418cecfb96af9e609160c55592882eec0ef5b6e93e9e",
+          "timestamp": "2025-10-22 21:35:13"
+        },
+        {
+          "usd": 41,
+          "ramaWei": "4100000000000000",
+          "txHash": "0xb6d66cfb3b6a4bfae8a8e709c4140e7c0c4522df8e5fc65e44274572e9746207",
+          "timestamp": "2025-10-22 21:35:19"
+        },
+        {
+          "usd": 400,
+          "ramaWei": "40000000000000000",
+          "txHash": "0x2e346b1adda9100b92d6d27be716500bc9e60992dd34dba3f79a35a3ae5b9dfb",
+          "timestamp": "2025-10-22 21:35:26"
+        }
+      ]
+    },
+    "0x66Ca0FA32481a97cF67ff397ce8C4930BC5e88C3": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 19,
+      "portfolios": [
+        {
+          "usd": 636,
+          "ramaWei": "63600000000000000",
+          "txHash": "0x7a1a9ac91e6573e28d965e13487ab9608d4c3455a289e1007ff8a9bd8e904460",
+          "timestamp": "2025-10-22 21:35:33"
+        },
+        {
+          "usd": 485,
+          "ramaWei": "48500000000000000",
+          "txHash": "0x3358120a679644ffd93227e5779b343ae23fcb02463538180de7e79e53ad974a",
+          "timestamp": "2025-10-22 21:35:39"
+        },
+        {
+          "usd": 369,
+          "ramaWei": "36900000000000000",
+          "txHash": "0x892bd72b108e17c763afe791a03918d72a0a35224660f6c84c9b3fb90e0c4498",
+          "timestamp": "2025-10-22 21:35:46"
+        },
+        {
+          "usd": 613,
+          "ramaWei": "61300000000000000",
+          "txHash": "0xe8c34aeb237855c3016f22238383d418f44d05c2251a1b28c5473b3a92fcb82b",
+          "timestamp": "2025-10-22 21:35:53"
+        }
+      ]
+    },
+    "0xE5E45e109035fb370B84C910fae6B111B71bd96c": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 20,
+      "portfolios": [
+        {
+          "usd": 454,
+          "ramaWei": "45400000000000000",
+          "txHash": "0xa595ba99fadaf6c811246ed6d63ae864cc55be099f7e8066e228944a451d3f57",
+          "timestamp": "2025-10-22 21:35:59"
+        },
+        {
+          "usd": 783,
+          "ramaWei": "78300000000000000",
+          "txHash": "0x9d3ad35b193237f2593f9b236dc85070690fd4bf8a58fb4d40d23b22245ae991",
+          "timestamp": "2025-10-22 21:36:06"
+        },
+        {
+          "usd": 308,
+          "ramaWei": "30800000000000000",
+          "txHash": "0x3ff80048c1cd20612db756695c86a94e48307c06d88f1c6c3dc38ea6e29572c3",
+          "timestamp": "2025-10-22 21:36:13"
+        },
+        {
+          "usd": 406,
+          "ramaWei": "40600000000000000",
+          "txHash": "0x17034edaf32515b7d047a1027542f7c7d050585e84c2fc0087160c52248d6c9c",
+          "timestamp": "2025-10-22 21:36:19"
+        }
+      ]
+    },
+    "0xf5f76c769C658c348b3B8542cd7fcCdaFC693302": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 21,
+      "portfolios": [
+        {
+          "usd": 693,
+          "ramaWei": "69300000000000000",
+          "txHash": "0x9bfe3b654389ffc77be9857f21fbf2d79eb288d9563291ecd1a01c23037f33ca",
+          "timestamp": "2025-10-22 21:36:26"
+        },
+        {
+          "usd": 678,
+          "ramaWei": "67800000000000000",
+          "txHash": "0xc226988cafc23c558c92f066c951b70f1b89f0e6a528bd59d67020bd88eb5dcb",
+          "timestamp": "2025-10-22 21:36:36"
+        },
+        {
+          "usd": 225,
+          "ramaWei": "22500000000000000",
+          "txHash": "0x732b5dee50572c355283d02560767ab473fb4584504df1163c08fce16af92b1b",
+          "timestamp": "2025-10-22 21:36:43"
+        },
+        {
+          "usd": 777,
+          "ramaWei": "77700000000000000",
+          "txHash": "0x27def7ed7aeebc235dbd50f9afac5886baed782e8d2d596784245214a5e1a953",
+          "timestamp": "2025-10-22 21:36:50"
+        }
+      ]
+    },
+    "0x8144942f14865CE30F9C501a0FFD316a636971E4": {
+      "referrer": "0x5f0dbA9b164CfC6a03349Fd85E51772808126B3c",
+      "keyIndex": 22,
+      "portfolios": [
+        {
+          "usd": 230,
+          "ramaWei": "23000000000000000",
+          "txHash": "0xa1117b36dddfaba1ff3e4c1439aca99af86f485355bd1c9f843ce231c7072543",
+          "timestamp": "2025-10-22 21:36:56"
+        },
+        {
+          "usd": 767,
+          "ramaWei": "76700000000000000",
+          "txHash": "0x2076ee0f85e9a12fdd75e0958bb67f488f49fec4589ad86dbc11325fc15ea330",
+          "timestamp": "2025-10-22 21:37:03"
+        },
+        {
+          "usd": 198,
+          "ramaWei": "19800000000000000",
+          "txHash": "0xe89fff2a0a93d800069f3d617cf729104a199aa8249dfc9ae35050b87c444354",
+          "timestamp": "2025-10-22 21:37:10"
+        },
+        {
+          "usd": 371,
+          "ramaWei": "37100000000000000",
+          "txHash": "0xf64dbb1f93d550026e66ee83a98a888f189c7d7af1f81859376e1d06164a795d",
+          "timestamp": "2025-10-22 21:37:16"
+        }
+      ]
+    },
+    "0x5648497c54a4e5d91f1e7729De963AcF007B8a5c": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 23,
+      "portfolios": [
+        {
+          "usd": 682,
+          "ramaWei": "68200000000000000",
+          "txHash": "0xbd785ef4e4329c4f1e5a122a586a891214437ba2f7ecf3a19a6ac8563da1ed08",
+          "timestamp": "2025-10-22 21:37:27"
+        },
+        {
+          "usd": 289,
+          "ramaWei": "28900000000000000",
+          "txHash": "0xc08ad74a0c46fb82593d55262e26c58c26bdd8f592749e5d0461de96ed9261ec",
+          "timestamp": "2025-10-22 21:37:33"
+        },
+        {
+          "usd": 557,
+          "ramaWei": "55700000000000000",
+          "txHash": "0x2b2dae14a1a1893d2ba97193da5c8b0749bafc11c8fa9a43d2327b1a464231e2",
+          "timestamp": "2025-10-22 21:37:40"
+        },
+        {
+          "usd": 53,
+          "ramaWei": "5300000000000000",
+          "txHash": "0xe31f691e7453d35c211a488b2dded107730e99d7a26182c2564d4310d18e859f",
+          "timestamp": "2025-10-22 21:37:46"
+        }
+      ]
+    },
+    "0xbBf3A124fB8bB3276659B573D65a5016517437c4": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 24,
+      "portfolios": [
+        {
+          "usd": 256,
+          "ramaWei": "25600000000000000",
+          "txHash": "0x7e363c23363fb9ca0cb1e3b41cb599af22035e6a355f7e4fa5bf93d17e60ed5d",
+          "timestamp": "2025-10-22 21:37:57"
+        },
+        {
+          "usd": 376,
+          "ramaWei": "37600000000000000",
+          "txHash": "0xaa17678054dfd7a3c2c88b97269e323eade8a38399354dbe9b31d29425d6722a",
+          "timestamp": "2025-10-22 21:38:03"
+        },
+        {
+          "usd": 739,
+          "ramaWei": "73900000000000000",
+          "txHash": "0xe7f4af549158cb77ee73fafb5302650a3b37f8ceccb3b31f2127f9002a080d1f",
+          "timestamp": "2025-10-22 21:38:14"
+        },
+        {
+          "usd": 99,
+          "ramaWei": "9900000000000000",
+          "txHash": "0xc3d9f2009ce824c8249824440e3f105ae4af8182fdcfc01493d4aa5e90beefe9",
+          "timestamp": "2025-10-22 21:38:21"
+        }
+      ]
+    },
+    "0x26726810231E87B09eEA30347e6B8417d2E258f0": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 25,
+      "portfolios": [
+        {
+          "usd": 528,
+          "ramaWei": "52800000000000000",
+          "txHash": "0x9a39efacda0e7b699e01b086503efb994c38f3e307a57cd018a8eb98377ee036",
+          "timestamp": "2025-10-22 21:38:27"
+        },
+        {
+          "usd": 643,
+          "ramaWei": "64300000000000000",
+          "txHash": "0x403e516c0cf1d6aa14832e8611bde327fb40c1b70376ec2e1fc24f5b9ba6d214",
+          "timestamp": "2025-10-22 21:38:34"
+        },
+        {
+          "usd": 48,
+          "ramaWei": "4800000000000000",
+          "txHash": "0x67ec73cf3665c2c7ea027f17945e8c144ae243c63d16fea9e6bc5a4bcbbf1167",
+          "timestamp": "2025-10-22 21:38:40"
+        },
+        {
+          "usd": 32,
+          "ramaWei": "3200000000000000",
+          "txHash": "0xbebd1bc6ab9697f76d42e69f0e84ae0ca2343daeac81fe809eefa30bea9ed690",
+          "timestamp": "2025-10-22 21:38:47"
+        }
+      ]
+    },
+    "0x74D2b538537962336771bA258165343C87015908": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 26,
+      "portfolios": [
+        {
+          "usd": 63,
+          "ramaWei": "6300000000000000",
+          "txHash": "0x997a1511355f93f3cef9d9adc88bab511f75e8dbf6e31a1e885a6134a50919d3",
+          "timestamp": "2025-10-22 21:38:58"
+        },
+        {
+          "usd": 234,
+          "ramaWei": "23400000000000000",
+          "txHash": "0xf942433c38ce89b7f1303da0fb3a8bc34fe0c1be4ea32f95aad09b5e2f5b9af0",
+          "timestamp": "2025-10-22 21:39:04"
+        },
+        {
+          "usd": 261,
+          "ramaWei": "26100000000000000",
+          "txHash": "0x4a0508114923c7810c40087b904dec4d726f37663fa79b87bbf4e9449fb78756",
+          "timestamp": "2025-10-22 21:39:11"
+        },
+        {
+          "usd": 40,
+          "ramaWei": "4000000000000000",
+          "txHash": "0xcd2cc30585b98a61a08e6de18e96500c095cd02fab5ff569c23b714103fa5f61",
+          "timestamp": "2025-10-22 21:39:22"
+        }
+      ]
+    },
+    "0xfAE272f908903342D6EFf191Ec81fe5b25331907": {
+      "referrer": "0x63c6C2Cf907c0a711f03d24250B731d9397C3A84",
+      "keyIndex": 27,
+      "portfolios": [
+        {
+          "usd": 548,
+          "ramaWei": "54800000000000000",
+          "txHash": "0x90623312726e15da9960c4b0a87aef9e0bf33b7abbe909061a5ff9e0708b5ded",
+          "timestamp": "2025-10-22 21:39:28"
+        },
+        {
+          "usd": 88,
+          "ramaWei": "8800000000000000",
+          "txHash": "0x5acd3c5e243c985d2d26d81e1f8f37bf39422732aa85f2988d27acc2bee56d0b",
+          "timestamp": "2025-10-22 21:39:35"
+        },
+        {
+          "usd": 215,
+          "ramaWei": "21500000000000000",
+          "txHash": "0x9c4a9955bbb5e2f717751a5109c2b74b9ad5fa1450f0ca9ad7e0df212c1600f2",
+          "timestamp": "2025-10-22 21:39:46"
+        },
+        {
+          "usd": 539,
+          "ramaWei": "53900000000000000",
+          "txHash": "0xaf9fd78eaa175dde7bc80955bc7ffedf98d95859b7d92b0a947523e8ef48ec93",
+          "timestamp": "2025-10-22 21:39:52"
+        }
+      ]
+    },
+    "0x1e1C84177bc8929c70180a2f87d35081849E27E3": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 28,
+      "portfolios": [
+        {
+          "usd": 83,
+          "ramaWei": "8300000000000000",
+          "txHash": "0x9d1b7f773d53f741f9a5f080cc2c09365831d2df6521213eefd06cdaff5dbf73",
+          "timestamp": "2025-10-22 21:40:03"
+        },
+        {
+          "usd": 765,
+          "ramaWei": "76500000000000000",
+          "txHash": "0x823515c92af137ec41e3a105450d2c5e9cf086d58c057fa0a91ac64f9a90df5d",
+          "timestamp": "2025-10-22 21:40:09"
+        },
+        {
+          "usd": 612,
+          "ramaWei": "61200000000000000",
+          "txHash": "0xe6ec93044ad7eae36623a295ece7c6d5e5f09961ed632afdb97c0b36ad19e503",
+          "timestamp": "2025-10-22 21:40:16"
+        },
+        {
+          "usd": 556,
+          "ramaWei": "55600000000000000",
+          "txHash": "0xfe167de4d74e65f160d6b353597d41dff63e2674c417af0dc1c59cae6f9e54eb",
+          "timestamp": "2025-10-22 21:40:26"
+        }
+      ]
+    },
+    "0x5c214aC9f9dBE3161e931E5b33c38d927c7A82da": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 29,
+      "portfolios": [
+        {
+          "usd": 354,
+          "ramaWei": "35400000000000000",
+          "txHash": "0xc2a248c3cc540162e27ed76a412dd12fe005eeb6261562bbef77804f65b86e68",
+          "timestamp": "2025-10-22 21:40:33"
+        },
+        {
+          "usd": 134,
+          "ramaWei": "13400000000000000",
+          "txHash": "0xc032844301ece653500fdc93debd779497efc527d8b0876d6d215c61274a16bf",
+          "timestamp": "2025-10-22 21:40:39"
+        },
+        {
+          "usd": 216,
+          "ramaWei": "21600000000000000",
+          "txHash": "0x70c11b9b9362adbe543615d9ac6b26e3ba54f14c3df9df50128ae1c93904b18a",
+          "timestamp": "2025-10-22 21:40:50"
+        },
+        {
+          "usd": 611,
+          "ramaWei": "61100000000000000",
+          "txHash": "0x950176f0dbed8184efe3356cbdc44beaee71d7f9a152ce937483936089305b63",
+          "timestamp": "2025-10-22 21:40:57"
+        }
+      ]
+    },
+    "0x39c5dB4c9F9BEDBc28AB5200e970D34297B0e95E": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 30,
+      "portfolios": [
+        {
+          "usd": 727,
+          "ramaWei": "72700000000000000",
+          "txHash": "0xc9e2b20824e6187389eccfcf2fbf3e73f5c9fa4ea618d422d18cfa2d9f9c2ad5",
+          "timestamp": "2025-10-22 21:41:03"
+        },
+        {
+          "usd": 575,
+          "ramaWei": "57500000000000000",
+          "txHash": "0x33292c7a70643ff4a04ebc32b24a20e03a5b7a56d6b10efbc615f874c08a0714",
+          "timestamp": "2025-10-22 21:41:10"
+        },
+        {
+          "usd": 286,
+          "ramaWei": "28600000000000000",
+          "txHash": "0x6781c75178f12c58bf0a3844f802051c476d1f4b684921203449d0a1c665a437",
+          "timestamp": "2025-10-22 21:41:16"
+        },
+        {
+          "usd": 559,
+          "ramaWei": "55900000000000000",
+          "txHash": "0xfd73d17a53cf4416e8e5486320c8540ba3beda75f766c858aff3ec148b47ba39",
+          "timestamp": "2025-10-22 21:41:23"
+        }
+      ]
+    },
+    "0x86D851547Cd9FD4FcB901c3f87Cb47d1b9CF647C": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 31,
+      "portfolios": [
+        {
+          "usd": 261,
+          "ramaWei": "26100000000000000",
+          "txHash": "0xf1fce58be2f96f9c000553085ec01912d12f9cb6f24fd96be07a3a3da4b9aa95",
+          "timestamp": "2025-10-22 21:41:34"
+        },
+        {
+          "usd": 27,
+          "ramaWei": "2700000000000000",
+          "txHash": "0x53ca53eefa825614aa71ffb4334823178a09e7ea61d9f3bca7a3752846bf45f0",
+          "timestamp": "2025-10-22 21:41:40"
+        },
+        {
+          "usd": 338,
+          "ramaWei": "33800000000000000",
+          "txHash": "0x8a3e7371cb08004c776a7a908ff3d03b28e5cf788ffcba2412393f81108c2ed4",
+          "timestamp": "2025-10-22 21:41:51"
+        },
+        {
+          "usd": 310,
+          "ramaWei": "31000000000000000",
+          "txHash": "0x0def059e7b0145e2972199140e5cf39fd72c6feff89b0374e352b17f10a361df",
+          "timestamp": "2025-10-22 21:41:57"
+        }
+      ]
+    },
+    "0xeF9A4b0ca968f29B7cdFd19D691a1Fb29b48A4A0": {
+      "referrer": "0x6449fA4bC0Df82661e4309E13DBF53f615D9E901",
+      "keyIndex": 32,
+      "portfolios": [
+        {
+          "usd": 283,
+          "ramaWei": "28300000000000000",
+          "txHash": "0x9439b21fb4b9f7dd0b6def07432fef830517a4255af3b7e96f6250fc27be7f09",
+          "timestamp": "2025-10-22 21:42:04"
+        },
+        {
+          "usd": 524,
+          "ramaWei": "52400000000000000",
+          "txHash": "0xb4c1a90889a26d1137413600375dc9f5c3da3229779c95df0e7d768c23bfe0a2",
+          "timestamp": "2025-10-22 21:42:15"
+        },
+        {
+          "usd": 643,
+          "ramaWei": "64300000000000000",
+          "txHash": "0x3a955eaebd6782b11c0f924ab1f1fb79e52f2788c754765dfc72ed7292f3623a",
+          "timestamp": "2025-10-22 21:42:21"
+        },
+        {
+          "usd": 553,
+          "ramaWei": "55300000000000000",
+          "txHash": "0x09801807925767132d7b30c247a77bb3bea7b27a4954c74b4273e914fe2a371f",
+          "timestamp": "2025-10-22 21:42:28"
+        }
+      ]
+    },
+    "0x29cA8E2b88e5CBDa900a79950cE1699fFB468FA8": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 33,
+      "portfolios": [
+        {
+          "usd": 304,
+          "ramaWei": "30400000000000000",
+          "txHash": "0x5eb609305f543621034c9e2d7c0a79a0c1986d16b476963b5b420995cfc38b39",
+          "timestamp": "2025-10-22 21:42:39"
+        },
+        {
+          "usd": 230,
+          "ramaWei": "23000000000000000",
+          "txHash": "0xf099427d4f8f1caddd3e2c8097c0f53bdd534a076cec138ed844c09e1053463b",
+          "timestamp": "2025-10-22 21:42:45"
+        },
+        {
+          "usd": 362,
+          "ramaWei": "36200000000000000",
+          "txHash": "0x7befca5ab46863a8ab7ddc0b7a68ec38eb0c3baf42bc76014f35e431e6d0d2d5",
+          "timestamp": "2025-10-22 21:42:52"
+        },
+        {
+          "usd": 700,
+          "ramaWei": "70000000000000000",
+          "txHash": "0x339b6d4c1cdce2e934fa5c61315c219fa283cc297f521ccf36febf826c2dd088",
+          "timestamp": "2025-10-22 21:42:59"
+        }
+      ]
+    },
+    "0xd7df554e710a53C84670107191fAD56F8B012e6B": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 34,
+      "portfolios": [
+        {
+          "usd": 328,
+          "ramaWei": "32800000000000000",
+          "txHash": "0x68cd8f7840c35afa77d06cb6102f2acc22b3c8a98cfb7fab9aa64c6f573015f6",
+          "timestamp": "2025-10-22 21:43:05"
+        },
+        {
+          "usd": 534,
+          "ramaWei": "53400000000000000",
+          "txHash": "0x7dca386a3f240f05029929036ca5186b69549b763716de34fd6d198863c0a943",
+          "timestamp": "2025-10-22 21:43:12"
+        },
+        {
+          "usd": 684,
+          "ramaWei": "68400000000000000",
+          "txHash": "0x7214a349590ef382d9186fbeb37764aaef4174b431fbd89ab4676739360e6511",
+          "timestamp": "2025-10-22 21:43:18"
+        },
+        {
+          "usd": 295,
+          "ramaWei": "29500000000000000",
+          "txHash": "0x4993b29a707854935971748b1180378278ff70b3b82301c6dff383ff791bc5bf",
+          "timestamp": "2025-10-22 21:43:25"
+        }
+      ]
+    },
+    "0x81BFBb19f14952be2f7455071631E5580262e6A4": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 35,
+      "portfolios": [
+        {
+          "usd": 242,
+          "ramaWei": "24200000000000000",
+          "txHash": "0xe8a1291d6908be45e3412d776a23df2c0d96dd1dfa5144eea94d081aeb5975da",
+          "timestamp": "2025-10-22 21:43:31"
+        },
+        {
+          "usd": 323,
+          "ramaWei": "32300000000000000",
+          "txHash": "0x1b08303b4296612631ecb9e48b8243e5fe74f5b0861bab843fe39839cc3bcb8b",
+          "timestamp": "2025-10-22 21:43:38"
+        },
+        {
+          "usd": 387,
+          "ramaWei": "38700000000000000",
+          "txHash": "0xc16786591a4551e4b071765741e5e8f5bcd569c3f44481af7f77e27ac253e3d4",
+          "timestamp": "2025-10-22 21:43:44"
+        },
+        {
+          "usd": 316,
+          "ramaWei": "31600000000000000",
+          "txHash": "0x201dc583cf784559cc5906a45e67565f45298d61b92d4ccb7584d42a2d47145c",
+          "timestamp": "2025-10-22 21:43:51"
+        }
+      ]
+    },
+    "0x75597E012c038032887EACB1a7EF85A050c2c4EA": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 36,
+      "portfolios": [
+        {
+          "usd": 337,
+          "ramaWei": "33700000000000000",
+          "txHash": "0x3629bbc7bb2cd9cdad02cf8b1f5c9abcf9e32952047fbc0743eec5df9871352e",
+          "timestamp": "2025-10-22 21:43:58"
+        },
+        {
+          "usd": 771,
+          "ramaWei": "77100000000000000",
+          "txHash": "0x5fe0111bd3f0f544391cee5dc30dc137c009e0a7e5127b7091fdd36f400c77bb",
+          "timestamp": "2025-10-22 21:44:04"
+        },
+        {
+          "usd": 237,
+          "ramaWei": "23700000000000000",
+          "txHash": "0xca709837502fdb8bee2dd881a04f22b0e77b6967fd1e77a137abd938e1ad5565",
+          "timestamp": "2025-10-22 21:44:15"
+        },
+        {
+          "usd": 139,
+          "ramaWei": "13900000000000000",
+          "txHash": "0x8acc96d9739b0c2ac8702f1840d8aecc7e3e2de46bf74f70f1dce6123778eeb8",
+          "timestamp": "2025-10-22 21:44:21"
+        }
+      ]
+    },
+    "0xc21920435850AC5EfF3ee25aB923Afd4f0a4935C": {
+      "referrer": "0x8C507cEeE49C6F5c97cFa3EfBf35e08E79616dEe",
+      "keyIndex": 37,
+      "portfolios": [
+        {
+          "usd": 438,
+          "ramaWei": "43800000000000000",
+          "txHash": "0x6bdefb38e3d585b9f6ec22a65d2d9228951a1ffe0084c2dff8def0a08c8e8d14",
+          "timestamp": "2025-10-22 21:44:28"
+        },
+        {
+          "usd": 644,
+          "ramaWei": "64400000000000000",
+          "txHash": "0x360c6910235e60a11cd38291ccd12864471cfdd73c5cacfc7eff7bf9e3f75b1d",
+          "timestamp": "2025-10-22 21:44:35"
+        },
+        {
+          "usd": 790,
+          "ramaWei": "79000000000000000",
+          "txHash": "0x933d157112ccd45873fe5b09dbafe17dda07cd693a1328ae6974da79697bf877",
+          "timestamp": "2025-10-22 21:44:41"
+        },
+        {
+          "usd": 191,
+          "ramaWei": "19100000000000000",
+          "txHash": "0xdcf31bd36f8d5ee6b500fdea30537008d72ca48248cbb08cb3573b2f642876cb",
+          "timestamp": "2025-10-22 21:44:48"
+        }
+      ]
+    },
+    "0x0FdD3Bb3005f503dDc95B911fCAec57b7451d195": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 38,
+      "portfolios": [
+        {
+          "usd": 285,
+          "ramaWei": "28500000000000000",
+          "txHash": "0x5d14d531fa8dd3f5be8265d0c8d3b21dc04c2a92ceaed40eb87b337658017504",
+          "timestamp": "2025-10-22 21:44:58"
+        },
+        {
+          "usd": 410,
+          "ramaWei": "41000000000000000",
+          "txHash": "0xb0b266e9b637f846b0111043650f35fbfbfb13fa43e59ec506e99dec13862462",
+          "timestamp": "2025-10-22 21:45:05"
+        },
+        {
+          "usd": 626,
+          "ramaWei": "62600000000000000",
+          "txHash": "0xa4f960254a790e7c2e0dc37ef64cb86ad561e59aaa18f7eae63e757fc1a516c0",
+          "timestamp": "2025-10-22 21:45:12"
+        },
+        {
+          "usd": 219,
+          "ramaWei": "21900000000000000",
+          "txHash": "0xaa9f52fe635ccbfde270b6891da23849a4fac75ceaa5dedb092a747c7b2a99d5",
+          "timestamp": "2025-10-22 21:45:18"
+        }
+      ]
+    },
+    "0x0B08a8cC854804a5BB11050837BBeF195fa63475": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 39,
+      "portfolios": [
+        {
+          "usd": 585,
+          "ramaWei": "58500000000000000",
+          "txHash": "0x205dd74203316907115315d38ccc9cf82f9fb4fa68962d8e744fc15c23e79925",
+          "timestamp": "2025-10-22 21:45:25"
+        },
+        {
+          "usd": 140,
+          "ramaWei": "14000000000000000",
+          "txHash": "0x86a61b1c4487183e70f0ce46aae6e8a053640e42611b4f97553a939665a63061",
+          "timestamp": "2025-10-22 21:45:31"
+        },
+        {
+          "usd": 120,
+          "ramaWei": "12000000000000000",
+          "txHash": "0xa3abcc24d853f64e20a849ec970764d33fd877d3b723c30918fb46beb49c4677",
+          "timestamp": "2025-10-22 21:45:38"
+        },
+        {
+          "usd": 450,
+          "ramaWei": "45000000000000000",
+          "txHash": "0x8b67f0368c0cf3f1b1a9e94239159325710f2f8999fffe4c8f968ae3f92ad6e6",
+          "timestamp": "2025-10-22 21:45:45"
+        }
+      ]
+    },
+    "0x0C47Fa129cd0aE5Ba86d262EFA7a68E837e3e28e": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 40,
+      "portfolios": [
+        {
+          "usd": 481,
+          "ramaWei": "48100000000000000",
+          "txHash": "0xe5494f63b998f3e2a2de4334c248776a80196f4eae9c6b0e99f444919562f4db",
+          "timestamp": "2025-10-22 21:45:51"
+        },
+        {
+          "usd": 250,
+          "ramaWei": "25000000000000000",
+          "txHash": "0x39eb47da48b43080874b1a04ee12c68bfe269a164db73a38ba929cbef2adf62a",
+          "timestamp": "2025-10-22 21:45:58"
+        },
+        {
+          "usd": 416,
+          "ramaWei": "41600000000000000",
+          "txHash": "0x3b87b9fe8ce190eff0972562f5f8076049d086ebcc12298b59a17f671cd7ac9c",
+          "timestamp": "2025-10-22 21:46:04"
+        },
+        {
+          "usd": 173,
+          "ramaWei": "17300000000000000",
+          "txHash": "0x95e95d050f16f24ae6410cf4989f4e9d605b6a6cdf565b21b6314ff96aef167d",
+          "timestamp": "2025-10-22 21:46:11"
+        }
+      ]
+    },
+    "0x2A626Bdee6bfb477FD96D21cEd654eDCE17e4E84": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 41,
+      "portfolios": [
+        {
+          "usd": 75,
+          "ramaWei": "7500000000000000",
+          "txHash": "0xf7dcd4e7bef0de7a53f60a758797fe809848be2329d56db79e0b6b91906b2171",
+          "timestamp": "2025-10-22 21:46:18"
+        },
+        {
+          "usd": 225,
+          "ramaWei": "22500000000000000",
+          "txHash": "0xd2f87c1d1cabe36c10f63b2ee9931d986d59f4367e55803eb473a962240947b5",
+          "timestamp": "2025-10-22 21:46:24"
+        },
+        {
+          "usd": 217,
+          "ramaWei": "21700000000000000",
+          "txHash": "0x9f0f019b570ce228409389ff4ae9ff090acf229c338c383d163fd9cd6f354791",
+          "timestamp": "2025-10-22 21:46:31"
+        },
+        {
+          "usd": 529,
+          "ramaWei": "52900000000000000",
+          "txHash": "0x617ae058d3983e0f48ed63af17dd8395167f0ccf02d64fada39bec0f2a40f5e1",
+          "timestamp": "2025-10-22 21:46:38"
+        }
+      ]
+    },
+    "0xCAE814221B5DAd27F3430dFc9ecCe91c2803FD35": {
+      "referrer": "0x075bE37AD04C3369eBeffC67cd0Ed5C8Bd693021",
+      "keyIndex": 42,
+      "portfolios": [
+        {
+          "usd": 736,
+          "ramaWei": "73600000000000000",
+          "txHash": "0xca9b14db8f269e239c0bd6976bc51ba1bd3130434b8bb61fc85fa1826f8e7f85",
+          "timestamp": "2025-10-22 21:46:44"
+        },
+        {
+          "usd": 788,
+          "ramaWei": "78800000000000000",
+          "txHash": "0xd02431e8e46103c7429e3b04a69b4daeb3f700d94856463a45690abbf577bb13",
+          "timestamp": "2025-10-22 21:46:55"
+        },
+        {
+          "usd": 250,
+          "ramaWei": "25000000000000000",
+          "txHash": "0x2b842ec89ca80331b4eeaf461a573f7059d471c29674c4fc972ae33a3755b503",
+          "timestamp": "2025-10-22 21:47:01"
+        },
+        {
+          "usd": 597,
+          "ramaWei": "59700000000000000",
+          "txHash": "0xc0823d10a147fef01c7b68f24037c51fcaadb6fea981a9fbe4c84726f794ec78",
+          "timestamp": "2025-10-22 21:47:08"
+        }
+      ]
+    },
+    "0x21e53ABC1C498DE633102c8295AC8B4eEEE4E9E7": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 43,
+      "portfolios": [
+        {
+          "usd": 115,
+          "ramaWei": "11500000000000000",
+          "txHash": "0x9cd44f71f35e47a160ace4dea19be5973280c1ffa8659235f15b4da743566304",
+          "timestamp": "2025-10-22 21:47:15"
+        },
+        {
+          "usd": 788,
+          "ramaWei": "78800000000000000",
+          "txHash": "0x13fc37a584d3f8248bd88dc4322c68148bfba9eada58faae41847ab21ec8d37f",
+          "timestamp": "2025-10-22 21:47:21"
+        },
+        {
+          "usd": 520,
+          "ramaWei": "52000000000000000",
+          "txHash": "0x77266f1b0116866d9bb57c99cc5eff7338822a14755dd9f02df6341c5a6fe9c7",
+          "timestamp": "2025-10-22 21:47:28"
+        },
+        {
+          "usd": 156,
+          "ramaWei": "15600000000000000",
+          "txHash": "0x622dcca6995ece6e11dfd7144f020996658bf80c0e19c5f9570ca092ffd79514",
+          "timestamp": "2025-10-22 21:47:34"
+        }
+      ]
+    },
+    "0xf4F8B6d88892E9ab2ECF3cf55445e313bB237B9B": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 44,
+      "portfolios": [
+        {
+          "usd": 314,
+          "ramaWei": "31400000000000000",
+          "txHash": "0xe6ab6e9c4dfe8d820055a69ed8628ee81b3e101637184ea7fa717365f31a7e3e",
+          "timestamp": "2025-10-22 21:47:41"
+        },
+        {
+          "usd": 770,
+          "ramaWei": "77000000000000000",
+          "txHash": "0x28581a15a2d050e571c4524a33cff474e0737b564a76cc2d9bc89ccda7bbdcfc",
+          "timestamp": "2025-10-22 21:47:47"
+        },
+        {
+          "usd": 24,
+          "ramaWei": "2400000000000000",
+          "txHash": "0x017fb2fe70b987b8b7f35cc5ac4bb616b3e0a047f7a37b5683a9aefbe51f90c6",
+          "timestamp": "2025-10-22 21:47:54"
+        },
+        {
+          "usd": 91,
+          "ramaWei": "9100000000000000",
+          "txHash": "0x43338854fa0a71973b9c46dfee4269d8bf806f0bcfec97b4d26f26daff09cdc1",
+          "timestamp": "2025-10-22 21:48:05"
+        }
+      ]
+    },
+    "0x7556773FFB859828DaF5182FEf5558c7505c0B59": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 45,
+      "portfolios": [
+        {
+          "usd": 39,
+          "ramaWei": "3900000000000000",
+          "txHash": "0xa56e2ad6349034672a2227e16982a4c6a1cb1545b5c928f976e89bd2aaa8c3f1",
+          "timestamp": "2025-10-22 21:48:11"
+        },
+        {
+          "usd": 180,
+          "ramaWei": "18000000000000000",
+          "txHash": "0x260d5d2e0caed0ce3be1c139081b1198d16ce6b38ebb452036b83126e422b6c0",
+          "timestamp": "2025-10-22 21:48:18"
+        },
+        {
+          "usd": 192,
+          "ramaWei": "19200000000000000",
+          "txHash": "0x043e86ce6c9e118ba007c5646788f74d07c990b8a0733ec9e7645aa8617745bf",
+          "timestamp": "2025-10-22 21:48:24"
+        },
+        {
+          "usd": 669,
+          "ramaWei": "66900000000000000",
+          "txHash": "0x6eedad40b14e410658fe5e6875bccff3aa5bd9d933e7af5a47888a95f3ff54c3",
+          "timestamp": "2025-10-22 21:48:31"
+        }
+      ]
+    },
+    "0x05B29cAcCf8CcC94B620cCAB3B6A80DDa5Bed1EC": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 46,
+      "portfolios": [
+        {
+          "usd": 722,
+          "ramaWei": "72200000000000000",
+          "txHash": "0x645ea3aba354d5ad1bfa04f011374a182690f8c8296ea93b54d4a81703f40386",
+          "timestamp": "2025-10-22 21:48:37"
+        },
+        {
+          "usd": 681,
+          "ramaWei": "68100000000000000",
+          "txHash": "0xccf66e0bb453d77d4df7ad21b7dad397ef6e3d69796ae8b90ef0d485d7bddf45",
+          "timestamp": "2025-10-22 21:48:44"
+        },
+        {
+          "usd": 463,
+          "ramaWei": "46300000000000000",
+          "txHash": "0x7e9e85ad123238f10437e4d5a001e91dd2b49391968dc8d6c19e1da174eb26ce",
+          "timestamp": "2025-10-22 21:48:55"
+        },
+        {
+          "usd": 711,
+          "ramaWei": "71100000000000000",
+          "txHash": "0x9d9bc274ce6f2f0418b87453497a94f33019bc2a9f764d13fc5960bee1fed2bc",
+          "timestamp": "2025-10-22 21:49:01"
+        }
+      ]
+    },
+    "0x0f22e0a6d362BccE511DD4F6057AD64112fb5Ccc": {
+      "referrer": "0x259781f718DF587a0Ca0d66D40AAA3468D5D7a2D",
+      "keyIndex": 47,
+      "portfolios": [
+        {
+          "usd": 244,
+          "ramaWei": "24400000000000000",
+          "txHash": "0x0b159e353e6f10e9f7bdd19fefb113c6130a466c618fa6222afd7dc59b56f105",
+          "timestamp": "2025-10-22 21:49:08"
+        },
+        {
+          "usd": 313,
+          "ramaWei": "31300000000000000",
+          "txHash": "0xe0291014b5a137fe371e4de4eb3f51595abd89e14e5e62507e7880c935aa29c7",
+          "timestamp": "2025-10-22 21:49:19"
+        },
+        {
+          "usd": 412,
+          "ramaWei": "41200000000000000",
+          "txHash": "0x1dd01e492f0da2f521ca20628005a5e56855cf87d9c5f80e135cb39526a5a0c1",
+          "timestamp": "2025-10-22 21:49:25"
+        },
+        {
+          "usd": 637,
+          "ramaWei": "63700000000000000",
+          "txHash": "0x07e57c52d4cfa5d5dc776213fa7b19cb866d72441c42d67a8f6a3487a5cc6e78",
+          "timestamp": "2025-10-22 21:49:32"
+        }
+      ]
+    },
+    "0x6E2fCFB9453a030074Cb182b68d979C1D80Be8eE": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 48,
+      "portfolios": [
+        {
+          "usd": 756,
+          "ramaWei": "75600000000000000",
+          "txHash": "0x89a3e89269a5801a613563fc4d7b517dbb04b42881c4b3a8e2e096006be3aaf3",
+          "timestamp": "2025-10-22 21:49:42"
+        },
+        {
+          "usd": 367,
+          "ramaWei": "36700000000000000",
+          "txHash": "0x27a6a3761df0753a34fe21a36145037c39c1d6415a3670210d443c5ff87154de",
+          "timestamp": "2025-10-22 21:49:49"
+        },
+        {
+          "usd": 66,
+          "ramaWei": "6600000000000000",
+          "txHash": "0xf47e0672c76cef447997a846aa79e37ab1427c3f5c693243647ad4aa694a45a6",
+          "timestamp": "2025-10-22 21:49:55"
+        },
+        {
+          "usd": 123,
+          "ramaWei": "12300000000000000",
+          "txHash": "0xdfb82a17fca830b39d5d7c44b4374415ad7b9f733a727c63fd3a485570ab908f",
+          "timestamp": "2025-10-22 21:50:06"
+        }
+      ]
+    },
+    "0x439e2dcD6C5753F51e1aa28d6e481b80D0c0b1e1": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 49,
+      "portfolios": [
+        {
+          "usd": 663,
+          "ramaWei": "66300000000000000",
+          "txHash": "0xdce130d94e560524f688d49c2ba4d68cc5c155c867ba7f4907c9990b0c96d598",
+          "timestamp": "2025-10-22 21:50:13"
+        },
+        {
+          "usd": 787,
+          "ramaWei": "78700000000000000",
+          "txHash": "0xf0c769e0e0bad59627e8657344a4d8055310de0b41b3d6c2749b5a0891267cb9",
+          "timestamp": "2025-10-22 21:50:20"
+        },
+        {
+          "usd": 541,
+          "ramaWei": "54100000000000000",
+          "txHash": "0x0f1a7016a3559fbea7b51886ae314a1532ab94c2758e3b99504e4cd78daf5851",
+          "timestamp": "2025-10-22 21:50:30"
+        },
+        {
+          "usd": 62,
+          "ramaWei": "6200000000000000",
+          "txHash": "0x86c07f02af0eac6bd18908dc99a82839b545ed0fb28fdf53968c7ec9a4cc5d48",
+          "timestamp": "2025-10-22 21:50:37"
+        }
+      ]
+    },
+    "0xFc6012430AD6295390D9E34447DE837e4F0663DB": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 50,
+      "portfolios": [
+        {
+          "usd": 339,
+          "ramaWei": "33900000000000000",
+          "txHash": "0xcf897797179ab6062bdc288870372443dfe03fb4542d6b6631fd98b9b2301193",
+          "timestamp": "2025-10-22 21:50:43"
+        },
+        {
+          "usd": 582,
+          "ramaWei": "58200000000000000",
+          "txHash": "0xe5562bc7e81401cda9726587e27cde073c40da683d14ab0a514e98606423d39b",
+          "timestamp": "2025-10-22 21:50:54"
+        },
+        {
+          "usd": 441,
+          "ramaWei": "44100000000000000",
+          "txHash": "0xa786908a17bf74a86d8b47f0dafab940f7ee23ffe7001d4e9d09d94552d7e10b",
+          "timestamp": "2025-10-22 21:51:00"
+        },
+        {
+          "usd": 770,
+          "ramaWei": "77000000000000000",
+          "txHash": "0xbf13499b8d714c05e8ca3bf64b933a0e5ce9b5566c13cb2de9f6ae04352ace46",
+          "timestamp": "2025-10-22 21:51:07"
+        }
+      ]
+    },
+    "0xaa9746A7f114f2f8C868db33ACa4710eFe6C2d94": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 51,
+      "portfolios": [
+        {
+          "usd": 151,
+          "ramaWei": "15100000000000000",
+          "txHash": "0xbce9d17d1e6d8800dc67c447eb41d1935f41354483bde6ed0ccf73524db08087",
+          "timestamp": "2025-10-22 21:51:14"
+        },
+        {
+          "usd": 341,
+          "ramaWei": "34100000000000000",
+          "txHash": "0x35b90f1c7cf4b3b155022a9f4d87dde2e92b0c16bfb66d13c1ee3f253e69b4b8",
+          "timestamp": "2025-10-22 21:51:20"
+        },
+        {
+          "usd": 87,
+          "ramaWei": "8700000000000000",
+          "txHash": "0xfd78664d8b118b3ca775811e433f4b5cb238abf0b7da849149d6be49d101103e",
+          "timestamp": "2025-10-22 21:51:27"
+        },
+        {
+          "usd": 21,
+          "ramaWei": "2100000000000000",
+          "txHash": "0x3711159d94def5543f8cd5ac100eaba4156f608607278dd3ce0475a76e52499f",
+          "timestamp": "2025-10-22 21:51:33"
+        }
+      ]
+    },
+    "0xb891EE85Bad08c2975ED1E7031a3337F6e5011b8": {
+      "referrer": "0xC98D8650b07B53FD76450F035B29c869bE93B9e6",
+      "keyIndex": 52,
+      "portfolios": [
+        {
+          "usd": 400,
+          "ramaWei": "40000000000000000",
+          "txHash": "0x0a823ed7524718ce08e201b80ae333df97bbf5502ac7a84a425e4553efa5350d",
+          "timestamp": "2025-10-22 21:51:40"
+        },
+        {
+          "usd": 606,
+          "ramaWei": "60600000000000000",
+          "txHash": "0xc5142a874ddfcc791f6cc6131f4e8712ed64c5e74e43950733758172db481596",
+          "timestamp": "2025-10-22 21:51:51"
+        },
+        {
+          "usd": 153,
+          "ramaWei": "15300000000000000",
+          "txHash": "0xf8dc531652b549959debe037853b479182f38122fbd773be61dda26562dd1625",
+          "timestamp": "2025-10-22 21:51:57"
+        },
+        {
+          "usd": 786,
+          "ramaWei": "78600000000000000",
+          "txHash": "0xc1ffa23f7af84b18dd74fb9ad74b925012f146162f4fe21db5d1376adb600ab6",
+          "timestamp": "2025-10-22 21:52:04"
+        }
+      ]
+    },
+    "0x7C344d254fb10f9d66ea2842dE74b322D9597689": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 53,
+      "portfolios": [
+        {
+          "usd": 623,
+          "ramaWei": "62300000000000000",
+          "txHash": "0x16c321ce455b7228bc93ca73cad849d40ed7da8762924d08adcd1b952b2470b8",
+          "timestamp": "2025-10-22 21:52:14"
+        },
+        {
+          "usd": 605,
+          "ramaWei": "60500000000000000",
+          "txHash": "0xb2661a16460c4545df0e1730b5cf4f104cb3466cedafd493203720233e5c22f6",
+          "timestamp": "2025-10-22 21:52:21"
+        },
+        {
+          "usd": 322,
+          "ramaWei": "32200000000000000",
+          "txHash": "0x5bd4babf04925d8858cbad183be9159f4dd1ca8717ea594de01f8dc8607d64f1",
+          "timestamp": "2025-10-22 21:52:28"
+        },
+        {
+          "usd": 382,
+          "ramaWei": "38200000000000000",
+          "txHash": "0x88e1f7d543dd11a7a8681c7ea2077fc1b3b3feced6a12b376f362cac0764d82e",
+          "timestamp": "2025-10-22 21:52:38"
+        }
+      ]
+    },
+    "0x5dD70E3A4e5Cd4005E0E06aC95eb75f8374c5084": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 54,
+      "portfolios": [
+        {
+          "usd": 598,
+          "ramaWei": "59800000000000000",
+          "txHash": "0xd6c5302154f33753da31323a7cec8221ea943f6dc16f0fc98349c01fede98616",
+          "timestamp": "2025-10-22 21:52:45"
+        },
+        {
+          "usd": 758,
+          "ramaWei": "75800000000000000",
+          "txHash": "0x4693f5904663c3d2d832d1c48ecc3fe6a2c6764225944566f3e1aad4258fa2fc",
+          "timestamp": "2025-10-22 21:52:51"
+        },
+        {
+          "usd": 379,
+          "ramaWei": "37900000000000000",
+          "txHash": "0x52aee7a45b584c536af02299525f529ab78eda40aebc5a1e0d5bdeb7ec4c1596",
+          "timestamp": "2025-10-22 21:53:02"
+        },
+        {
+          "usd": 167,
+          "ramaWei": "16700000000000000",
+          "txHash": "0x10c847500acba96f0f4fee0d3e52535c82e17e6d75c84baef5b0556425932c48",
+          "timestamp": "2025-10-22 21:53:09"
+        }
+      ]
+    },
+    "0x1D87b6Be9018b3c63E02Ff526ead1e6dE3e7C154": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 55,
+      "portfolios": [
+        {
+          "usd": 202,
+          "ramaWei": "20200000000000000",
+          "txHash": "0xe78608019ba0cdfdb224d56ccb0a61033706e2ed4b935c4d2fc8fec73e770bcf",
+          "timestamp": "2025-10-22 21:53:16"
+        },
+        {
+          "usd": 751,
+          "ramaWei": "75100000000000000",
+          "txHash": "0x2218c88060115873d3ec0c3cb83d15221804f4d7cd16f024f81247ca2f22937e",
+          "timestamp": "2025-10-22 21:53:22"
+        },
+        {
+          "usd": 252,
+          "ramaWei": "25200000000000000",
+          "txHash": "0x58d40d3fd53d86a95ba77b618d34727b722bada5e580ec5a458df932a9293c38",
+          "timestamp": "2025-10-22 21:53:29"
+        },
+        {
+          "usd": 148,
+          "ramaWei": "14800000000000000",
+          "txHash": "0xeaf0742a279b883bc7967219fdab49a3504b55579d853c5c87d34bd81863cf91",
+          "timestamp": "2025-10-22 21:53:36"
+        }
+      ]
+    },
+    "0xc00d470c3f1d986d97D8F1E5ebb215612Ea6F6C2": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 56,
+      "portfolios": [
+        {
+          "usd": 58,
+          "ramaWei": "5800000000000000",
+          "txHash": "0xf4204625682b7ad76673b65a002dc1dfae05be1d5fa8b0499419c7a3e284fd0b",
+          "timestamp": "2025-10-22 21:53:42"
+        },
+        {
+          "usd": 753,
+          "ramaWei": "75300000000000000",
+          "txHash": "0xbbaad1e1b48ff1d79d301fbf673732c446217dd3060c115b48e9a1b26f35c2a8",
+          "timestamp": "2025-10-22 21:53:53"
+        },
+        {
+          "usd": 427,
+          "ramaWei": "42700000000000000",
+          "txHash": "0x331d6bc1690482d04475fb3e02846f185e56764275a15046647a1bcc8dd085af",
+          "timestamp": "2025-10-22 21:53:59"
+        },
+        {
+          "usd": 201,
+          "ramaWei": "20100000000000000",
+          "txHash": "0xdfcbc9a59d425379066238fd35c6759559d44ac56c535372b42a2cb90621d048",
+          "timestamp": "2025-10-22 21:54:06"
+        }
+      ]
+    },
+    "0xB3c51ee1647AA3cC3887Bd9bbDd7B9c0fE97Ee10": {
+      "referrer": "0xa3Ec5b6a7C0f34b3b94A063255537C0Df2E39294",
+      "keyIndex": 57,
+      "portfolios": [
+        {
+          "usd": 265,
+          "ramaWei": "26500000000000000",
+          "txHash": "0xf8ac8f70e46745598bdd474293bd7bd73a11e9cf13065fe96f6c8b258ee1035c",
+          "timestamp": "2025-10-22 21:54:12"
+        },
+        {
+          "usd": 606,
+          "ramaWei": "60600000000000000",
+          "txHash": "0x0476e4037a0df85689a75a304d25278b0748626a4ff937ed7be68a97981ce179",
+          "timestamp": "2025-10-22 21:54:19"
+        },
+        {
+          "usd": 546,
+          "ramaWei": "54600000000000000",
+          "txHash": "0x8d9b7affd04452656df4971aa19faf702c11b78276a7b0af4b601386bcf2f5c5",
+          "timestamp": "2025-10-22 21:54:26"
+        },
+        {
+          "usd": 359,
+          "ramaWei": "35900000000000000",
+          "txHash": "0xed5de929e72f0689c89989923e7bb746c3b2831abd27724b90d05ed273e98fab",
+          "timestamp": "2025-10-22 21:54:32"
+        }
+      ]
+    },
+    "0xf758fEC45D1F0ffF4dbf1bB7D16E245fD82C8f6F": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 58,
+      "portfolios": [
+        {
+          "usd": 668,
+          "ramaWei": "66800000000000000",
+          "txHash": "0x9380e1b03586ffffa3e13f7f0049641aa1a52d9d6c2062d8b4cf7aec057d2693",
+          "timestamp": "2025-10-22 21:54:43"
+        },
+        {
+          "usd": 126,
+          "ramaWei": "12600000000000000",
+          "txHash": "0x4b2c5201551270544d102416b20b62395527d8403c2127d2a33bd5631a15305b",
+          "timestamp": "2025-10-22 21:54:49"
+        },
+        {
+          "usd": 508,
+          "ramaWei": "50800000000000000",
+          "txHash": "0x4d725491bab105ae2770ca4a3243677ed3672488854eb51e2158c0093dc857ba",
+          "timestamp": "2025-10-22 21:54:56"
+        },
+        {
+          "usd": 159,
+          "ramaWei": "15900000000000000",
+          "txHash": "0x7d57a8936c2ed07a4ea7d43a24ae8429ad7c0a2e8683b4b301a27399de7e88b2",
+          "timestamp": "2025-10-22 21:55:03"
+        }
+      ]
+    },
+    "0x1785fcce0E9859274fBD00D0cb1ceeb43FF24504": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 59,
+      "portfolios": [
+        {
+          "usd": 251,
+          "ramaWei": "25100000000000000",
+          "txHash": "0xd66993c2acc41b33040637c9ef7cb142de1d9842772d6b7e876e24960d2b1082",
+          "timestamp": "2025-10-22 21:55:09"
+        },
+        {
+          "usd": 91,
+          "ramaWei": "9100000000000000",
+          "txHash": "0xd8c8fb51c6bda7273a6aa37e8347594b4613653551654c07a70be6448ff03c1a",
+          "timestamp": "2025-10-22 21:55:16"
+        },
+        {
+          "usd": 491,
+          "ramaWei": "49100000000000000",
+          "txHash": "0x07fc2be9b3231974213d65cdd0cc38b2464d38257955db18e481ce98b366dd19",
+          "timestamp": "2025-10-22 21:55:22"
+        },
+        {
+          "usd": 669,
+          "ramaWei": "66900000000000000",
+          "txHash": "0x9145329e4b19e34d0b4ac0b7f17ac805f7e3cbdc6c06d84daad0c1b1a972aaa8",
+          "timestamp": "2025-10-22 21:55:29"
+        }
+      ]
+    },
+    "0xCFC1FCB34111C27b847a3EcF8FCC28868c3B6870": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 60,
+      "portfolios": [
+        {
+          "usd": 636,
+          "ramaWei": "63600000000000000",
+          "txHash": "0x24d2692d333e25b4161cfbcce8e1ae25fa50c25be6b2f41fdeed4694305b119b",
+          "timestamp": "2025-10-22 21:55:36"
+        },
+        {
+          "usd": 667,
+          "ramaWei": "66700000000000000",
+          "txHash": "0x2d427efecdd5e0f4a8cdc4cfa9f5886843d35066d4b88d47a42d32eeebb1a6eb",
+          "timestamp": "2025-10-22 21:55:42"
+        },
+        {
+          "usd": 33,
+          "ramaWei": "3300000000000000",
+          "txHash": "0x94c137516419b85766cad4fca9b2b148789e3dd53e15449113844c2248c3e2a0",
+          "timestamp": "2025-10-22 21:55:49"
+        },
+        {
+          "usd": 665,
+          "ramaWei": "66500000000000000",
+          "txHash": "0xf0f534755332aa080706a7f012ea3e95bb4066e169bdf301e2231301ae15516a",
+          "timestamp": "2025-10-22 21:55:56"
+        }
+      ]
+    },
+    "0xd14F2EBF372f04B6E21146c8b46CF473aA77585D": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 61,
+      "portfolios": [
+        {
+          "usd": 449,
+          "ramaWei": "44900000000000000",
+          "txHash": "0x8088cc03cd592740ed2fdbac524d2ae45b5ab9a85a2784a66469c6093c1564ac",
+          "timestamp": "2025-10-22 21:56:02"
+        },
+        {
+          "usd": 714,
+          "ramaWei": "71400000000000000",
+          "txHash": "0x73e195833b3fd30920ed1fc6bc89b02f6bbacfdabfcc6ebd577149a96284270d",
+          "timestamp": "2025-10-22 21:56:09"
+        },
+        {
+          "usd": 747,
+          "ramaWei": "74700000000000000",
+          "txHash": "0x7d802962a2d7db490d975ffb5448513b84b457331043139a3effe8a126fc023a",
+          "timestamp": "2025-10-22 21:56:16"
+        },
+        {
+          "usd": 273,
+          "ramaWei": "27300000000000000",
+          "txHash": "0xab51938f659f707f0405aaa4c1ecdf4576a6775760a5c00d9dfe4302701c2456",
+          "timestamp": "2025-10-22 21:56:22"
+        }
+      ]
+    },
+    "0x354Ae3e6FC616fDA5807e9762DA6592011e0aE40": {
+      "referrer": "0xBF14DdE32cE295385c92242a07690Fc6bCf8aa3C",
+      "keyIndex": 62,
+      "portfolios": [
+        {
+          "usd": 188,
+          "ramaWei": "18800000000000000",
+          "txHash": "0xea3730a86d373d58dfdc0a2e38f7abade136a5c070caa44c0e1d5963f79c5d39",
+          "timestamp": "2025-10-22 21:56:29"
+        },
+        {
+          "usd": 780,
+          "ramaWei": "78000000000000000",
+          "txHash": "0xb82ea81050059778e0ad37616efad76cfc9bfc76d446c7cbad16eb0c9d551c2c",
+          "timestamp": "2025-10-22 21:56:36"
+        },
+        {
+          "usd": 568,
+          "ramaWei": "56800000000000000",
+          "txHash": "0xcd5044628b79a53e03007e94bfa2e71b6d9c53bbe5f3000c90eb9a394fe002fd",
+          "timestamp": "2025-10-22 21:56:42"
+        },
+        {
+          "usd": 196,
+          "ramaWei": "19600000000000000",
+          "txHash": "0xb32897bfbb942c47ca3f7251631218a24615d616f20dde4555e1099f8d0b9cba",
+          "timestamp": "2025-10-22 21:56:49"
+        }
+      ]
+    },
+    "0x8aA38363cf5D0F21b1bAe13947443c0d4D8aDA2e": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 63,
+      "portfolios": [
+        {
+          "usd": 377,
+          "ramaWei": "37700000000000000",
+          "txHash": "0x5e454bf23f4753293ee1680c0882e5f30e8e5bc017489517e45a961dd2105ead",
+          "timestamp": "2025-10-22 21:56:56"
+        },
+        {
+          "usd": 80,
+          "ramaWei": "8000000000000000",
+          "txHash": "0x28fc2a52db480a8b1d6cb92f2cb3c775f968dc30d51e1c3244952a032cbde89a",
+          "timestamp": "2025-10-22 21:57:06"
+        },
+        {
+          "usd": 342,
+          "ramaWei": "34200000000000000",
+          "txHash": "0x9c4b009b4ebd562d5679a7080f7dfc4be17dcfc01bb8bf4802f8677c34bfe834",
+          "timestamp": "2025-10-22 21:57:13"
+        },
+        {
+          "usd": 71,
+          "ramaWei": "7100000000000000",
+          "txHash": "0x0592f48c675d3676f30204ebab60816a05ec75ea2f17d60a0f1d00ff05833993",
+          "timestamp": "2025-10-22 21:57:20"
+        }
+      ]
+    },
+    "0xeC1bb650830eef2826910a2CC610AfDD452bbBf9": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 64,
+      "portfolios": [
+        {
+          "usd": 455,
+          "ramaWei": "45500000000000000",
+          "txHash": "0x6de2837e80390098587a118c10f51b4b655f7ccafdd5b8a95ce340f7c2a30955",
+          "timestamp": "2025-10-22 21:57:30"
+        },
+        {
+          "usd": 604,
+          "ramaWei": "60400000000000000",
+          "txHash": "0xaa653264e65ee3e409962565637bbc8f08a9ded835fa2a85e81aa0c3c889229e",
+          "timestamp": "2025-10-22 21:57:37"
+        },
+        {
+          "usd": 335,
+          "ramaWei": "33500000000000000",
+          "txHash": "0x6536f36ae883cbca64a13173f960d2e3b05ffd8d48e97884990279b335406b6d",
+          "timestamp": "2025-10-22 21:57:44"
+        },
+        {
+          "usd": 243,
+          "ramaWei": "24300000000000000",
+          "txHash": "0xfd54a2e828e606efcf93ce2be9ca38f699dfc701f502776b26c53f6cd169def4",
+          "timestamp": "2025-10-22 21:57:50"
+        }
+      ]
+    },
+    "0x693e44636cB2C0a019b4B9C6C67F820bd78D4EDB": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 65,
+      "portfolios": [
+        {
+          "usd": 764,
+          "ramaWei": "76400000000000000",
+          "txHash": "0x439acb50f2a0d82f6821f0a65ddef30dbac83d0704dfd3462edd4c6b3396e571",
+          "timestamp": "2025-10-22 21:57:57"
+        },
+        {
+          "usd": 691,
+          "ramaWei": "69100000000000000",
+          "txHash": "0xe6188f208f0e6df8b8fa09215adf38ee7f953d9e64b1c3ebbe701d28a8092c97",
+          "timestamp": "2025-10-22 21:58:03"
+        },
+        {
+          "usd": 289,
+          "ramaWei": "28900000000000000",
+          "txHash": "0xbcce49e6d90832f4555c7e1043937ccca57541aba3f48adf5479733a35f29276",
+          "timestamp": "2025-10-22 21:58:10"
+        },
+        {
+          "usd": 503,
+          "ramaWei": "50300000000000000",
+          "txHash": "0xb0fd45ce583f5ad581a38b1bc550ed43dee9f213afb5bfd6003056e90a77ffb6",
+          "timestamp": "2025-10-22 21:58:17"
+        }
+      ]
+    },
+    "0x50D5be9BeC4fD41993B320B032B4F07ab238309D": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 66,
+      "portfolios": [
+        {
+          "usd": 317,
+          "ramaWei": "31700000000000000",
+          "txHash": "0x5a9602caeb944521610f2294d7ae22caf41ca590916287e8a1854a5011344342",
+          "timestamp": "2025-10-22 21:58:23"
+        },
+        {
+          "usd": 250,
+          "ramaWei": "25000000000000000",
+          "txHash": "0xd6e10a55b46cb453e16d96e142b3ef0256fef7e689cddbf2eb7caf56c665f9ab",
+          "timestamp": "2025-10-22 21:58:30"
+        },
+        {
+          "usd": 570,
+          "ramaWei": "57000000000000000",
+          "txHash": "0x2405a00772409567092a84346ba2a4e82c377fbc4b460e9f481841148c3af912",
+          "timestamp": "2025-10-22 21:58:36"
+        },
+        {
+          "usd": 427,
+          "ramaWei": "42700000000000000",
+          "txHash": "0x5f80b4807df184b608ab22275fdadebe22332ab75f364fee4fd6820366397f84",
+          "timestamp": "2025-10-22 21:58:43"
+        }
+      ]
+    },
+    "0xEe6D4BCAF105139e7a310091f688f212CDcC4247": {
+      "referrer": "0xD089A76b50334839d91Ffd70132e41f047F11F8c",
+      "keyIndex": 67,
+      "portfolios": [
+        {
+          "usd": 87,
+          "ramaWei": "8700000000000000",
+          "txHash": "0xf89d219588a14635ab3ec7ecaad12e2eddfd8efae6eabd6807d1d8f66cf2a62d",
+          "timestamp": "2025-10-22 21:58:50"
+        },
+        {
+          "usd": 23,
+          "ramaWei": "2300000000000000",
+          "txHash": "0x811eb8b4fae410fb2fa155b0af8264f68c874a577c78d5bf6be62b78e01d3e21",
+          "timestamp": "2025-10-22 21:58:56"
+        },
+        {
+          "usd": 461,
+          "ramaWei": "46100000000000000",
+          "txHash": "0xf5edd1caadd4d8825eb99364ac90823a0163b1d63e03363b111ceed546be10fd",
+          "timestamp": "2025-10-22 21:59:07"
+        },
+        {
+          "usd": 331,
+          "ramaWei": "33100000000000000",
+          "txHash": "0x0ae3d5c0dc10c3ed18135f9d973e1f7fae30352c73ecb0a63dd6fa0d567984b6",
+          "timestamp": "2025-10-22 21:59:13"
+        }
+      ]
+    },
+    "0xE1aAe7D46e4277c779a484C6D6FF8753B0Da668B": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 68,
+      "portfolios": [
+        {
+          "usd": 754,
+          "ramaWei": "75400000000000000",
+          "txHash": "0x5716ca1e85389fe71ffd69fc825587e2022879485bcb95aa7e656b2aeee2ce46",
+          "timestamp": "2025-10-22 21:59:20"
+        },
+        {
+          "usd": 507,
+          "ramaWei": "50700000000000000",
+          "txHash": "0x2237d09155cdf60707d113d3e3ec93d40ce5d5c8817d8b8cf6c620a6bfa7e31d",
+          "timestamp": "2025-10-22 21:59:27"
+        },
+        {
+          "usd": 152,
+          "ramaWei": "15200000000000000",
+          "txHash": "0x80adb546cb783eae94b191d6a13fc9e3b34be779c370a5610953068bbd9d20a7",
+          "timestamp": "2025-10-22 21:59:37"
+        },
+        {
+          "usd": 461,
+          "ramaWei": "46100000000000000",
+          "txHash": "0x1b763422831deb984168057544bd37312edf00d2b347406b6613983c86981e20",
+          "timestamp": "2025-10-22 21:59:44"
+        }
+      ]
+    },
+    "0x292952ACB862957b55b39789F3Caeb851e0aE3c7": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 69,
+      "portfolios": [
+        {
+          "usd": 589,
+          "ramaWei": "58900000000000000",
+          "txHash": "0x7641a7e4a864d5132d3dcdadebdc2b8865dbdc21d52075a7eaaac91e3e02eb09",
+          "timestamp": "2025-10-22 21:59:54"
+        },
+        {
+          "usd": 237,
+          "ramaWei": "23700000000000000",
+          "txHash": "0x2e03682071a609bd07f3b8f980589fed736095f05cf15d73a76c857cba60224e",
+          "timestamp": "2025-10-22 22:00:01"
+        },
+        {
+          "usd": 217,
+          "ramaWei": "21700000000000000",
+          "txHash": "0x5e613284ad35b8974c51f7b7df23dd2901cf84309527f036b0433faa6199660f",
+          "timestamp": "2025-10-22 22:00:07"
+        },
+        {
+          "usd": 470,
+          "ramaWei": "47000000000000000",
+          "txHash": "0x2f450625abb603e153c30158c260a585f0c16efd7e832488c676401e9b8b9ec2",
+          "timestamp": "2025-10-22 22:00:18"
+        }
+      ]
+    },
+    "0x09717924417e809518220014B7F257C45bEFf837": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 70,
+      "portfolios": [
+        {
+          "usd": 721,
+          "ramaWei": "72100000000000000",
+          "txHash": "0xb546371712ac0df74abc51fb61fbd42d68df0f1b33e5b7c9ebd4a82dba989ab8",
+          "timestamp": "2025-10-22 22:00:25"
+        },
+        {
+          "usd": 676,
+          "ramaWei": "67600000000000000",
+          "txHash": "0x0359defbfa816d35f4ff7daf209033496ac147b85fb2c3d9a9886626847212f7",
+          "timestamp": "2025-10-22 22:00:31"
+        },
+        {
+          "usd": 514,
+          "ramaWei": "51400000000000000",
+          "txHash": "0xd8279ef5320800145aa9db9fcd2aae8454cc53b51d020d230a927fcde0ad9a29",
+          "timestamp": "2025-10-22 22:00:42"
+        },
+        {
+          "usd": 739,
+          "ramaWei": "73900000000000000",
+          "txHash": "0xffc05e7ec9fc6df3a3f2bbeacb2bc2c4714243bd08aa44b0df87772d08380a83",
+          "timestamp": "2025-10-22 22:00:48"
+        }
+      ]
+    },
+    "0x55116710Da282A51Ad46A4082B4ABb6D49541FC9": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 71,
+      "portfolios": [
+        {
+          "usd": 601,
+          "ramaWei": "60100000000000000",
+          "txHash": "0x20177225b17a68e28b0c4e8b60d1085411a4809d8b608f3df05ca3e11cbd7748",
+          "timestamp": "2025-10-22 22:00:55"
+        },
+        {
+          "usd": 586,
+          "ramaWei": "58600000000000000",
+          "txHash": "0x3b30685a5b0ef9dc255e1fcb48768e6c2fedcb36ddc758769217f8702d0ea0d0",
+          "timestamp": "2025-10-22 22:01:06"
+        },
+        {
+          "usd": 643,
+          "ramaWei": "64300000000000000",
+          "txHash": "0xda2e3d885a8299ae5c9897c6c19f38b788768dcf074c9f593241aa3574150888",
+          "timestamp": "2025-10-22 22:01:12"
+        },
+        {
+          "usd": 585,
+          "ramaWei": "58500000000000000",
+          "txHash": "0x85eaf7ab740746d5690c6dd318e29c6020e77dc6c26f35739027e14e0a2c0834",
+          "timestamp": "2025-10-22 22:01:23"
+        }
+      ]
+    },
+    "0x6922D93679E7d9d113c251dae2F68637a93DBcc4": {
+      "referrer": "0x52875DCE5AF84BDA54B650Bb7716BB7C0B2c4918",
+      "keyIndex": 72,
+      "portfolios": [
+        {
+          "usd": 247,
+          "ramaWei": "24700000000000000",
+          "txHash": "0x8ce01d675aedc871adbd9d74e2f92d22cb407ec7b85d6d70b207a8d32adc8dd5",
+          "timestamp": "2025-10-22 22:01:29"
+        },
+        {
+          "usd": 758,
+          "ramaWei": "75800000000000000",
+          "txHash": "0xca1ebd7d6700fc1a47601408a2bb745921f99d59b812f7aa1e1f327f9d7e6d6f",
+          "timestamp": "2025-10-22 22:01:36"
+        },
+        {
+          "usd": 613,
+          "ramaWei": "61300000000000000",
+          "txHash": "0xf8afe071df15837fe32f427e3a9ef2090e038a41ba305b3c1caea6d5e9a907d7",
+          "timestamp": "2025-10-22 22:01:47"
+        },
+        {
+          "usd": 402,
+          "ramaWei": "40200000000000000",
+          "txHash": "0x235e48821e16166844add0be3f4c114a57960a36883de3264ad3cf1dbb37bd2e",
+          "timestamp": "2025-10-22 22:01:53"
+        }
+      ]
+    },
+    "0xAF2cD1c8719127601B8226cb4d554b237d7457F9": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 73,
+      "portfolios": [
+        {
+          "usd": 492,
+          "ramaWei": "49200000000000000",
+          "txHash": "0x78932f8ec8d0d262dcad9fac3a237a0fe5a64439330b56d716ad43bacbc96b17",
+          "timestamp": "2025-10-22 22:02:00"
+        },
+        {
+          "usd": 114,
+          "ramaWei": "11400000000000000",
+          "txHash": "0x4bbee47d4e2c795765664e40214bc59fc7c3c3cc361df0a0fcc21435f0a61c3f",
+          "timestamp": "2025-10-22 22:02:11"
+        },
+        {
+          "usd": 785,
+          "ramaWei": "78500000000000000",
+          "txHash": "0xb88baf2c5befea1654ed3d6602f790d6cd91e968a2038fecc8ddabf99fc49646",
+          "timestamp": "2025-10-22 22:02:17"
+        },
+        {
+          "usd": 613,
+          "ramaWei": "61300000000000000",
+          "txHash": "0x80bf007844b8a611e7e77886f1bbf6235f6fe4a5b5daebdd6da40008050dcbae",
+          "timestamp": "2025-10-22 22:02:24"
+        }
+      ]
+    },
+    "0xc6f42721e9d9F9bf7FBf44093ac760C7e2268598": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 74,
+      "portfolios": [
+        {
+          "usd": 298,
+          "ramaWei": "29800000000000000",
+          "txHash": "0xab384b2b8040ee5379f9d2df70a54ceb44a391247bffcd592913d1cd0bf8ec2d",
+          "timestamp": "2025-10-22 22:02:31"
+        },
+        {
+          "usd": 98,
+          "ramaWei": "9800000000000000",
+          "txHash": "0xf2ec15ebcf52c0b4ecc2809144e5ff2a221c19826f68442c14be042b4709e66f",
+          "timestamp": "2025-10-22 22:02:38"
+        },
+        {
+          "usd": 545,
+          "ramaWei": "54500000000000000",
+          "txHash": "0x646b6c26262823ee5f6184b9f479f04f7052a0900aadce57b023ea3fbc9d0e3b",
+          "timestamp": "2025-10-22 22:02:45"
+        },
+        {
+          "usd": 377,
+          "ramaWei": "37700000000000000",
+          "txHash": "0x1142b16e8040495ead2ae36cba53590a8f05a929bd41c53109f4a0dc45e47a72",
+          "timestamp": "2025-10-22 22:02:51"
+        }
+      ]
+    },
+    "0xaC558BcD9D39b0F7e473EAE5F899339419eF39c2": {
+      "referrer": "0x33D4EaD90a98Fb1Ef04AF4733bA18231983B1172",
+      "keyIndex": 75,
+      "portfolios": [
+        {
+          "usd": 458,
+          "ramaWei": "45800000000000000",
+          "txHash": "0x034c727f6c9133e961c7aea4a0c903ea3a2cba9d4b3397d85cb8ca2adb1112fc",
+          "timestamp": "2025-10-22 22:03:02"
+        }
+      ]
+    }
+  }
+}

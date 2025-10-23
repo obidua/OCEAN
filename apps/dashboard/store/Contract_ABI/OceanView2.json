@@ -1,0 +1,831 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      }
+    ],
+    "name": "BeaconUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "cfg",
+    "outputs": [
+      {
+        "internalType": "contract ICoreConfig",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "todayDayId",
+        "type": "uint32"
+      }
+    ],
+    "name": "getDashboardData",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "totalStakedUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalEarnedRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalClaimableUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "accruedGrowthUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "accruedGrowthRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "qualifiedVolumeUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint32",
+            "name": "directRefs",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "teamCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "upline",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "slabLevel",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "slabCanClaim",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "royaltyLevel",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "royaltyPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "royaltyCanClaim",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint64",
+            "name": "royaltyLastMonthEpoch",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "royaltyNextMonthEpoch",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltyPaidMonths",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltyRenewalSnapshotUsd",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltyRecentSnapshotUsd",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.DashboardSummary",
+        "name": "summary",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "totalUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "growthUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "slabUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "slabAvailableUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltyUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "overrideUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[3]",
+            "name": "overrideWaveUsdMicro",
+            "type": "uint256[3]"
+          }
+        ],
+        "internalType": "struct OceanViewV2.IncomeSummary",
+        "name": "income",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "safeWalletRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "safeWalletUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lifetimeRoiUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingGrowthRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingGrowthUsdMicro",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.WalletSummary",
+        "name": "wallet",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "principalRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "principalUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "capRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "capUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creditedRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creditedUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "capProgressBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dailyRateWad",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "capPct",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tier",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "booster",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint64",
+            "name": "createdAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "frozenUntil",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct OceanViewV2.PortfolioCard[]",
+        "name": "portfolios",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32[7]",
+            "name": "dayIds",
+            "type": "uint32[7]"
+          },
+          {
+            "internalType": "uint256[7]",
+            "name": "usdAmounts",
+            "type": "uint256[7]"
+          }
+        ],
+        "internalType": "struct OceanViewV2.WeeklyEarnings",
+        "name": "weekly",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lifetimeCapBps",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getIncomeStreams",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "totalUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "growthUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "slabUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "slabAvailableUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltyUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "overrideUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[3]",
+            "name": "overrideWaveUsdMicro",
+            "type": "uint256[3]"
+          }
+        ],
+        "internalType": "struct OceanViewV2.IncomeSummary",
+        "name": "income",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getPortfolioCards",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "principalRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "principalUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "capRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "capUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creditedRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creditedUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "capProgressBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dailyRateWad",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "capPct",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tier",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "booster",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint64",
+            "name": "createdAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "frozenUntil",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct OceanViewV2.PortfolioCard[]",
+        "name": "cards",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lifetimeCapBps",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRecentTransactions",
+    "outputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "entries",
+        "type": "bytes[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "depth",
+        "type": "uint8"
+      }
+    ],
+    "name": "getTeamSummary",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address[]",
+            "name": "directs",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint32",
+            "name": "directCount",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "teamCount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.TeamSummary",
+        "name": "team",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getWalletSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "safeWalletRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "safeWalletUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lifetimeRoiUsdMicro",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingGrowthRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingGrowthUsdMicro",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.WalletSummary",
+        "name": "wallet",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "todayDayId",
+        "type": "uint32"
+      }
+    ],
+    "name": "getWeeklyEarnings",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32[7]",
+            "name": "dayIds",
+            "type": "uint32[7]"
+          },
+          {
+            "internalType": "uint256[7]",
+            "name": "usdAmounts",
+            "type": "uint256[7]"
+          }
+        ],
+        "internalType": "struct OceanViewV2.WeeklyEarnings",
+        "name": "weekly",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_cfg",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_query",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_legacy",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "legacy",
+    "outputs": [
+      {
+        "internalType": "contract IOceanViewLegacy",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "query",
+    "outputs": [
+      {
+        "internalType": "contract IOceanQueryUpgradeable",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]
