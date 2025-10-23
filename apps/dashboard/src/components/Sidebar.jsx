@@ -21,6 +21,7 @@ const menuSections = [
   {
     title: 'Income & Rewards',
     items: [
+      { path: '/dashboard/accrued-rewards', label: 'Accrued Rewards', icon: Award, color: 'text-neon-green' },
       { path: '/dashboard/slab', label: 'Slab Income', icon: Award, color: 'text-neon-purple' },
       { path: '/dashboard/spot-income', label: 'Spot Income', icon: Coins, color: 'text-emerald-400' },
       { path: '/dashboard/stake', label: 'Stake', icon: Wallet, color: 'text-cyan-300' },

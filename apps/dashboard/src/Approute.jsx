@@ -18,6 +18,7 @@ import About from './pages/About';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import AccruedRewards from './pages/AccruedRewards';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import Features from './pages/Features';
@@ -162,6 +163,7 @@ const Approute = () => {
           <Route path="about" element={<About />} />
           <Route path="presentation" element={<Presentation />} />
           <Route path="ocean-defi-guide" element={<OceanDefiGuide />} />
+          <Route path="accrued-rewards" element={<AccruedRewards />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

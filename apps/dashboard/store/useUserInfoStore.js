@@ -21,31 +21,37 @@ import {
   ONE_TIME_REWARDS as ONE_TIME_REWARDS_FALLBACK,
 } from "../src/utils/contractData";
 
+// Initialize contract interfaces
+const getContractInterface = async () => {
+  const web3 = new Web3(window.ethereum);
+  try {
+    const oceanicView = new web3.eth.Contract(OceanicViewABI, "0xf352ded4a4F9A18062B639224E80C225F2Ae0b88");
+    const portfolioManager = new web3.eth.Contract(
+      PortFolioManagerABI,
+      "0x139b15932d767c72aAAdC4848552674d0C32084d"
+    );
+    return { oceanicView, portfolioManager };
+  } catch (error) {
+    console.error("Failed to initialize contracts:", error);
+    throw error;
+  }
+};
+
 const resolveEnvValue = (key) => {
   const env = import.meta.env ?? {};
   return env[`VITE_${key}`] ?? env[key];
 };
 
 const resolveAddress = (key, fallback) => {
-  const candidate = resolveEnvValue(key);
-  if (typeof candidate === "string" && candidate.startsWith("0x") && candidate.length === 42) {
-    return candidate;
-  }
-  return fallback;
-};
+    const candidate = resolveEnvValue(key);
+    if (typeof candidate === "string" && candidate.startsWith("0x") && candidate.length === 42) {
+      return candidate;
+    }
+    return fallback;
+  };
 
-const oceanicViewAddress = resolveAddress(
-  "OCEANICVIEW",
-  resolveAddress(
-    "Oceanicview",
-    resolveAddress(
-      "OCEANVIEWUPGRADEABLE",
-      "0xf352ded4a4F9A18062B639224E80C225F2Ae0b88"
-    )
-  )
-);
-
-const Contract = {
+  // Use the provided Oceanic View address
+  const oceanicViewAddress = "0xf352ded4a4F9A18062B639224E80C225F2Ae0b88";const Contract = {
   UserRegistry: resolveAddress("USERREGISTRY", "0x1B7CC7E9C5583F581aCAf2b7Bc207B1CA970897E"),
   CoreConfig: resolveAddress("CORECONFIG", "0x659946334312BCe5d5F5f01D09035FD110b10EBE"),
   RoiDistribution: resolveAddress("ROIDISTRIBUTOR", "0x053Ce7E1f4287d12437EadE4cD3EB469Aa89D1d3"),
@@ -220,6 +226,219 @@ const slabsName = ["None", "Coral Reef", "Shallow Waters", "Tide Pool", "Wave Cr
 
 
 export const useStore = create((set, get) => ({
+  // Accrued Rewards functions
+  getAccruedRewardStats: async (address) => {
+    try {
+      const { oceanicView } = await getContractInterface();
+      const [portfolios, rewardsData] = await Promise.all([
+        oceanicView.methods.getPortfolios(address).call(),
+        oceanicView.methods.getRewards(address).call()
+      ]);
+
+      // Destructure rewards data based on contract structure
+      const {
+        lifetimeUsdWad,
+        ramaWei,
+        thresholdsUsdWad = [],
+        rewardsUsdWad = [],
+        achieved = []
+      } = rewardsData;
+
+      const totalRewardsUsd = parseFloat(Web3.utils.fromWei(lifetimeUsdWad || '0', 'ether'));
+      const totalRewardsRama = parseFloat(Web3.utils.fromWei(ramaWei || '0', 'ether'));
+      
+      // Calculate pending rewards from unclaimed thresholds
+      const pendingRewardsUsd = rewardsUsdWad
+        .filter((_, index) => !achieved[index])
+        .reduce((sum, reward) => sum + parseFloat(Web3.utils.fromWei(reward, 'ether')), 0);
+
+      // Get the latest timestamp from portfolios
+      const lastClaimTimestamp = Math.max(
+        ...portfolios.portfolios.map(p => parseInt(p.lastUpdate || '0'))
+      );
+
+      return {
+        totalRewardsUsd,
+        totalRewardsRama,
+        pendingRewardsUsd,
+        pendingRewardsRama: pendingRewardsUsd * get().ramaPrice,
+        lastClaimTimestamp,
+        nextClaimAvailable: lastClaimTimestamp + (24 * 60 * 60), // 24 hours after last claim
+        portfolioCount: portfolios.portfolios.length
+      };
+    } catch (error) {
+      console.error('Error fetching accrued reward stats:', error);
+      throw error;
+    }
+  },
+
+  claimROI: async (portfolioId) => {
+    try {
+      const { portfolioManager } = await getContractInterface();
+      // Get unclaimed periods first
+      const periods = await oceanicView.methods.getROIUnclaimedPerPeriod(
+        window.ethereum.selectedAddress,
+        0, // from start
+        Math.floor(Date.now() / 86400) // until today
+      ).call();
+      
+      if (periods.epochsCount === 0) {
+        throw new Error('No unclaimed ROI available');
+      }
+
+      const transaction = await portfolioManager.methods.claimROI(
+        portfolioId,
+        periods.periodIds,
+        periods.usdPerPeriod,
+        periods.ramaPerPeriod
+      ).send({
+        from: window.ethereum.selectedAddress
+      });
+      return transaction;
+    } catch (error) {
+      console.error('Error claiming ROI:', error);
+      throw error;
+    }
+  },
+
+  getUnclaimedROI: async (address) => {
+    try {
+      const { oceanicView } = await getContractInterface();
+      const unclaimedData = await oceanicView.methods.getROIPreviewPerPortfolioPaged(
+        address,
+        0, // offset
+        1000, // limit
+        [], // all portfolios
+      ).call();
+      return unclaimedData;
+    } catch (error) {
+      console.error('Error getting unclaimed ROI:', error);
+      throw error;
+    }
+  },
+
+  getRoiDashboard: async (address) => {
+    try {
+      const { oceanicView } = await getContractInterface();
+      const dashboard = await oceanicView.methods.getROIDashboardPaged(
+        address,
+        0, // periodFrom
+        Math.floor(Date.now() / 86400), // periodTo (current day)
+        0, // historyOffset
+        100, // historyLimit
+        0, // pidClaimsEpoch
+        0, // pidClaimsOffset
+        1000, // pidClaimsLimit
+        0, // previewOffset
+        1000 // previewLimit
+      ).call();
+
+      return {
+        totals: {
+          claimed: {
+            usd: parseFloat(Web3.utils.fromWei(dashboard.totals.claimedUsdMicro, 'mwei')),
+            rama: parseFloat(Web3.utils.fromWei(dashboard.totals.claimedRamaWei, 'ether'))
+          },
+          unclaimed: {
+            usd: parseFloat(Web3.utils.fromWei(dashboard.totals.unclaimedUsdMicro, 'mwei')),
+            rama: parseFloat(Web3.utils.fromWei(dashboard.totals.unclaimedRamaWei, 'ether'))
+          },
+          periods: {
+            from: dashboard.totals.unclaimedFromPeriod,
+            last: dashboard.totals.unclaimedLastPeriod,
+            count: dashboard.totals.unclaimedEpochsCount
+          }
+        },
+        history: dashboard.histUsdMicro.map((usd, i) => ({
+          fromPeriod: dashboard.histFromPeriod[i],
+          toPeriod: dashboard.histToPeriod[i],
+          usdAmount: parseFloat(Web3.utils.fromWei(usd, 'mwei')),
+          ramaAmount: parseFloat(Web3.utils.fromWei(dashboard.histRamaWei[i], 'ether')),
+          claimedAt: dashboard.histClaimedAt[i],
+          epoch: dashboard.histEpoch[i]
+        })),
+        portfolios: dashboard.previewPids.map((pid, i) => ({
+          pid: pid,
+          usdAmount: parseFloat(Web3.utils.fromWei(dashboard.previewUsdMicro[i], 'mwei')),
+          ramaAmount: parseFloat(Web3.utils.fromWei(dashboard.previewRamaWei[i], 'ether')),
+          epochCount: dashboard.previewEpochCounts[i],
+          meta: dashboard.previewMeta[i]
+        }))
+      };
+    } catch (error) {
+      console.error('Error getting ROI dashboard:', error);
+      throw error;
+    }
+  },
+
+  getPortfolioRewards: async (address) => {
+    try {
+      const { oceanicView } = await getContractInterface();
+      // Get both ROI preview and claim history
+      const [roiData, claimHistory] = await Promise.all([
+        oceanicView.methods.getROIPreviewPerPortfolioPaged(
+          address,
+          0, // offset
+          1000, // limit
+        ).call(),
+        oceanicView.methods.getROIClaimHistoryPaged(
+          address,
+          0, // offset
+          100 // limit
+        ).call()
+      ]);
+
+      return roiData.pids.map((pid, index) => {
+        const meta = roiData.meta[index];
+        const claims = claimHistory.fromPeriod.map((from, i) => ({
+          fromPeriod: from,
+          toPeriod: claimHistory.toPeriod[i],
+          usdAmount: parseFloat(Web3.utils.fromWei(claimHistory.usdMicro[i], 'mwei')),
+          ramaAmount: parseFloat(Web3.utils.fromWei(claimHistory.ramaWei[i], 'ether')),
+          claimedAt: claimHistory.claimedAt[i],
+          epoch: claimHistory.epoch[i]
+        }));
+
+        const totalRewardsUsd = portfolioRewards.reduce((sum, reward) => 
+          sum + parseFloat(Web3.utils.fromWei(reward, 'ether')), 0);
+        const pendingRewardsUsd = portfolioRewards
+          .filter((_, i) => !portfolioAchieved[i])
+          .reduce((sum, reward) => sum + parseFloat(Web3.utils.fromWei(reward, 'ether')), 0);
+
+        // Find matching ROI data for this portfolio
+        const roiIndex = roiData.meta.findIndex(m => parseInt(m.pid) === parseInt(portfolio.pid));
+        const roi = roiIndex !== -1 ? {
+          usdAmount: parseFloat(Web3.utils.fromWei(roiData.usdMicro[roiIndex], 'mwei')),
+          ramaAmount: parseFloat(Web3.utils.fromWei(roiData.ramaWei[roiIndex], 'ether')),
+          epochCount: roiData.epochCounts[roiIndex],
+          meta: {
+            principalRama: parseFloat(Web3.utils.fromWei(roiData.meta[roiIndex].principal_RAMA, 'ether')),
+            principalUsd: parseFloat(Web3.utils.fromWei(roiData.meta[roiIndex].principal_USD_WAD, 'ether')),
+            boosterActive: roiData.meta[roiIndex].booster,
+            tier: roiData.meta[roiIndex].tier,
+            capPct: roiData.meta[roiIndex].capPct,
+            isCapped: roiData.meta[roiIndex].isCapped,
+            isClosed: roiData.meta[roiIndex].isClosed,
+            totalBoosterROI: parseFloat(Web3.utils.fromWei(roiData.meta[roiIndex].totalReceivedBoosterROI || '0', 'ether')),
+            boosterActivationDate: roiData.meta[roiIndex].boosterActivationDate,
+            isActivatedFromSafeWallet: roiData.meta[roiIndex].isActivatedFromSafeWallet
+          }
+        } : null;
+
+        return {
+          portfolioId: parseInt(portfolio.pid),
+          totalRewardsUsd,
+          pendingRewardsUsd,
+          lastClaimTimestamp: parseInt(portfolio.lastUpdate || '0'),
+          status: portfolio.status || 'active',
+          roi: roi
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching portfolio rewards:', error);
+      throw error;
+    }
+  },
 
   UserRegistryAddress: Contract["UserRegistry"],
   CoreConfigAddress: Contract["CoreConfig"],
