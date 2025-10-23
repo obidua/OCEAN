@@ -87,7 +87,7 @@ export default function Signup() {
   const [redirectCountdown, setRedirectCountdown] = useState(15);
   const redirectTimerRef = useRef(null);
 
-  const regPortFoliAmt = useStore((s) => s.regPortFoliAmt);
+  const usdToRama = useStore((s) => s.usdToRama);
   const CreateportFolio = useStore((s) => s.CreateportFolio);
   const isUserRegisterd = useStore((s) => s.isUserRegisterd);
   const userIdByAdd = useStore((s) => s.userIdByAdd);
@@ -116,8 +116,8 @@ export default function Signup() {
   }, [amtInUSD]);
 
   const payableRama = useMemo(() => {
-    if (!portFolioAmt?.ramaAmt) return null;
-    const rate = Number(portFolioAmt.ramaAmt);
+    if (!portFolioAmt) return null;
+    const rate = Number(portFolioAmt);
     if (!Number.isFinite(rate)) return null;
     return rate * amountNumber;
   }, [portFolioAmt, amountNumber]);
@@ -322,18 +322,36 @@ export default function Signup() {
     };
   }, [txStage, navigate]);
 
-  const fetchPayableAmt = useCallback(async () => {
+ // 1) Make the fetcher accept the current amount
+const fetchPayableAmt = useCallback(
+  async (usd) => {
+    if (usd === '' || !Number.isFinite(Number(usd))) {
+      setPortFolioAmt(null);
+      return;
+    }
     try {
-      const res = await regPortFoliAmt();
+      const res = await usdToRama(usd);
       setPortFolioAmt(res);
     } catch (error) {
       console.log(error);
+      setPortFolioAmt(null);
     }
-  }, [regPortFoliAmt]);
+  },
+  [usdToRama]
+);
 
-  useEffect(() => {
-    fetchPayableAmt();
-  }, [fetchPayableAmt]);
+// 2) Call it with the up-to-date value
+useEffect(() => {
+  let cancelled = false;
+  (async () => {
+    if (cancelled) return;
+    await fetchPayableAmt(amtInUSD);
+  })();
+  return () => {
+    cancelled = true;
+  };
+}, [amtInUSD, fetchPayableAmt]);
+
 
   useEffect(() => {
     const trimmed = (userValue || '').trim();
@@ -475,7 +493,7 @@ export default function Signup() {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  const formattedRamaAmount = payableRama != null ? payableRama.toFixed(4) : null;
+
   const highlightMetrics = [
     {
       label: 'Funding Amount',
@@ -484,7 +502,7 @@ export default function Signup() {
     },
     {
       label: 'Payable Token',
-      value: formattedRamaAmount ? `${formattedRamaAmount} RAMA` : 'Calculating…',
+      value: portFolioAmt ? `${portFolioAmt} RAMA` : 'Calculating…',
       helper: 'Live Ramestta conversion',
     },
     {
@@ -780,9 +798,9 @@ export default function Signup() {
                       <div className="rounded-xl border border-cyan-500/20 bg-dark-950/60 p-4 space-y-2">
                         <p className="text-xs uppercase tracking-wide text-cyan-300/60">Payable (RAMA)</p>
                         <p className="text-2xl font-semibold text-cyan-100">
-                          {formattedRamaAmount ? (
+                          {portFolioAmt ? (
                             <>
-                              {formattedRamaAmount}
+                              {portFolioAmt.toFixed(4)}
                               <span className="ml-1 text-base font-medium text-cyan-300/70">RAMA</span>
                             </>
                           ) : (
