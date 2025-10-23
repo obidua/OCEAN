@@ -3321,7 +3321,7 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = parseInt(ramaWeiQuoteStr);
+      const valueToSend = BigInt(ramaWeiQuoteStr);
       if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
 
 
@@ -3557,7 +3557,7 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const ramaWei = parseInt(ramaWeiQuoteStr);
+      const ramaWei = BigInt(ramaWeiQuoteStr);
       if (ramaWei <= 0) throw new Error('Invalid RAMA quote (0)');
 
       const tol = ramaWei / 200; // 0.5%
@@ -3626,7 +3626,7 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = parseInt(ramaWeiQuoteStr);
+      const valueToSend = BigInt(ramaWeiQuoteStr);
       if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
 
 
@@ -3686,7 +3686,7 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = parseInt(ramaWeiQuoteStr);
+      const valueToSend = BigInt(ramaWeiQuoteStr);
       if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
 
       console.log(valueToSend.toString(), valueToSend)
@@ -3747,7 +3747,7 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = parseInt(ramaWeiQuoteStr);
+      const valueToSend = BigInt(ramaWeiQuoteStr);
       if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
 
 
@@ -3810,7 +3810,7 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = parseInt(ramaWeiQuoteStr);
+      const valueToSend = BigInt(ramaWeiQuoteStr);
       if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
 
 
@@ -3860,5 +3860,34 @@ export const useStore = create((set, get) => ({
     }
   },
 
+// ==========================================================================
+  // INcome Transaction History
+  // ==========================================================================
+
+
+  getIncomeTransaction: async (userAddress, kind, limit, offset) => {
+    try {
+      if (!userAddress) return null;
+
+      const CompView = makeContract(
+        ComprehensiveViewABI,
+        Contract["ComprehensiveView"]
+      );
+
+
+      console.log(userAddress, kind, limit, offset)
+
+      const response = await CompView.methods
+        .getIncomeHistoryByKind(userAddress, kind, offset, limit)
+        .call();
+
+      console.log(response)
+
+      return response;
+    } catch (error) {
+      console.log("getIncomeTransaction error:", error);
+      return null;
+    }
+  }
 
 }));

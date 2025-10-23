@@ -532,8 +532,8 @@ export default function StakeInvest() {
                 onClick={CreateNewPortFolio}
                 disabled={isStaking || !isConnected}
                 className={`w-full cursor-pointer py-4 rounded-lg bg-cyan-900 font-bold uppercase tracking-wide transition-all relative overflow-hidden group ${canStake && !isStaking
-                  ? 'bg-gradient-to-r from-cyan-500 to-cyan-800 text-dark-950 hover:shadow-neon-cyan hover:scale-[1.02] cursor-pointer'
-                  : 's bg-gradient-to-r from-cyan-500 to-cyan-800 text-cyan-400/40'
+                  ? 'bg-gradient-to-r from-cyan-500 to-cyan-800 cursor-pointer'
+                  : 'bg-gradient-to-r from-cyan-500 to-cyan-800'
                   }`}
               >
                 {!canStake && !isStaking && (
@@ -553,9 +553,9 @@ export default function StakeInvest() {
                     )}
                   </span>
                 ):(
-                  <>
+                  <div className="relative z-10 flex items-center justify-center gap-2">
                     Connect Wallet
-                  </>
+                  </div>
                 )}
               </button>
 

@@ -6,16 +6,18 @@ import CopyButton from '../components/CopyButton';
 import { useStore } from '../../store/useUserInfoStore';
 
 const TRANSACTION_TYPES = {
-  PORTFOLIO_GROWTH: 'Portfolio Growth',
-  SLAB_INCOME: 'Slab Income',
-  ROYALTY_INCOME: 'Royalty Income',
-  SAME_SLAB_OVERRIDE: 'Same-Slab Override',
-  ONE_TIME_REWARD: 'One-Time Reward',
-  SPOT_INCOME: 'Spot Income',
+  ROI: 'ROI',
+  GROWTH: 'Portfolio Growth',
+  ROYALTY: 'Royalty Income',
+  SLAB: 'Slab Income',
+  REWARD: 'One-Time Reward',
+  DIRECT: 'Direct Income',
+  MANUAL: 'Manual Credit',
+
+  STAKE_SPEND: 'Stake Spend',
   PORTFOLIO_CREATED: 'Portfolio Created',
-  CLAIM_TO_WALLET: 'Claim to External Wallet',
-  CLAIM_TO_SAFE: 'Claim to Safe Wallet',
-  TRANSFER_TO_SAFE: 'Transfer to Safe Wallet',
+  PORTFOLIO_TOPUP: 'Portfolio Topup',
+  WITHDRAW: 'external Withdraw',
 };
 
 const SAFEWALLET_KINDS = {
@@ -41,27 +43,23 @@ const normalizeUsdDisplay = (value) => {
   return amount;
 };
 
-const shortenAddress = (addr) => {
-  if (!addr || addr === ZERO_ADDRESS) return null;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-};
-
 const CREDIT_KIND_TO_TYPE = {
-  [SAFEWALLET_KINDS.ROI]: TRANSACTION_TYPES.PORTFOLIO_GROWTH,
-  [SAFEWALLET_KINDS.GROWTH]: TRANSACTION_TYPES.SPOT_INCOME,
-  [SAFEWALLET_KINDS.ROYALTY]: TRANSACTION_TYPES.ROYALTY_INCOME,
-  [SAFEWALLET_KINDS.SLAB]: TRANSACTION_TYPES.SLAB_INCOME,
-  [SAFEWALLET_KINDS.REWARD]: TRANSACTION_TYPES.ONE_TIME_REWARD,
-  [SAFEWALLET_KINDS.DIRECT]: TRANSACTION_TYPES.SPOT_INCOME,
-  [SAFEWALLET_KINDS.MANUAL]: TRANSACTION_TYPES.TRANSFER_TO_SAFE,
+  [SAFEWALLET_KINDS.ROI]: TRANSACTION_TYPES.ROI,
+  [SAFEWALLET_KINDS.GROWTH]: TRANSACTION_TYPES.GROWTH,
+  [SAFEWALLET_KINDS.ROYALTY]: TRANSACTION_TYPES.ROYALTY,
+  [SAFEWALLET_KINDS.SLAB]: TRANSACTION_TYPES.SLAB,
+  [SAFEWALLET_KINDS.REWARD]: TRANSACTION_TYPES.REWARD,
+  [SAFEWALLET_KINDS.DIRECT]: TRANSACTION_TYPES.DIRECT,
+  [SAFEWALLET_KINDS.MANUAL]: TRANSACTION_TYPES.MANUAL,
 };
 
 const DEBIT_KIND_TO_TYPE = {
-  [SAFEWALLET_KINDS.STAKE_SPEND]: TRANSACTION_TYPES.PORTFOLIO_CREATED,
+  [SAFEWALLET_KINDS.STAKE_SPEND]: TRANSACTION_TYPES.STAKE_SPEND,
   [SAFEWALLET_KINDS.PORTFOLIO_CREATE]: TRANSACTION_TYPES.PORTFOLIO_CREATED,
-  [SAFEWALLET_KINDS.PORTFOLIO_TOPUP]: TRANSACTION_TYPES.PORTFOLIO_CREATED,
-  [SAFEWALLET_KINDS.WITHDRAW]: TRANSACTION_TYPES.CLAIM_TO_WALLET,
+  [SAFEWALLET_KINDS.PORTFOLIO_TOPUP]: TRANSACTION_TYPES.PORTFOLIO_TOPUP,
+  [SAFEWALLET_KINDS.WITHDRAW]: TRANSACTION_TYPES.WITHDRAW,
 };
+
 
 const getTransactionIcon = (type) => {
   const iconMap = {
@@ -95,136 +93,112 @@ const getTransactionColor = (type) => {
   return colorMap[type] || 'cyan-400';
 };
 
-const formatTimestamp = (timestamp) => {
-  if (!timestamp) return '—';
-  const date = new Date(timestamp * 1000);
-  if (Number.isNaN(date.getTime())) return '—';
-  const iso = date.toISOString();
-  return `${iso.slice(0, 10)} ${iso.slice(11, 19)}`;
-};
+
+
 
 const transformLedgerEntry = (entry) => {
   const type = entry.isCredit
-    ? CREDIT_KIND_TO_TYPE[entry.kind] || TRANSACTION_TYPES.TRANSFER_TO_SAFE
-    : DEBIT_KIND_TO_TYPE[entry.kind] || TRANSACTION_TYPES.TRANSFER_TO_SAFE;
-
-  const amountUsd = normalizeUsdDisplay(entry.usd);
-  const amountRama = entry.rama;
-  const relatedShort = shortenAddress(entry.related);
-  const relatedAddress =
-    entry.related && entry.related !== ZERO_ADDRESS ? entry.related : null;
-
-  const source = entry.isCredit
-    ? relatedShort
-      ? `From ${relatedShort}`
-      : 'Protocol Credit'
-    : 'Safe Wallet';
-
-  const destination = entry.isCredit
-    ? 'Safe Wallet'
-    : entry.kind === SAFEWALLET_KINDS.WITHDRAW
-    ? relatedShort
-      ? `To ${relatedShort}`
-      : 'External Wallet'
-    : entry.kind === SAFEWALLET_KINDS.PORTFOLIO_CREATE || entry.kind === SAFEWALLET_KINDS.PORTFOLIO_TOPUP
-    ? entry.pid && entry.pid > 0
-      ? `Portfolio #${entry.pid}`
-      : 'Portfolio'
-    : 'Safe Wallet';
-
-  const portfolioDetails =
-    type === TRANSACTION_TYPES.PORTFOLIO_CREATED
-      ? {
-          walletType:
-            destination.toLowerCase().includes('external')
-              ? 'External Wallet'
-              : 'Safe Wallet',
-          portfolioId: entry.pid ? `PF-${entry.pid}` : undefined,
-        }
-      : undefined;
-
-  const sourceAddress = entry.isCredit ? relatedAddress : null;
-  const destinationAddress =
-    !entry.isCredit && entry.kind === SAFEWALLET_KINDS.WITHDRAW && relatedAddress
-      ? relatedAddress
-      : null;
+    ? CREDIT_KIND_TO_TYPE[Number(entry.kind)] || TRANSACTION_TYPES.MANUAL
+    : DEBIT_KIND_TO_TYPE[Number(entry.kind)] || TRANSACTION_TYPES.WITHDRAW;
 
   return {
-    id: entry.id,
+    id: entry.memoReadable || entry.memo || `${entry.kind}-${entry.timestamp}`,
     type,
-    amount_usd: amountUsd,
-    amount_rama: amountRama,
-    source,
-    destination,
-    timestamp: formatTimestamp(entry.timestamp),
-    rawTimestamp: entry.timestamp,
-    status: 'completed',
-    fee: 0,
-    txHash: entry.memoReadable ?? entry.memo ?? entry.id,
-    feeAmount: 0,
-    netAmount: amountRama,
-    related: entry.related,
-    relatedAddress,
-    sourceAddress,
-    destinationAddress,
-    pid: entry.pid,
     isCredit: entry.isCredit,
-    memo: entry.memoReadable,
-    portfolioDetails,
+    amount_usd: parseFloat(entry.usdAmount) / 1e8, // assuming cents → dollars
+    amount_rama: parseFloat(entry.ramaAmount) / 1e18, // adjust if 18 decimals
+    timestamp: new Date(Number(entry.timestamp) * 1000)
+      .toISOString()
+      .replace("T", " ")
+      .slice(0, 19),
+    rawTimestamp: Number(entry.timestamp),
+    related: entry.related,
+    pid: Number(entry.pid),
   };
 };
 
+
 export default function TransactionHistory() {
-  const [selectedType, setSelectedType] = useState('all');
+  const [selectedType, setSelectedType] = useState(TRANSACTION_TYPES.ROI
+
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTx, setExpandedTx] = useState(null);
+
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const getTransactionHistory = useStore((s) => s.getTransactionHistory);
-  const userAddressFromStore = useStore((s) => s.userAddress);
-  const userAddress =
-    userAddressFromStore || localStorage.getItem('userAddress') || null;
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(20); // you can change to 20 
+  const [totalPages, setTotalPages] = useState(1);
+
+
+
+
+  const getIncomeTransaction = useStore((s) => s.getIncomeTransaction);
+  const userAddress = localStorage.getItem('userAddress') || null;
+
+  const fetchTransactions = useCallback(
+    async (page = 0) => {
+      if (!userAddress || !getIncomeTransaction) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        let kind = 0;
+        const lookup = Object.entries(TRANSACTION_TYPES).find(
+          ([key, label]) => label === selectedType
+        );
+        if (lookup) kind = SAFEWALLET_KINDS[lookup[0]];
+
+        const offset = page * pageSize;
+        console.log("Fetching:", { userAddress, kind, pageSize, offset });
+
+        // FIX: positional params instead of object
+        const result = await getIncomeTransaction(userAddress, kind, pageSize, offset);
+        console.log("Result:", result);
+
+        const slices = result[0] || result.slice || [];
+        const total = Number(result[1] || result.total || 0);
+        setTotalPages(Math.ceil(total / pageSize));
+
+        const transformed = slices.map(transformLedgerEntry);
+        setTransactions(transformed);
+      } catch (err) {
+        console.error("Transaction load error:", err);
+        setError(err?.message || "Failed to load transactions.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userAddress, selectedType, getIncomeTransaction, pageSize]
+  );
+
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (!userAddress || !getTransactionHistory) {
-        setTransactions([]);
-        setSummary(null);
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getTransactionHistory(userAddress, {
-          offset: 0,
-          limit: 200,
-        });
-        if (cancelled) return;
-        const mapped = (data?.entries ?? [])
-          .map(transformLedgerEntry)
-          .sort((a, b) => (b.rawTimestamp ?? 0) - (a.rawTimestamp ?? 0));
-        setTransactions(mapped);
-        setSummary(data ?? null);
-      } catch (err) {
-        if (cancelled) return;
-        console.error(err);
-        setError(err?.message || 'Unable to load transaction history.');
-        setTransactions([]);
-        setSummary(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+    const addr =
+      typeof window !== "undefined"
+        ? localStorage.getItem("userAddress")
+        : null;
 
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [userAddress, getTransactionHistory]);
+    if (!addr || !getIncomeTransaction) return;
+
+    // Reset page if type changes
+    setTransactions([]); // clear existing before load
+    setCurrentPage((p) => (p === 0 ? 0 : 0)); // ensures reset only when changed
+    fetchTransactions(0, false);
+  }, [selectedType]);
+
+  useEffect(() => {
+    if (!userAddress) return;
+    fetchTransactions(currentPage);
+  }, [userAddress, currentPage, selectedType]);
+
+
 
   const baseTransactions = transactions;
 
@@ -260,11 +234,11 @@ export default function TransactionHistory() {
           .filter((tx) => tx.type === TRANSACTION_TYPES.ROYALTY_INCOME)
           .reduce((sum, tx) => sum + tx.amount_usd, 0)
       ),
-        sameSlabOverride: normalizeUsdDisplay(
-          baseTransactions
-            .filter((tx) => tx.type === TRANSACTION_TYPES.SAME_SLAB_OVERRIDE)
-            .reduce((sum, tx) => sum + tx.amount_usd, 0)
-        ),
+      sameSlabOverride: normalizeUsdDisplay(
+        baseTransactions
+          .filter((tx) => tx.type === TRANSACTION_TYPES.SAME_SLAB_OVERRIDE)
+          .reduce((sum, tx) => sum + tx.amount_usd, 0)
+      ),
       oneTimeReward: normalizeUsdDisplay(
         baseTransactions
           .filter((tx) => tx.type === TRANSACTION_TYPES.ONE_TIME_REWARD)
@@ -470,17 +444,13 @@ export default function TransactionHistory() {
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full bg-dark-900 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-cyan-300 text-sm appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none transition-colors"
+                className="w-full bg-dark-900 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-cyan-300 text-sm"
               >
-                <option value="all">All Transactions</option>
-                <option value={TRANSACTION_TYPES.PORTFOLIO_GROWTH}>Portfolio Growth</option>
-                <option value={TRANSACTION_TYPES.SLAB_INCOME}>Slab Income</option>
-                <option value={TRANSACTION_TYPES.ROYALTY_INCOME}>Royalty Income</option>
-                <option value={TRANSACTION_TYPES.SAME_SLAB_OVERRIDE}>Same-Slab Override</option>
-                <option value={TRANSACTION_TYPES.ONE_TIME_REWARD}>One-Time Rewards</option>
-                <option value={TRANSACTION_TYPES.SPOT_INCOME}>Spot Income</option>
-                <option value={TRANSACTION_TYPES.PORTFOLIO_CREATED}>Portfolio Creation History</option>
-                <option value={TRANSACTION_TYPES.CLAIM_TO_WALLET}>Transfer to External Wallet</option>
+                {Object.values(TRANSACTION_TYPES).map((label) => (
+                  <option key={label} value={label}>
+                    {label}
+                  </option>
+                ))}
               </select>
               <Filter className="absolute right-4 top-1/2 -translate-y-1/2 text-cyan-400 pointer-events-none" size={16} />
             </div>
@@ -513,48 +483,10 @@ export default function TransactionHistory() {
           </div>
         </div>
 
-        {selectedType === TRANSACTION_TYPES.PORTFOLIO_CREATED ? (
-          <div className="max-h-[60vh] overflow-y-auto pr-1 hide-scrollbar">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-              <thead>
-                <tr className="border-b border-cyan-500/30">
-                  <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Sr. No.</th>
-                  <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Portfolio ID</th>
-                  <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Amount (USD)</th>
-                  <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Amount (RAMA)</th>
-                  <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Created Date</th>
-                  <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Growth Rate</th>
-                  <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTransactions.map((tx, index) => (
-                  <tr key={tx.id} className="border-b border-cyan-500/10 hover:bg-cyan-500/5 transition-colors">
-                    <td className="py-3 px-4 text-sm text-cyan-300">{index + 1}</td>
-                    <td className="py-3 px-4 text-sm text-cyan-300 font-mono">{tx.portfolioDetails?.portfolioId || tx.destination}</td>
-                    <td className="py-3 px-4 text-sm text-neon-green font-semibold">{formatUSD(tx.amount_usd ?? 0)}</td>
-                    <td className="py-3 px-4 text-sm text-cyan-300">{tx.amount_rama.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm text-cyan-300">{tx.timestamp}</td>
-                    <td className="py-3 px-4 text-sm text-neon-orange font-semibold">{tx.portfolioDetails?.growthRate || '0.5% Daily'}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                        tx.status === 'completed' ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                      }`}>
-                        {tx.status === 'completed' ? <CheckCircle size={12} /> : <Clock size={12} />}
-                        {tx.status === 'completed' ? 'Active' : 'Pending'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className="max-h-[60vh] overflow-y-auto pr-1 hide-scrollbar">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+
+        <div className="pr-1 hide-scrollbar">
+          <div className="overflow-x-auto">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-cyan-500/30">
                   <th className="text-left py-3 px-4 text-xs text-cyan-400 uppercase tracking-wide">Sr. No.</th>
@@ -601,17 +533,16 @@ export default function TransactionHistory() {
                           </div>
                         </td>
                         <td className="py-3 px-4 text-sm text-neon-green font-semibold">{formatUSD(tx.amount_usd ?? 0)}</td>
-                        <td className="py-3 px-4 text-sm text-cyan-300">{tx.amount_rama.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-sm text-cyan-300">{tx.amount_rama.toFixed(5)}</td>
                         <td className="py-3 px-4 text-sm text-cyan-300">{tx.timestamp}</td>
-                        <td className="py-3 px-4 text-sm text-cyan-300/90 font-mono text-xs">
+                        <td className="py-3 px-4 text-sm text-cyan-300/90 font-mono">
                           {sourceContent}
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                            tx.status === 'completed' ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                          }`}>
-                            {tx.status === 'completed' ? <CheckCircle size={12} /> : <Clock size={12} />}
-                            {tx.status === 'completed' ? 'Claimed' : 'Pending'}
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${tx.isCredit ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                            }`}>
+                            {tx.isCredit ? <CheckCircle size={12} /> : <Clock size={12} />}
+                            {tx.isCredit ? 'Claimed' : 'Pending'}
                           </span>
                         </td>
                       </tr>
@@ -652,7 +583,7 @@ export default function TransactionHistory() {
                                     )}
                                     <div className="flex justify-between text-sm">
                                       <span className="text-cyan-300/70">Status:</span>
-                                      <span className="text-neon-green font-medium capitalize">{tx.status}</span>
+                                      <span className="text-neon-green font-medium capitalize">{tx.isCredit}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -811,10 +742,36 @@ export default function TransactionHistory() {
                   );
                 })}
               </tbody>
-              </table>
-            </div>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 0))}
+                  disabled={currentPage === 0 || loading}
+                  className="px-3 py-1.5 text-sm rounded-md bg-dark-800 border border-cyan-500/30 text-cyan-300 hover:border-cyan-400 disabled:opacity-40"
+                >
+                  Prev
+                </button>
+
+                <span className="text-cyan-400 text-sm">
+                  Page {currentPage + 1} of {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((p) => (p + 1 < totalPages ? p + 1 : p))}
+                  disabled={currentPage + 1 >= totalPages || loading}
+                  className="px-3 py-1.5 text-sm rounded-md bg-dark-800 border border-cyan-500/30 text-cyan-300 hover:border-cyan-400 disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+
           </div>
-        )}
+        </div>
+
 
         {filteredTransactions.length === 0 && (
           <div className="text-center py-12">
