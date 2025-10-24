@@ -4093,7 +4093,7 @@ export const useStore = create((set, get) => ({
       const safeWallCont = new web3.eth.Contract(SafeWalletABI, Contract.SafeWallet);
 
 
-      const usdMicro = Amt * 1e6;
+      const usdMicro = BigInt(Math.floor(Number(Amt) * 1e6));
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -4105,9 +4105,7 @@ export const useStore = create((set, get) => ({
 
       console.log(valueToSend.toString(), valueToSend)
 
-      const data = safeWallCont.methods
-        .createPortfolioFromSafe(valueToSend, userAddress)
-        .encodeABI();
+      const data = safeWallCont.methods.createPortfolioFromSafe(valueToSend).encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
 
@@ -4115,9 +4113,9 @@ export const useStore = create((set, get) => ({
       try {
         gasLimit = await web3.eth.estimateGas({
           from: userAddress,
-          to: Contract.PortFolioManager,
+          to: Contract.SafeWallet,
           data,
-          value: valueToSend,
+          value: 0,
         });
       } catch (err) {
         console.error('Gas estimation failed:', err);
@@ -4133,14 +4131,14 @@ export const useStore = create((set, get) => ({
 
       const tx = {
         from: userAddress,
-        to: Contract.PortFolioManager,   // ✅ correct target (PM)
+        to: Contract.SafeWallet,  
         data,
-        value: valueToSend,       // ✅ must send RAMA wei
+        value: 0,       
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
 
-      return tx; // your wallet (AppKit/WalletConnect) will sign & send this
+      return tx;
     } catch (error) {
       console.error('SafeSelfPort error:', error);
       Swal.fire({ icon: 'error', title: 'SafeSelfPort error', text: error?.message || 'Unknown error' });
@@ -4156,7 +4154,7 @@ export const useStore = create((set, get) => ({
       const safeWallCont = new web3.eth.Contract(SafeWalletABI, Contract.SafeWallet);
 
 
-      const usdMicro = Amt * 1e6;
+      const usdMicro = BigInt(Math.floor(Number(Amt) * 1e6));
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -4169,7 +4167,7 @@ export const useStore = create((set, get) => ({
       console.log(valueToSend.toString(), valueToSend)
 
       const data = safeWallCont.methods
-        .createPortfolioForOthersFromSafe(userAddress, beneficiary, valueToSend, userAddress)
+        .sponsorCreatePortfolioFor(beneficiary, valueToSend, userAddress)
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
@@ -4178,9 +4176,9 @@ export const useStore = create((set, get) => ({
       try {
         gasLimit = await web3.eth.estimateGas({
           from: userAddress,
-          to: Contract.PortFolioManager,
+          to: Contract.SafeWallet,
           data,
-          value: valueToSend,
+          value: 0,
         });
       } catch (err) {
         console.error('Gas estimation failed:', err);
@@ -4196,14 +4194,14 @@ export const useStore = create((set, get) => ({
 
       const tx = {
         from: userAddress,
-        to: Contract.PortFolioManager,   // ✅ correct target (PM)
+        to: Contract.SafeWallet,   
         data,
-        value: valueToSend,       // ✅ must send RAMA wei
+        value: 0,       
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
 
-      return tx; // your wallet (AppKit/WalletConnect) will sign & send this
+      return tx; 
     } catch (error) {
       console.error('SafeOtherPort error:', error);
       Swal.fire({ icon: 'error', title: 'CreateSelfPort error', text: error?.message || 'Unknown error' });
