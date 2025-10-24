@@ -4031,8 +4031,8 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  CreateOtherfPort: async (userAddress, toBeActivatedUSer, Amt) => {
-    console.log('CreateOtherfPort args:', userAddress, toBeActivatedUSer, Amt);
+  CreateOtherfPort: async (userAddress, toBeActivatedUSer, Amt,sponsorAddress) => {
+    console.log('userAddress, toBeActivatedUSer, Amt,sponsorAddress args:', userAddress, toBeActivatedUSer, Amt,sponsorAddress);
     try {
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
 
@@ -4047,7 +4047,7 @@ export const useStore = create((set, get) => ({
       console.log(valueToSend.toString(), valueToSend)
 
       const data = pm.methods
-        .createPortfolioForOthers(toBeActivatedUSer, userAddress, Amt)
+        .createPortfolioForOthers(toBeActivatedUSer, sponsorAddress)
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
