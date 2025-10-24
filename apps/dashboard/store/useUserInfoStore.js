@@ -380,25 +380,25 @@ export const useStore = create((set, get) => ({
 
   getClaimHistoryPaged: async (address, offset = 0, limit = 20) => {
     try {
-      const oceanicView = makeContract(OceanicViewABI, oceanicViewAddress);
-      if (!oceanicView) {
-        throw new Error("OceanicView contract not available");
+      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
+      if (!roiDistributor) {
+        throw new Error("ROI Distributor contract not available");
       }
 
-      const result = await oceanicView.methods
-        .getRoiClaimHistory(address, offset, limit)
+      const result = await roiDistributor.methods
+        .getClaimHistorySlice(address, offset, limit)
         .call();
 
-      const history = (result.dayIds ?? []).map((dayId, index) => {
-        const usdAmount = fromWadToUsd(result.usdWad?.[index] ?? 0);
-        const ramaAmount = fromWeiToRama(result.ramaWei?.[index] ?? 0);
+      const history = (result ?? []).map((item, index) => {
+        const usdAmount = fromMicroUSD(item.usdTotal);
+        const ramaAmount = fromWeiToRama(item.ramaTotal);
         
         return {
-          id: `${dayId}-${index}`,
-          dayId: Number(dayId),
+          id: `${item.fromPeriod}-${item.toPeriod}-${index}`,
+          dayId: `${item.fromPeriod} - ${item.toPeriod}`,
           usdAmount,
           ramaAmount,
-          claimedAt: null // This view doesn't provide a specific timestamp
+          claimedAt: Number(item.claimedAt)
         };
       });
 
@@ -479,6 +479,26 @@ export const useStore = create((set, get) => ({
       };
     } catch (error) {
       console.error('Error getting ROI dashboard:', error);
+      throw error;
+    }
+  },
+
+  getROITotals: async (address) => {
+    try {
+      const oceanicView = makeContract(OceanicViewABI, oceanicViewAddress);
+      if (!oceanicView) {
+        console.warn("OceanicView contract not available for getROITotals");
+        return { claimedUsd: 0, claimedRama: 0, unclaimedUsd: 0, unclaimedRama: 0 };
+      }
+      const totals = await oceanicView.methods.getROITotals(address).call();
+      return {
+        claimedUsd: fromMicroUSD(totals.claimedUsdMicro),
+        claimedRama: fromWeiToRama(totals.claimedRamaWei),
+        unclaimedUsd: fromMicroUSD(totals.unclaimedUsdMicro),
+        unclaimedRama: fromWeiToRama(totals.unclaimedRamaWei),
+      };
+    } catch (error) {
+      console.error("Error fetching ROI totals:", error);
       throw error;
     }
   },

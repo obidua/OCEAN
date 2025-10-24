@@ -39,7 +39,7 @@ const ClaimHistoryModal = ({ isOpen, onClose, history, loading }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="cyber-glass rounded-xl border border-cyan-500/30 p-6 w-full max-w-2xl space-y-4">
+      <div className="cyber-glass rounded-xl border border-cyan-500/30 p-6 w-full max-w-3xl space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-cyan-300">Claim History</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-cyan-500/10">
@@ -57,7 +57,8 @@ const ClaimHistoryModal = ({ isOpen, onClose, history, loading }) => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-cyan-500/20">
-                  <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Date (Day ID)</th>
+                  <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Claimed At</th>
+                  <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Period Range</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">USD Amount</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">RAMA Amount</th>
                 </tr>
@@ -65,6 +66,7 @@ const ClaimHistoryModal = ({ isOpen, onClose, history, loading }) => {
               <tbody className="divide-y divide-cyan-500/20">
                 {history.map(item => (
                   <tr key={item.id}>
+                    <td className="py-3 px-4 text-cyan-200 whitespace-nowrap">{new Date(item.claimedAt * 1000).toLocaleString()}</td>
                     <td className="py-3 px-4 text-cyan-200">{item.dayId}</td>
                     <td className="py-3 px-4 text-right text-cyan-100">{formatUSD(item.usdAmount)}</td>
                     <td className="py-3 px-4 text-right text-cyan-100">{formatRAMAPrecise(item.ramaAmount)}</td>
@@ -103,6 +105,7 @@ export default function AccruedRewards() {
   const getClaimHistoryPaged = useStore((s) => s.getClaimHistoryPaged);
   const claimAccruedROI = useStore((s) => s.claimAccruedROI);
   const userAddress = useStore((s) => s.userAddress);
+  const getROITotals = useStore((s) => s.getROITotals);
 
   const { handleSendTx, hash } = useTransaction();
   const { data: receipt, isSuccess, isError } = useWaitForTransactionReceipt({
@@ -123,11 +126,14 @@ export default function AccruedRewards() {
 
     try {
       const offset = (currentPage - 1) * pageSize;
-      const { portfolios: fetchedPortfolios, totalCount } = await getAccruedRewardsPaged(
-        userAddress,
-        offset,
-        pageSize
-      );
+      
+      // Fetch totals and paged portfolios in parallel
+      const [totals, pagedData] = await Promise.all([
+        getROITotals(userAddress),
+        getAccruedRewardsPaged(userAddress, offset, pageSize)
+      ]);
+
+      const { portfolios: fetchedPortfolios, totalCount } = pagedData;
 
       if (!fetchedPortfolios) {
         throw new Error('Unable to fetch portfolio data.');
@@ -136,32 +142,33 @@ export default function AccruedRewards() {
       setPortfolios(fetchedPortfolios);
       setTotalPortfolios(totalCount);
 
-      const dashboardData = fetchedPortfolios.reduce((acc, p) => {
-        if (!p || !p.roi) return acc;
-        
-        const unclaimedUsd = p.roi.accrued || 0;
-        const unclaimedRama = p.roi.ramaAmount || 0;
-
-        acc.totals.unclaimed.usd += unclaimedUsd;
-        acc.totals.unclaimed.rama += unclaimedRama;
-
-        if (p.roi.meta.createdAt > acc.totals.periods.from) {
-          acc.totals.periods.from = p.roi.meta.createdAt;
-        }
-        if (p.roi.meta.lastUpdate > acc.totals.periods.last) {
-          acc.totals.periods.last = p.roi.meta.lastUpdate;
-        }
-
-        return acc;
-      }, {
+      // Use the accurate totals from getROITotals
+      const dashboardData = {
         totals: {
-          claimed: { usd: 0, rama: 0 },
-          unclaimed: { usd: 0, rama: 0 },
+          claimed: {
+            usd: totals.claimedUsd || 0,
+            rama: totals.claimedRama || 0,
+          },
+          unclaimed: {
+            usd: totals.unclaimedUsd || 0,
+            rama: totals.unclaimedRama || 0,
+          },
           periods: {
             count: totalCount,
             from: 0,
-            last: 0
+            last: 0,
           }
+        }
+      };
+
+      // We can still iterate to get the from/last dates if needed
+      fetchedPortfolios.forEach(p => {
+        if (!p || !p.roi) return;
+        if (p.roi.meta.createdAt > dashboardData.totals.periods.from) {
+          dashboardData.totals.periods.from = p.roi.meta.createdAt;
+        }
+        if (p.roi.meta.lastUpdate > dashboardData.totals.periods.last) {
+          dashboardData.totals.periods.last = p.roi.meta.lastUpdate;
         }
       });
 
@@ -178,7 +185,7 @@ export default function AccruedRewards() {
     } finally {
       setLoading(false);
     }
-  }, [userAddress, getAccruedRewardsPaged, currentPage, pageSize]);
+  }, [userAddress, getAccruedRewardsPaged, getROITotals, currentPage, pageSize]);
 
   useEffect(() => {
     loadData();
