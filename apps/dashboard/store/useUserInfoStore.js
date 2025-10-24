@@ -961,14 +961,14 @@ export const useStore = create((set, get) => ({
       if (oceanViewV2) {
         try {
           const todayDayId = Math.floor(Date.now() / 86400000);
-          const [
-            summaryRaw,
-            incomeRaw,
-            walletRaw,
-            portfoliosRaw,
-            weeklyRaw,
-            lifetimeCapRaw,
-          ] = await oceanViewV2.methods
+          const {
+            summary: summaryRaw,
+            income: incomeRaw,
+            wallet: walletRaw,
+            portfolios: portfoliosRaw,
+            weekly: weeklyRaw,
+            lifetimeCapBps: lifetimeCapRaw,
+          } = await oceanViewV2.methods
             .getDashboardData(userAddress, todayDayId)
             .call();
 

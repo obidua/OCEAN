@@ -568,10 +568,12 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => setShowIncomeModal(true)}
-          className="w-full cyber-glass border border-neon-green/30 hover:border-neon-green/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden text-left"
+          onKeyDown={(e) => e.key === 'Enter' && setShowIncomeModal(true)}
+          className="w-full cyber-glass border border-neon-green/30 hover:border-neon-green/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden text-left cursor-pointer"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center justify-between mb-3 relative z-10">
@@ -611,7 +613,7 @@ export default function Dashboard() {
               {incomeTotalsError}
             </p>
           )}
-        </button>
+        </div>
 
         <Link to="/dashboard/team" className="cyber-glass border border-neon-orange/30 hover:border-neon-orange/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-neon-orange/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
