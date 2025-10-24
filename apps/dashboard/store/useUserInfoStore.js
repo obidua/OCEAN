@@ -14,7 +14,7 @@ import SlabManagerABI from './Contract_ABI/SlabManager.json';
 import RoyaltyManagerABI from './Contract_ABI/RoyaltyManager.json';
 import RewardVaultABI from './Contract_ABI/RewardVault.json';
 import SafeWalletABI from './Contract_ABI/SafeWallet.json';
-import RoiDistributionABI from './Contract_ABI/RoiDistribution.json';
+import RoiDistributionABI from './Contract_ABI/RoiDistributor.json';
 import { dayShortFromUnix } from "../src/utils/helper";
 import {
   ROYALTY_LEVELS as ROYALTY_LEVELS_FALLBACK,
@@ -27,7 +27,7 @@ import {
 // (Reown AppKit / Wagmi) to sign & submit.
 const getContractInterface = async () => {
   try {
-    const oceanicView = new web3.eth.Contract(OceanicViewABI, oceanicViewAddress);
+    const oceanicView = new web3.eth.Contract(OceanicViewABI, Contract["Oceanicview"]);
     const portfolioManager = new web3.eth.Contract(PortFolioManagerABI, Contract["PortFolioManager"]);
     return { oceanicView, portfolioManager };
   } catch (error) {
@@ -51,26 +51,28 @@ const resolveAddress = (key, fallback) => {
 
 
 
+// Load contract addresses from environment variables
+// Fallback to hardcoded addresses only if env vars are not available
 const Contract = {
-  UserRegistry: "0x246c7317F4093065B96c2b0DC65A63De395444ed",
-  CoreConfig: "0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d",
-  RoiDistribution:"0x7951bf0faABE00c451F1d92008297a7bd85d4678",
-  PortFolioManager: "0xC73f964eA7bC04a2c7455CAf6107238147c88365",
-  RoyaltyManager: "0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5",
-  SlabManager: "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9",
-  IncomeDistributor: "0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626",
-  FreezePolicy: "0x6541987258B73bd8128d23e8678a00258226ad3C",
-  RewardVault: "0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d",
-  AdminControl: "0x538eB028b51f10f1Bf9A7414c3eb3e85b067120C",
-  MainWallet: "0x5C8E7b2a9c35caF45607bA5AAB4c5dfdD50dCe84", // not provided, left unchanged
-  SafeWallet: "0x36ebfd33a8053Cd6CC72436aDb356364Ee43ad54",
-  CapPayoutRouter: "0x18B1E77b9C71f6d903e4249B0f9837D56Ea76D7B", // not provided, left unchanged
-  CappingIncomeManager: "0x038c37724aAf96fdaF82E2C70cf55eB2dC557865",
-  OceanViewUpgradeable: "0x0Dc6C606988100B53d016E1B7f9462Ca439BB608",
-  OceanViewV2: "0x08A6575a6158Dd5F61a2565F0f97249dcb497a78",
-  Oceanicview: "0x938616ab14763506F7111Cdf06EF5A3B4C586dE6",
-  ComprehensiveView: "0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0",
-  OceanQueryUpgradeable: "0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db",
+  UserRegistry: resolveAddress("USERREGISTRY", "0x246c7317F4093065B96c2b0DC65A63De395444ed"),
+  CoreConfig: resolveAddress("CORECONFIG", "0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d"),
+  RoiDistribution: resolveAddress("ROIDISTRIBUTOR", "0x7951bf0faABE00c451F1d92008297a7bd85d4678"),
+  PortFolioManager: resolveAddress("PORTFOLIOMANAGER", "0xC73f964eA7bC04a2c7455CAf6107238147c88365"),
+  RoyaltyManager: resolveAddress("ROYALTYMANAGER", "0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5"),
+  SlabManager: resolveAddress("SLABMANAGER", "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9"),
+  IncomeDistributor: resolveAddress("INCOMEDISTRIBUTOR", "0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626"),
+  FreezePolicy: resolveAddress("FREEZEPOLICY", "0x6541987258B73bd8128d23e8678a00258226ad3C"),
+  RewardVault: resolveAddress("REWARDVAULT", "0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d"),
+  AdminControl: resolveAddress("ADMINCONTROL", "0x538eB028b51f10f1Bf9A7414c3eb3e85b067120C"),
+  MainWallet: resolveAddress("MAINWALLET", "0x5C8E7b2a9c35caF45607bA5AAB4c5dfdD50dCe84"),
+  SafeWallet: resolveAddress("SAFEWALLET", "0x36ebfd33a8053Cd6CC72436aDb356364Ee43ad54"),
+  CapPayoutRouter: resolveAddress("CAP_PAYOUT_ROUTER", "0x18B1E77b9C71f6d903e4249B0f9837D56Ea76D7B"),
+  CappingIncomeManager: resolveAddress("CAPPINGINCOMEMANAGER", "0x038c37724aAf96fdaF82E2C70cf55eB2dC557865"),
+  OceanViewUpgradeable: resolveAddress("OCEANVIEWUPGRADEABLE", "0x0Dc6C606988100B53d016E1B7f9462Ca439BB608"),
+  OceanViewV2: resolveAddress("OCEANVIEWV2", "0x08A6575a6158Dd5F61a2565F0f97249dcb497a78"),
+  Oceanicview: resolveAddress("OCEANICVIEW", "0x938616ab14763506F7111Cdf06EF5A3B4C586dE6"),
+  ComprehensiveView: resolveAddress("COMPREHENSIVEVIEW", "0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0"),
+  OceanQueryUpgradeable: resolveAddress("OCEANQUERYUPGRADEABLE", "0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db"),
 };
 
 
@@ -316,7 +318,7 @@ export const useStore = create((set, get) => ({
 
   getAccruedRewardsPaged: async (address, offset = 0, limit = 50) => {
     try {
-      const oceanicView = makeContract(OceanicViewABI, oceanicViewAddress);
+      const oceanicView = makeContract(OceanicViewABI, Contract["Oceanicview"]);
       if (!oceanicView) {
         throw new Error("OceanicView contract not available");
       }
@@ -487,7 +489,7 @@ export const useStore = create((set, get) => ({
 
   getROITotals: async (address) => {
     try {
-      const oceanicView = makeContract(OceanicViewABI, oceanicViewAddress);
+      const oceanicView = makeContract(OceanicViewABI, Contract["Oceanicview"]);
       if (!oceanicView) {
         console.warn("OceanicView contract not available for getROITotals");
         return { claimedUsd: 0, claimedRama: 0, unclaimedUsd: 0, unclaimedRama: 0 };
