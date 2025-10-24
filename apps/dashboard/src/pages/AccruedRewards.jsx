@@ -413,16 +413,16 @@ export default function AccruedRewards() {
               <thead>
                 <tr className="border-b border-cyan-500/20">
                   <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">
-                    Portfolio
+                    Portfolio Details
                   </th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">
-                    Pending Rewards
+                    Accrued Rewards
                   </th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">
-                    Principal (USD)
+                    Principal Amount
                   </th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">
-                    Status
+                    Current Status
                   </th>
                 </tr>
               </thead>
