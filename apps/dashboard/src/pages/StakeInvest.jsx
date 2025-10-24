@@ -48,6 +48,8 @@ export default function StakeInvest() {
   // Current user info
   const [currentUserId, setCurrentUserId] = useState(null);
 
+  // Success countdown timer
+  const [successCountdown, setSuccessCountdown] = useState(10);
 
 
 
@@ -508,7 +510,8 @@ export default function StakeInvest() {
       if (stakeType === 'self' && useWallet === 'external') {
         response = await CreateSelfPort(address, stakeAmountNum);
       } else if (stakeType === 'other' && useWallet === 'external') {
-        response = await CreateOtherfPort(sponsorInfo?.address, beneficiaryAddress, stakeAmountNum);
+        // For already registered users, use the connected user as referrer
+        response = await CreateOtherfPort(address, beneficiaryAddress, stakeAmountNum, address);
       } else if (stakeType === 'self' && useWallet === 'safe') {
         response = await SafeSelfPort(address, stakeAmountNum);
       } else if (stakeType === 'other' && useWallet === 'safe') {
@@ -589,6 +592,40 @@ export default function StakeInvest() {
     };
     fetchCurrentUserId();
   }, [address, userIdByAdd]);
+
+  // Countdown timer and auto-redirect on success
+  useEffect(() => {
+    if (txStage === 'success') {
+      setSuccessCountdown(10);
+      
+      const timer = setInterval(() => {
+        setSuccessCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            // Reset form and refresh
+            setStakeAmount('10');
+            setBeneficiaryAddress('');
+            setSponsorValidated(false);
+            setSponsorInfo(null);
+            setSponsorError('');
+            setTxModalOpen(false);
+            setTxStage('idle');
+            setTxError('');
+            setTrxData(undefined);
+            setTrxHash(undefined);
+            setIsStaking(false);
+            
+            // Refresh the page
+            window.location.reload();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [txStage]);
 
 
 
@@ -1119,6 +1156,19 @@ export default function StakeInvest() {
                 </div>
                 <h3 className="text-2xl font-semibold text-cyan-100">Stake complete</h3>
                 <p className="text-sm text-cyan-300/80">Your staking transaction is confirmed on-chain.</p>
+                
+                {/* Countdown Timer */}
+                <div className="cyber-glass border border-cyan-500/30 rounded-xl px-4 py-3 bg-cyan-500/5">
+                  <p className="text-xs text-cyan-300/70 mb-2">Redirecting in</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-12 h-12 rounded-full border-2 border-cyan-500 bg-cyan-500/10 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-cyan-100">{successCountdown}</span>
+                    </div>
+                    <span className="text-sm text-cyan-300/80">seconds</span>
+                  </div>
+                  <p className="text-xs text-cyan-300/60 mt-2">Page will refresh automatically</p>
+                </div>
+
                 {trxHash && (
                   <div className="cyber-glass border border-cyan-500/30 rounded-xl px-4 py-3 text-left text-xs text-cyan-200/90">
                     <p className="mb-2 uppercase tracking-wider text-[11px] text-cyan-300/70">Transaction Hash</p>
@@ -1137,10 +1187,23 @@ export default function StakeInvest() {
                   </a>
                   <button
                     type="button"
-                    onClick={() => { setTxModalOpen(false); setTxStage('idle'); setTxError(''); setTrxData(undefined); setTrxHash(undefined); }}
+                    onClick={() => { 
+                      setStakeAmount('10');
+                      setBeneficiaryAddress('');
+                      setSponsorValidated(false);
+                      setSponsorInfo(null);
+                      setSponsorError('');
+                      setTxModalOpen(false); 
+                      setTxStage('idle'); 
+                      setTxError(''); 
+                      setTrxData(undefined); 
+                      setTrxHash(undefined);
+                      setIsStaking(false);
+                      window.location.reload();
+                    }}
                     className="w-full py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-bold hover:shadow-neon-cyan transition-all"
                   >
-                    Close
+                    Close & Refresh Now
                   </button>
                 </div>
               </div>
