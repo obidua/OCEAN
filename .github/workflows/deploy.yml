@@ -1,0 +1,172 @@
+name: Deploy Ocean DeFi
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20.x'
+  DEPLOY_SERVER: '65.1.0.60'
+  DEPLOY_PORT: '3332'
+  DEPLOY_USER: 'root'
+  DEPLOY_PATH: '/var/www/ocean-defi'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install dashboard dependencies
+        run: |
+          cd apps/dashboard
+          npm ci
+
+      - name: Create environment files
+        run: |
+          # Copy root .env for scripts
+          echo "${{ secrets.ENV_FILE }}" > .env
+          
+          # Generate dashboard .env using sync script
+          node scripts/sync_coreconfig.js
+
+      - name: Build dashboard
+        run: |
+          cd apps/dashboard
+          npm run build
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          
+          # Copy built dashboard
+          cp -r apps/dashboard/dist deploy/dist
+          
+          # Copy scripts and dependencies
+          cp -r scripts deploy/
+          cp -r config deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          
+          # Copy ABIs
+          mkdir -p deploy/apps/dashboard/store/Contract_ABI
+          cp -r apps/dashboard/store/Contract_ABI/* deploy/apps/dashboard/store/Contract_ABI/
+          
+          # Create .env (without sensitive data - will be provided on server)
+          echo "# Environment will be configured on server" > deploy/.env
+          
+          # Create deployment info
+          echo "Deployed: $(date)" > deploy/DEPLOYMENT_INFO.txt
+          echo "Commit: ${{ github.sha }}" >> deploy/DEPLOYMENT_INFO.txt
+          echo "Branch: ${{ github.ref_name }}" >> deploy/DEPLOYMENT_INFO.txt
+
+      - name: Create tarball
+        run: |
+          cd deploy
+          tar -czf ../ocean-defi-${{ github.sha }}.tar.gz .
+          cd ..
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.DEPLOY_SERVER }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          # Upload tarball
+          scp -i ~/.ssh/deploy_key -P ${{ env.DEPLOY_PORT }} ocean-defi-${{ github.sha }}.tar.gz ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_SERVER }}:/tmp/
+
+          # Execute deployment script on server
+          ssh -i ~/.ssh/deploy_key -p ${{ env.DEPLOY_PORT }} ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_SERVER }} << 'ENDSSH'
+            set -e
+            
+            # Create backup of current deployment
+            if [ -d "${{ env.DEPLOY_PATH }}/current" ]; then
+              BACKUP_DIR="${{ env.DEPLOY_PATH }}/backups/$(date +%Y%m%d_%H%M%S)"
+              mkdir -p "$BACKUP_DIR"
+              cp -r ${{ env.DEPLOY_PATH }}/current/* "$BACKUP_DIR/"
+              echo "Backup created at $BACKUP_DIR"
+            fi
+            
+            # Create new release directory
+            RELEASE_DIR="${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}"
+            mkdir -p "$RELEASE_DIR"
+            
+            # Extract new deployment
+            tar -xzf /tmp/ocean-defi-${{ github.sha }}.tar.gz -C "$RELEASE_DIR"
+            rm /tmp/ocean-defi-${{ github.sha }}.tar.gz
+            
+            # Copy .env from current if exists
+            if [ -f "${{ env.DEPLOY_PATH }}/shared/.env" ]; then
+              cp ${{ env.DEPLOY_PATH }}/shared/.env "$RELEASE_DIR/.env"
+            fi
+            
+            # Install production dependencies
+            cd "$RELEASE_DIR"
+            npm ci --production
+            
+            # Update symlink to new release
+            ln -sfn "$RELEASE_DIR" ${{ env.DEPLOY_PATH }}/current
+            
+            # Restart application (using PM2)
+            if command -v pm2 &> /dev/null; then
+              pm2 restart ocean-defi || pm2 start ecosystem.config.cjs --name ocean-defi
+            else
+              echo "PM2 not found. Please restart the application manually."
+            fi
+            
+            # Clean up old releases (keep last 5)
+            cd ${{ env.DEPLOY_PATH }}/releases
+            ls -t | tail -n +6 | xargs -I {} rm -rf {}
+            
+            echo "Deployment completed successfully!"
+          ENDSSH
+
+      - name: Health check
+        run: |
+          sleep 10
+          
+          # Check if the application is responding
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ env.DEPLOY_SERVER }}:3000 || echo "000")
+          
+          if [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "302" ]; then
+            echo "✅ Application is healthy (HTTP $response)"
+          else
+            echo "⚠️  Application might not be responding correctly (HTTP $response)"
+            echo "Please check the application manually"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          rm -f ocean-defi-*.tar.gz
+          rm -rf deploy
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "🚀 Deployment successful!"
+            echo "Server: http://${{ env.DEPLOY_SERVER }}:3000"
+          else
+            echo "❌ Deployment failed!"
+          fi

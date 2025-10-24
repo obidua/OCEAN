@@ -57,7 +57,7 @@ export function formatUSD(value) {
 
 export function formatRAMA(value) {
   const num = typeof value === 'string' ? parseFloat(value) / 1e18 : value;
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(num);
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(num);
 }
 
 export function formatPercentage(bps) {

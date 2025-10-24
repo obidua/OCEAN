@@ -7,7 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "sync:core": "node scripts/sync_coreconfig.js",
     "ocean:sim": "node scripts/ocean_sim.js",
-    "ocean:report": "node scripts/ocean_team_report.js"
+    "ocean:report": "node scripts/ocean_team_report.js",
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:server": "bash scripts/deploy.sh 65.1.0.60 3332 root",
+    "build:dashboard": "cd apps/dashboard && npm run build",
+    "dev:dashboard": "cd apps/dashboard && npm run dev",
+    "setup:server": "bash scripts/server-setup.sh"
   },
   "keywords": [],
   "author": "",

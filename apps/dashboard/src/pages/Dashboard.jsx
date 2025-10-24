@@ -554,11 +554,11 @@ export default function Dashboard() {
             <div className="p-2 bg-cyan-500/20 rounded-lg flex-shrink-0 border border-cyan-500/30">
               <Wallet size={20} className="text-cyan-400" />
             </div>
-            <p className="text-xs sm:text-sm font-medium text-cyan-300 uppercase tracking-wide">Staked Amount</p>
+            <p className="text-xs sm:text-sm font-medium text-cyan-300 uppercase tracking-wide">Staked Portfolio</p>
           </div>
           <NumberPopup
             value={formatUSD(totalStakedUsd)}
-            label="Staked Amount"
+            label="Staked Portfolio"
             className="text-xl sm:text-2xl font-bold mb-2 text-cyan-400 relative z-10"
             isLoading={summaryLoading}
           />

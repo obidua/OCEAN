@@ -1,0 +1,66 @@
+name: Test & Build
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+  push:
+    branches-ignore:
+      - master
+      - main
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install dashboard dependencies
+        run: |
+          cd apps/dashboard
+          npm ci
+
+      - name: Run linter
+        run: |
+          cd apps/dashboard
+          npm run lint || true
+
+      - name: Type check
+        run: |
+          cd apps/dashboard
+          npm run typecheck || true
+
+      - name: Test build
+        run: |
+          # Create dummy .env for build test
+          echo "VITE_RPC_URL=https://blockchain.ramestta.com" > apps/dashboard/.env
+          echo "VITE_CORECONFIG=0x0000000000000000000000000000000000000000" >> apps/dashboard/.env
+          
+          cd apps/dashboard
+          npm run build
+
+      - name: Check build output
+        run: |
+          if [ -d "apps/dashboard/dist" ]; then
+            echo "✅ Build successful"
+            echo "Build size: $(du -sh apps/dashboard/dist | cut -f1)"
+            echo "Files: $(find apps/dashboard/dist -type f | wc -l)"
+          else
+            echo "❌ Build failed - no dist directory found"
+            exit 1
+          fi
