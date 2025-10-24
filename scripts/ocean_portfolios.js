@@ -2,6 +2,7 @@
 // Portfolio creation runner for already registered users
 // Usage:
 //   node scripts/ocean_portfolios.js
+//   node scripts/ocean_portfolios.js --resume
 
 import fs from 'fs';
 import path from 'path';
@@ -9,14 +10,22 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { ethers } from 'ethers';
 
-dotenv.config();
-
 // -----------------------------------------------------------------------------//
-// Paths & constants
+// Resolve project root and load .env from root (../.env relative to /scripts)
 // -----------------------------------------------------------------------------//
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
+dotenv.config({ path: path.join(ROOT_DIR, '.env') });
+
+// -----------------------------------------------------------------------------//
+// CLI arguments
+// -----------------------------------------------------------------------------//
+const RESUME_MODE = process.argv.includes('--resume');
+
+// -----------------------------------------------------------------------------//
+// Paths & constants
+// -----------------------------------------------------------------------------//
 const DATA_DIR = path.join(ROOT_DIR, 'data');
 const CONFIG_DIR = path.join(ROOT_DIR, 'config');
 
@@ -37,16 +46,46 @@ for (const [k, v] of Object.entries(ADDR)) {
   }
 }
 
-const PORTFOLIOS_PER_USER = 4;
+const PORTFOLIOS_PER_USER = 4; // create 4 additional portfolios per user
 const PORT_MIN_USD = Number(process.env.PORTFOLIO_MIN_USD ?? 10);
-const PORT_MAX_USD = Number(process.env.PORTFOLIO_MAX_USD ?? 800);
+const PORT_MAX_USD = Number(process.env.PORTFOLIO_MAX_USD ?? 5000);
+const INCREASE_MIN_PCT = 20; // minimum 20% increase
+const INCREASE_MAX_PCT = 40; // maximum 40% increase
 
 // -----------------------------------------------------------------------------//
-// Minimal ABIs
+// Minimal ABIs (only what we need)
 // -----------------------------------------------------------------------------//
 const ABI_PortfolioManager = [
+  // tx
   'function createPortfolio() payable returns (uint256 pid)',
+
+  // helpers for price mapping
   'function getPackageValueInRAMA(uint256 usdMicro) view returns (uint256)',
+
+  // on-chain reads to fetch last portfolio amounts
+  'function portfoliosOf(address user) view returns (uint256[])',
+  `function getPortfolio(uint256 pid) view returns (
+      tuple(
+        uint128 principal,
+        uint128 principalUsd,
+        uint128 credited,
+        uint64 createdAt,
+        uint64 lastAccrual,
+        uint64 frozenUntil,
+        bool booster,
+        uint8 tier,
+        uint8 capPct,
+        address owner,
+        address activatedBy,
+        uint64 boosterActivationDate,
+        bool isCapped,
+        bool isClosed,
+        uint256 cappedAt,
+        uint256 closedAt,
+        uint256 totalReceivedBoosterROI,
+        bool isActivatedFromSafeWallet
+      )
+    )`,
 ];
 const ABI_PriceOracle = [
   'function usdToRama(uint256 usdMicro) view returns (uint256)',
@@ -80,14 +119,17 @@ function humanNow() {
 function delay(ms) {
   return new Promise((res) => setTimeout(res, ms));
 }
-function randUSD(min = 10, max = 800) {
-  const a = Math.floor(Math.max(min, 1));
-  const b = Math.floor(Math.max(max, a));
-  return Math.floor(Math.random() * (b - a + 1)) + a;
-}
 function usdToMicro(usdNumber) {
   return BigInt(Math.round(usdNumber * 1_000_000));
 }
+function extractReason(err) {
+  return err?.reason || err?.shortMessage || err?.message || String(err);
+}
+
+function randomInRange(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
 async function withRetry(label, fn, retries = 5, baseDelay = 1500) {
   let lastErr;
   for (let i = 0; i <= retries; i++) {
@@ -95,7 +137,7 @@ async function withRetry(label, fn, retries = 5, baseDelay = 1500) {
       return await fn();
     } catch (err) {
       lastErr = err;
-      const msg = err?.reason || err?.shortMessage || err?.message || String(err);
+      const msg = extractReason(err);
       const wait = baseDelay * (i + 1);
       console.log(`[${label}] attempt ${i + 1} failed: ${msg}; retrying in ${wait}ms`);
       await delay(wait);
@@ -117,7 +159,7 @@ function writePortfolioCsv(portData) {
     'address,referrer,key_index,portfolio_index,usd_amount,rama_wei,tx_hash,timestamp',
   ];
   for (const [addr, entry] of Object.entries(portData.users)) {
-    entry.portfolios.forEach((p, idx) => {
+    (entry.portfolios || []).forEach((p, idx) => {
       lines.push(
         [
           addr,
@@ -135,6 +177,21 @@ function writePortfolioCsv(portData) {
   fs.writeFileSync(PORTFOLIO_CSV, lines.join('\n') + '\n');
 }
 
+/** Return the last portfolio record for this user, or null */
+function lastPortfolio(entry) {
+  const list = entry?.portfolios || [];
+  if (list.length === 0) return null;
+  return list[list.length - 1];
+}
+
+/** Get the user's activation USD from registrations (first portfolio baseline). */
+function activationUsd(registrationData, addr) {
+  const rec = registrationData.users?.[addr];
+  if (!rec || !rec.activation) return null;
+  const u = rec.activation.usd;
+  return typeof u === 'number' ? u : Number(u ?? 0) || null;
+}
+
 // -----------------------------------------------------------------------------//
 // Core logic
 // -----------------------------------------------------------------------------//
@@ -142,12 +199,14 @@ async function main() {
   ensureDir(DATA_DIR);
   ensureCsvHeader();
 
+  // Load registration data (contains activation.usd per user)
   let registrationData = loadJSON(REGISTER_JSON);
   if (!registrationData || !registrationData.users) {
     console.error('Registration data not found. Run ocean_sim.js first.');
     process.exit(1);
   }
 
+  // Load / init portfolio data
   let portfoliosData = loadJSON(PORTFOLIO_JSON, null);
   if (!portfoliosData) {
     portfoliosData = {
@@ -162,6 +221,7 @@ async function main() {
     writePortfolioCsv(portfoliosData);
   }
 
+  // Load keys
   const rawKeys = loadJSON(KEYS_FILE);
   if (!Array.isArray(rawKeys) || rawKeys.length === 0) {
     console.error('privateKeys.json must be an array of keys');
@@ -174,6 +234,7 @@ async function main() {
     throw new Error('privateKeys.json item missing "privateKey" or not a string');
   });
 
+  // Contracts
   const provider = new ethers.JsonRpcProvider(RPC_URL);
   const oracle = new ethers.Contract(ADDR.PriceOracle, ABI_PriceOracle, provider);
   const pm = new ethers.Contract(ADDR.PortfolioManager, ABI_PortfolioManager, provider);
@@ -184,41 +245,133 @@ async function main() {
       const amt = await pm.getPackageValueInRAMA(micro);
       if (amt > 0n) return amt;
     } catch (err) {
-      console.warn(
-        'getPackageValueInRAMA fallback to oracle:',
-        err?.message || err,
-      );
+      console.warn('getPackageValueInRAMA fallback to oracle:', extractReason(err));
     }
     const fallback = await oracle.usdToRama(micro);
     if (fallback <= 0n) throw new Error('usdToRama returned 0');
     return fallback;
   }
 
-  async function createPortfolioForUser(keyIndex, usdAmount) {
-    if (keyIndex < 0 || keyIndex >= privKeys.length) {
-      throw new Error(`Invalid key index ${keyIndex}`);
+  /** Read the last portfolio's USD (micro -> number) from on-chain for a user; null if none. */
+  async function onChainLastUsd(userAddress) {
+    const pids = await pm.portfoliosOf(userAddress);
+    if (!Array.isArray(pids) || pids.length === 0) return null;
+
+    // Use the last pid in the array
+    const lastPid = pids[pids.length - 1];
+    const pf = await pm.getPortfolio(lastPid);
+
+    // principalUsd is uint128 (6 decimals = micro USD)
+    const principalUsdMicro = pf.principalUsd !== undefined ? pf.principalUsd : pf[1];
+
+    const usd = Number(principalUsdMicro) / 1_000_000;
+    return isFinite(usd) ? usd : null;
+  }
+
+  /**
+   * Calculate the next portfolio amount based on the last portfolio
+   * Increases by 20-40% plus a random amount
+   */
+  function calculateNextPortfolioAmount(lastUsd) {
+    // Calculate increase percentage (20-40%)
+    const increasePct = randomInRange(INCREASE_MIN_PCT, INCREASE_MAX_PCT);
+    
+    // Calculate base increase
+    const baseIncrease = lastUsd * (increasePct / 100);
+    
+    // Add random amount (0-10% of last USD)
+    const randomAmount = randomInRange(0, lastUsd * 0.1);
+    
+    // Calculate new amount
+    const newAmount = lastUsd + baseIncrease + randomAmount;
+    
+    // Round to 2 decimal places
+    return Math.round(newAmount * 100) / 100;
+  }
+
+  /**
+   * For a user:
+   * - Get the last portfolio USD from on-chain
+   * - Calculate next 4 portfolio amounts with 20-40% increases
+   * - Create portfolios sequentially
+   */
+  async function createNextPortfolio(addr, entry, keyIndex) {
+    // Get on-chain last portfolio
+    const onchainLast = await onChainLastUsd(addr);
+    
+    if (!onchainLast) {
+      // If no on-chain portfolio, try to get from local data or activation
+      const localLastUsd = lastPortfolio(entry)?.usd ?? null;
+      const actUsd = activationUsd(registrationData, addr);
+      
+      const baseline = localLastUsd || actUsd;
+      if (!baseline) {
+        throw new Error(
+          `No portfolios found for ${addr}. User must activate first.`
+        );
+      }
+      
+      // Use baseline for first portfolio
+      const candidateUsd = Math.max(PORT_MIN_USD, baseline);
+      return await createPortfolioWithAmount(addr, candidateUsd, keyIndex);
     }
+
+    // Calculate next portfolio amount (20-40% increase + random)
+    let candidateUsd = calculateNextPortfolioAmount(onchainLast);
+    
+    // Ensure it's at least the minimum increase over last portfolio
+    const minRequired = onchainLast + 1;
+    if (candidateUsd < minRequired) {
+      candidateUsd = minRequired;
+    }
+    
+    // Check if we've exceeded the max
+    if (candidateUsd > PORT_MAX_USD) {
+      throw new Error(
+        `Next portfolio amount ($${candidateUsd.toFixed(2)}) exceeds PORT_MAX_USD ($${PORT_MAX_USD}). ` +
+        `Increase PORTFOLIO_MAX_USD in .env or skip this user.`
+      );
+    }
+
+    console.log(
+      `Creating portfolio for ${addr}: last=$${onchainLast.toFixed(2)}, new=$${candidateUsd.toFixed(2)} (+${((candidateUsd - onchainLast) / onchainLast * 100).toFixed(1)}%)`
+    );
+
+    return await createPortfolioWithAmount(addr, candidateUsd, keyIndex);
+  }
+
+  /**
+   * Create a portfolio with a specific USD amount
+   */
+  async function createPortfolioWithAmount(addr, usdAmount, keyIndex) {
+    const ramaWei = await usdToRamaWei(usdAmount);
     const wallet = new ethers.Wallet(privKeys[keyIndex], provider);
-    const ramaWei = await withRetry('usdToRama', () => usdToRamaWei(usdAmount));
     const pmSigner = pm.connect(wallet);
 
-    const tx = await withRetry('createPortfolio', async () => {
-      const gas = await pmSigner.createPortfolio.estimateGas({
-        value: ramaWei,
-      });
-      return pmSigner.createPortfolio({
+    console.log(
+      `Creating portfolio: ${addr}, USD=$${usdAmount.toFixed(2)}, ramaWei=${ramaWei}`
+    );
+
+    try {
+      const gas = await pmSigner.createPortfolio.estimateGas({ value: ramaWei });
+      const tx = await pmSigner.createPortfolio({
         value: ramaWei,
         gasLimit: gas + 120000n,
       });
-    });
 
-    console.log(
-      `Portfolio TX: ${tx.hash} user=${await wallet.getAddress()} usd=$${usdAmount} ramaWei=${ramaWei}`,
-    );
-    const receipt = await tx.wait();
-    if (receipt.status !== 1) throw new Error('createPortfolio transaction reverted');
-    await delay(1200);
-    return { ramaWei: ramaWei.toString(), txHash: tx.hash };
+      console.log(
+        `Portfolio TX: ${tx.hash} user=${addr} usd=$${usdAmount.toFixed(2)} ramaWei=${ramaWei}`
+      );
+      
+      const receipt = await tx.wait();
+      if (receipt.status !== 1) throw new Error('createPortfolio transaction reverted');
+
+      await delay(1200);
+      return { usd: usdAmount, ramaWei: ramaWei.toString(), txHash: tx.hash };
+    } catch (err) {
+      const reason = extractReason(err);
+      throw new Error(`Portfolio creation failed: ${reason}`);
+    }
   }
 
   function savePortfolios() {
@@ -230,7 +383,7 @@ async function main() {
   function pickNextTarget() {
     const latest = loadJSON(REGISTER_JSON, null);
     if (latest && latest.users) {
-      registrationData = latest;
+      registrationData = latest; // refresh in case sim added more
     }
     const rootAddr =
       registrationData.meta?.root || (process.env.ROOT_ADDRESS || '').trim();
@@ -272,6 +425,10 @@ async function main() {
   console.log(
     `Target: ${PORTFOLIOS_PER_USER} portfolios/user, range $${PORT_MIN_USD} - $${PORT_MAX_USD}.`,
   );
+  console.log(
+    `Increase strategy: ${INCREASE_MIN_PCT}-${INCREASE_MAX_PCT}% + random amount per portfolio`
+  );
+  console.log(`Resume mode: ${RESUME_MODE ? 'ON' : 'OFF'}`);
 
   while (true) {
     try {
@@ -283,16 +440,26 @@ async function main() {
       }
 
       const { addr, info, done } = target;
-      const usdAmount = randUSD(PORT_MIN_USD, PORT_MAX_USD);
+
+      // Ensure entry exists
+      if (!portfoliosData.users[addr]) {
+        portfoliosData.users[addr] = {
+          referrer: info.referrer || null,
+          keyIndex: info.keyIndex,
+          portfolios: [],
+        };
+      }
+      const entry = portfoliosData.users[addr];
+
       try {
-        const { ramaWei, txHash } = await createPortfolioForUser(
-          info.keyIndex,
-          usdAmount,
+        const { usd, ramaWei, txHash } = await createNextPortfolio(
+          addr,
+          entry,
+          info.keyIndex
         );
 
-        const entry = portfoliosData.users[addr];
         entry.portfolios.push({
-          usd: usdAmount,
+          usd,
           ramaWei,
           txHash,
           timestamp: humanNow(),
@@ -300,23 +467,23 @@ async function main() {
         savePortfolios();
 
         console.log(
-          `Portfolio ${done + 1}/${PORTFOLIOS_PER_USER} completed for ${addr}.`,
+          `✅ Portfolio ${done + 1}/${PORTFOLIOS_PER_USER} completed for ${addr}. USD=$${usd.toFixed(2)}`
         );
       } catch (err) {
-        const msg = err?.reason || err?.shortMessage || err?.message || String(err);
-        console.error(`Portfolio creation failed for ${addr}: ${msg}`);
+        const msg = extractReason(err);
+        console.error(`❌ Portfolio creation failed for ${addr}: ${msg}`);
         await delay(4000);
       }
 
       await delay(800);
     } catch (err) {
-      console.error('Loop error:', err?.message || err);
+      console.error('Loop error:', extractReason(err));
       await delay(5000);
     }
   }
 }
 
 main().catch((err) => {
-  console.error('Fatal error:', err?.message || err);
+  console.error('Fatal error:', extractReason(err));
   process.exit(1);
 });

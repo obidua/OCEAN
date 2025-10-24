@@ -49,28 +49,30 @@ const resolveAddress = (key, fallback) => {
     return fallback;
   };
 
-  // Use the provided Oceanic View address
-  const oceanicViewAddress = "0xf352ded4a4F9A18062B639224E80C225F2Ae0b88";const Contract = {
-  UserRegistry: resolveAddress("USERREGISTRY", "0x1B7CC7E9C5583F581aCAf2b7Bc207B1CA970897E"),
-  CoreConfig: resolveAddress("CORECONFIG", "0x659946334312BCe5d5F5f01D09035FD110b10EBE"),
-  RoiDistribution: resolveAddress("ROIDISTRIBUTOR", "0x053Ce7E1f4287d12437EadE4cD3EB469Aa89D1d3"),
-  PortFolioManager: resolveAddress("PORTFOLIOMANAGER", "0x139b15932d767c72aAAdC4848552674d0C32084d"),
-  RoyaltyManager: resolveAddress("ROYALTYMANAGER", "0x00c0114755B95759A53E7312878EfE0Ba256f711"),
-  SlabManager: resolveAddress("SLABMANAGER", "0xd80F1e48e3cECEefa02418d67908F2d78dCe6b70"),
-  IncomeDistributor: resolveAddress("INCOMEDISTRIBUTOR", "0xcc404b23a0648da2f5aB9B7cc750883344071149"),
-  FreezePolicy: resolveAddress("FREEZEPOLICY", "0x441CC446c07f3EF7C1d6a4650b9C254352CaCA12"),
-  RewardVault: resolveAddress("REWARDVAULT", "0x87Fb4982378eb4a28a75f2AFF33e7C9f5E6fbdFd"),
-  AdminControl: resolveAddress("ADMINCONTROL", "0xe29B8935199745091c29F93c76AeF9290651d1ED"),
-  MainWallet: resolveAddress("MAINWALLET", "0x5C8E7b2a9c35caF45607bA5AAB4c5dfdD50dCe84"),
-  SafeWallet: resolveAddress("SAFEWALLET", "0xb804f0d0f2A1c799aB69e1b073Ec0ACAfba240a5"),
-  CapPayoutRouter: resolveAddress("CAP_PAYOUT_ROUTER", "0x18B1E77b9C71f6d903e4249B0f9837D56Ea76D7B"),
-  CappingIncomeManager: resolveAddress("CAPPINGINCOMEMANAGER", "0xBF2dCaE0b99b20715AC9fA83A0135F97756DD96b"),
-  OceanViewUpgradeable: resolveAddress("OCEANVIEWUPGRADEABLE", "0xe9c87BE7b1AfD89640d9240EeD8C1F9f0F9E8746"),
-  OceanViewV2: resolveAddress("OCEANVIEWV2", oceanicViewAddress),
-  Oceanicview: oceanicViewAddress,
-  ComprehensiveView: resolveAddress("COMPREHENSIVEVIEW", "0xf8Cb0fC5EB89CE097B70875f48A1B17AA401B53B"),
-  OceanQueryUpgradeable: resolveAddress("OCEANQUERYUPGRADEABLE", "0x93090A28Fb52dDdBBA783a1f019dF7Af739c9f87"),
+
+
+const Contract = {
+  UserRegistry: "0x246c7317F4093065B96c2b0DC65A63De395444ed",
+  CoreConfig: "0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d",
+  RoiDistribution:"0x7951bf0faABE00c451F1d92008297a7bd85d4678",
+  PortFolioManager: "0xC73f964eA7bC04a2c7455CAf6107238147c88365",
+  RoyaltyManager: "0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5",
+  SlabManager: "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9",
+  IncomeDistributor: "0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626",
+  FreezePolicy: "0x6541987258B73bd8128d23e8678a00258226ad3C",
+  RewardVault: "0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d",
+  AdminControl: "0x538eB028b51f10f1Bf9A7414c3eb3e85b067120C",
+  MainWallet: "0x5C8E7b2a9c35caF45607bA5AAB4c5dfdD50dCe84", // not provided, left unchanged
+  SafeWallet: "0x36ebfd33a8053Cd6CC72436aDb356364Ee43ad54",
+  CapPayoutRouter: "0x18B1E77b9C71f6d903e4249B0f9837D56Ea76D7B", // not provided, left unchanged
+  CappingIncomeManager: "0x038c37724aAf96fdaF82E2C70cf55eB2dC557865",
+  OceanViewUpgradeable: "0x0Dc6C606988100B53d016E1B7f9462Ca439BB608",
+  OceanViewV2: "0x08A6575a6158Dd5F61a2565F0f97249dcb497a78",
+  Oceanicview: "0x938616ab14763506F7111Cdf06EF5A3B4C586dE6",
+  ComprehensiveView: "0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0",
+  OceanQueryUpgradeable: "0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db",
 };
+
 
 const RPC_URL =
   resolveEnvValue("RPC_URL") ||

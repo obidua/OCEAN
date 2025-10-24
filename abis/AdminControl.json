@@ -1,0 +1,428 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      }
+    ],
+    "name": "BeaconUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "full",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "legA",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "legB",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "legC",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "slab",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "royalty",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "rewards",
+            "type": "bool"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct AdminControl.Bypass",
+        "name": "bp",
+        "type": "tuple"
+      }
+    ],
+    "name": "BypassSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "slab",
+        "type": "uint8"
+      }
+    ],
+    "name": "SuperUserSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bypasses",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "full",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "legA",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "legB",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "legC",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "slab",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "royalty",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "rewards",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "cfg",
+    "outputs": [
+      {
+        "internalType": "contract ICoreConfig",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_cfg",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "full",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "legA",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "legB",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "legC",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "slab",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "royalty",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "rewards",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct AdminControl.Bypass",
+        "name": "bp",
+        "type": "tuple"
+      }
+    ],
+    "name": "setBypass",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "slab",
+        "type": "uint8"
+      }
+    ],
+    "name": "setSuperUser",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "superUser",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "superUserSlab",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]
