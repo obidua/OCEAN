@@ -4241,6 +4241,84 @@ export const useStore = create((set, get) => ({
       console.log("getIncomeTransaction error:", error);
       return null;
     }
+  },
+
+  // Safe Wallet registration with custom sponsor
+  SafeRegisterAndActivate: async (userAddress, beneficiary, sponsor, Amt) => {
+    console.log('SafeRegisterAndActivate args:', { userAddress, beneficiary, sponsor, Amt });
+    try {
+      const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
+      const safeWallCont = new web3.eth.Contract(SafeWalletABI, Contract.SafeWallet);
+      const regContract = new web3.eth.Contract(UserRegistryABI, Contract.UserRegistry);
+
+      // Resolve sponsor (address or numeric ID)
+      let sponsorAddress;
+      if (typeof sponsor === 'string' && sponsor.startsWith('0x')) {
+        sponsorAddress = sponsor;
+      } else {
+        const userId = typeof sponsor === 'number' ? sponsor : Number(sponsor);
+        if (!Number.isFinite(userId) || userId <= 0) throw new Error('Invalid sponsor id');
+        sponsorAddress = await regContract.methods.idToAddress(userId).call();
+      }
+
+      if (!sponsorAddress || !sponsorAddress.startsWith('0x')) {
+        throw new Error('Resolved sponsor address is invalid');
+      }
+      if (/^0x0{40}$/i.test(sponsorAddress)) {
+        throw new Error('Sponsor not found (zero address)');
+      }
+
+      const usdMicro = BigInt(Math.floor(Number(Amt) * 1e6));
+      const ramaWeiQuoteStr = await pm.methods
+        .getPackageValueInRAMA(usdMicro.toString())
+        .call();
+
+      const valueToSend = BigInt(ramaWeiQuoteStr);
+      if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
+
+      console.log('Calling sponsorCreatePortfolioFor with:', { beneficiary, valueToSend: valueToSend.toString(), sponsor: sponsorAddress });
+
+      const data = safeWallCont.methods
+        .sponsorCreatePortfolioFor(beneficiary, valueToSend, sponsorAddress)
+        .encodeABI();
+
+      const gasPrice = await web3.eth.getGasPrice();
+
+      let gasLimit;
+      try {
+        gasLimit = await web3.eth.estimateGas({
+          from: userAddress,
+          to: Contract.SafeWallet,
+          data,
+          value: 0,
+        });
+      } catch (err) {
+        console.error('Gas estimation failed:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Gas estimation failed',
+          text: err?.message || 'Check contract & inputs.',
+        });
+        throw err;
+      }
+
+      const toHex = web3.utils.toHex;
+
+      const tx = {
+        from: userAddress,
+        to: Contract.SafeWallet,
+        data,
+        value: 0,
+        gas: toHex(gasLimit),
+        gasPrice: toHex(gasPrice),
+      };
+
+      return tx;
+    } catch (error) {
+      console.error('SafeRegisterAndActivate error:', error);
+      Swal.fire({ icon: 'error', title: 'Registration error', text: error?.message || 'Unknown error' });
+      throw error;
+    }
   }
 
 }));

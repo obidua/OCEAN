@@ -463,7 +463,7 @@ export default function AccruedRewards() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex flex-col">
                           <NumberPopup
                             value={portfolio.roi?.accrued || 0}
                             formatter={formatUSD}
