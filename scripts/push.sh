@@ -28,7 +28,8 @@ while [[ ${1-} ]]; do
     -b|--branch)
       shift; BRANCH="${1-}"; [ -z "${BRANCH}" ] && { echo "❌ Branch cannot be empty"; exit 1; } ;;
     -h|--help)
-      grep "^#" "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+      # Print only comment lines that start with '# ' (exclude shebang)
+      grep "^# " "$0" | sed 's/^# \{1\}//'; exit 0 ;;
     *)
       echo "Unknown argument: $1"; exit 1 ;;
   esac

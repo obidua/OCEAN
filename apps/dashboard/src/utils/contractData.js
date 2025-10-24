@@ -52,7 +52,12 @@ export const ONE_TIME_REWARDS = [
 
 export function formatUSD(value) {
   const num = typeof value === 'string' ? parseFloat(value) / USD_PRECISION : value;
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  }).format(num);
 }
 
 export function formatRAMA(value) {

@@ -121,6 +121,28 @@ const toBigIntSafe = (input) => {
   return 0n;
 };
 
+// Bytes32 helpers for decoding kinds and reasons from CappingIncomeManager
+const bytes32ToString = (b) => {
+  if (!b) return '';
+  try {
+    const s = Web3.utils.hexToUtf8(b);
+    return (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
+  } catch {
+    return String(b);
+  }
+};
+
+const normalizeMissedKind = (k) => {
+  const s = (bytes32ToString(k) || '').toLowerCase();
+  if (s.includes('direct') || s === 'spot' || s.includes('spot')) return 'spot';
+  if (s.includes('slab') && s.includes('override')) return 'slabOverride';
+  if (s === 'slab' || s.includes('slab')) return 'slab';
+  if (s === 'roi' || s.includes('roi')) return 'roi';
+  if (s.includes('royal')) return 'royalty';
+  if (s.includes('reward')) return 'reward';
+  return s || 'unknown';
+};
+
 const fromMicroUSD = (value) => toNumber(value) / USD_MICRO;
 const fromWeiToRama = (value) => toNumber(value) / RAMA_DECIMALS;
 const fromWadToUsd = (value) => toNumber(value) / 1e18;
@@ -879,6 +901,10 @@ export const useStore = create((set, get) => ({
         PortFolioManagerABI,
         Contract["PortFolioManager"]
       );
+      const cappingIncomeManager = new web3.eth.Contract(
+        CappingIncomeManagerABI,
+        Contract["CappingIncomeManager"]
+      );
 
       const [raw, pmRaw] = await Promise.all([
         oceanQuery.methods.getPortfolioDetails(portId).call(),
@@ -899,6 +925,24 @@ export const useStore = create((set, get) => ({
       const capUsdMicro = toBigIntSafe(pick("capUSD", 11) ?? pick("capUsd", 4));
       const capProgressBps = toNumber(pick("capProgressBps", 12));
       const dailyRateWad = pick("dailyRateWad", 11);
+
+      // Fetch remaining-to-cap from CappingIncomeManager and convert to USD6 via PortfolioManager
+      let remainingToCapWei = "0";
+      let remainingCapUsdMicro = "0";
+      try {
+        const wei = await cappingIncomeManager.methods.remainingToCapWei(portId).call();
+        remainingToCapWei = String(wei ?? "0");
+        if (wei && wei !== "0") {
+          try {
+            const usd6 = await portfolioManager.methods.getPackageValueInUSD(wei).call();
+            remainingCapUsdMicro = String(usd6 ?? "0");
+          } catch (convErr) {
+            console.warn("getPackageValueInUSD failed for remainingToCapWei:", convErr?.message || convErr);
+          }
+        }
+      } catch (remErr) {
+        console.warn("CappingIncomeManager.remainingToCapWei failed:", remErr?.message || remErr);
+      }
 
       const result = {
         pid: Number(pick("pid", 0)),
@@ -921,6 +965,9 @@ export const useStore = create((set, get) => ({
         capUsd: fromMicroUSD(capUsdMicro),
         dailyRateWad,
         capProgressBps,
+        remainingToCapWei,
+        remainingCapUsdMicro,
+        remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
       };
 
       applyPortfolioManagerFields(result, pmRaw);
@@ -947,6 +994,10 @@ export const useStore = create((set, get) => ({
       const portfolioManager = makeContract(
         PortFolioManagerABI,
         Contract["PortFolioManager"]
+      );
+      const cappingIncomeManager = makeContract(
+        CappingIncomeManagerABI,
+        Contract["CappingIncomeManager"]
       );
       const roiDistributor = makeContract(
         RoiDistributionABI,
@@ -1050,6 +1101,26 @@ export const useStore = create((set, get) => ({
             const frozenUntil = toNumber(pick(entry, "frozenUntil", 14) ?? 0);
             const roiPreview = roiPreviewMap.get(pid);
 
+            // Remaining-to-cap from CappingIncomeManager (wei) -> USD6 via PortfolioManager
+            let remainingToCapWei = "0";
+            let remainingCapUsdMicro = "0";
+            try {
+              if (cappingIncomeManager && Number.isFinite(pid)) {
+                const remWei = await cappingIncomeManager.methods.remainingToCapWei(pid).call();
+                remainingToCapWei = String(remWei ?? "0");
+                if (remWei && remWei !== "0" && portfolioManager) {
+                  try {
+                    const usd6 = await portfolioManager.methods.getPackageValueInUSD(remWei).call();
+                    remainingCapUsdMicro = String(usd6 ?? "0");
+                  } catch (convErr) {
+                    console.warn("getPackageValueInUSD failed (dashboard portfolios):", convErr?.message || convErr);
+                  }
+                }
+              }
+            } catch (remErr) {
+              console.warn("remainingToCapWei (dashboard portfolios) failed:", remErr?.message || remErr);
+            }
+
             const principalUsd = fromMicroUSD(principalUsdMicro);
             const principalRama = fromWeiToRama(principalRamaWei);
             const creditedUsd = fromMicroUSD(creditedUsdMicro);
@@ -1086,6 +1157,9 @@ export const useStore = create((set, get) => ({
               pendingUsdMicro: roiPreview?.usdMicro ?? "0",
               pendingRama: roiPreview?.rama ?? 0,
               pendingRamaWei: roiPreview?.ramaWei ?? 0,
+              remainingToCapWei,
+              remainingCapUsdMicro,
+              remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
             };
 
             if (portfolioManager) {
@@ -2036,6 +2110,158 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  // =====================================================================
+  // Missed & Held Income (Cap-locked state)
+  // =====================================================================
+
+  getMissedIncomeOverview: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error('Missing user address');
+
+      const cappingIncomeManager = makeContract(
+        CappingIncomeManagerABI,
+        Contract['CappingIncomeManager']
+      );
+      if (!cappingIncomeManager) throw new Error('CappingIncomeManager unavailable');
+
+      const [
+        totalsByKindRaw,
+        missedCountRaw,
+        hasOpenPortfolio,
+        openNotCappedPids,
+        portfolioSummaries,
+        royaltyOverview,
+        oneTimeOverview,
+        capStatus,
+      ] = await Promise.all([
+        cappingIncomeManager.methods.getTotalsByKind(userAddress).call(),
+        cappingIncomeManager.methods.getMissedIncomeCount(userAddress).call(),
+        cappingIncomeManager.methods.hasOpenPortfolio(userAddress).call(),
+        cappingIncomeManager.methods.getOpenAndNotCappedPids(userAddress).call(),
+        // reuse store methods for richer context
+        get().getPortfolioSummaries(userAddress).catch(() => []),
+        get().getRoyaltyOverview(userAddress).catch(() => null),
+        get().getOneTimeRewardsOverview(userAddress).catch(() => null),
+        get().getComprehensiveCapStatus(userAddress).catch(() => null),
+      ]);
+
+      const pickTotals = (rec, key, index) => {
+        if (!rec) return 0;
+        if (rec[key] != null) return rec[key];
+        if (Array.isArray(rec)) return rec[index] ?? 0;
+        return 0;
+      };
+      // getTotalsByKind returns tuple of 8 uints (USD6)
+      const earnedROI = toBigIntSafe(pickTotals(totalsByKindRaw, 'earnedROI', 0));
+      const earnedDirect = toBigIntSafe(pickTotals(totalsByKindRaw, 'earnedDirect', 1));
+      const earnedSlab = toBigIntSafe(pickTotals(totalsByKindRaw, 'earnedSlab', 2));
+      const earnedSlabOverride = toBigIntSafe(pickTotals(totalsByKindRaw, 'earnedSlabOverride', 3));
+      const missedROI = toBigIntSafe(pickTotals(totalsByKindRaw, 'missedROI', 4));
+      const missedDirect = toBigIntSafe(pickTotals(totalsByKindRaw, 'missedDirect', 5));
+      const missedSlab = toBigIntSafe(pickTotals(totalsByKindRaw, 'missedSlab', 6));
+      const missedSlabOverride = toBigIntSafe(pickTotals(totalsByKindRaw, 'missedSlabOverride', 7));
+
+      const missed = {
+        spotUsd: fromMicroUSD(missedDirect),
+        slabUsd: fromMicroUSD(missedSlab),
+        slabOverrideUsd: fromMicroUSD(missedSlabOverride),
+        roiUsd: fromMicroUSD(missedROI),
+      };
+      const totalMissedUsd =
+        (missed.spotUsd || 0) + (missed.slabUsd || 0) + (missed.slabOverrideUsd || 0);
+
+      // Cap status and timing
+      const capReachedAt = (() => {
+        if (!Array.isArray(portfolioSummaries)) return 0;
+        const times = portfolioSummaries
+          .map((p) => Number(p?.cappedAt || 0))
+          .filter((t) => Number.isFinite(t) && t > 0);
+        if (!times.length) return 0;
+        // Use latest cap event
+        return Math.max(...times);
+      })();
+      const nowSec = Math.floor(Date.now() / 1000);
+      const daysSinceCap = capReachedAt > 0 ? Math.max(0, Math.floor((nowSec - capReachedAt) / 86400)) : 0;
+
+      const openNotCapped = Array.isArray(openNotCappedPids) ? openNotCappedPids : [];
+      const capLocked = !hasOpenPortfolio || openNotCapped.length === 0;
+
+      const held = {
+        royaltyUsd: royaltyOverview?.royaltyIncomeUsd ?? 0,
+        rewardsUsd: oneTimeOverview?.pendingRewardUsd ?? 0,
+      };
+      const canClaimHeldNow = !capLocked && ((held.royaltyUsd ?? 0) > 0 || (held.rewardsUsd ?? 0) > 0);
+
+      return {
+        capLocked,
+        capStatus,
+        capReachedAt,
+        daysSinceCap,
+        missedCount: toNumber(missedCountRaw),
+        missed,
+        totalMissedUsd,
+        earned: {
+          roiUsd: fromMicroUSD(earnedROI),
+          spotUsd: fromMicroUSD(earnedDirect),
+          slabUsd: fromMicroUSD(earnedSlab),
+          slabOverrideUsd: fromMicroUSD(earnedSlabOverride),
+        },
+        held: {
+          ...held,
+          canClaimNow: canClaimHeldNow,
+        },
+        openNotCappedPids: openNotCapped.map((x) => Number(x)).filter(Number.isFinite),
+        fetchedAt: Date.now(),
+      };
+    } catch (error) {
+      console.error('getMissedIncomeOverview error:', error);
+      throw error;
+    }
+  },
+
+  getMissedIncomeSlice: async (userAddress, offset = 0, limit = 50) => {
+    try {
+      if (!userAddress) throw new Error('Missing user address');
+      const cappingIncomeManager = makeContract(
+        CappingIncomeManagerABI,
+        Contract['CappingIncomeManager']
+      );
+      if (!cappingIncomeManager) throw new Error('CappingIncomeManager unavailable');
+
+      const raw = await cappingIncomeManager.methods
+        .getMissedIncomeSlice(userAddress, offset, limit)
+        .call();
+
+      const entries = (raw ?? []).map((rec, idx) => {
+        const at = toNumber(rec?.at ?? rec?.[0] ?? 0);
+        const amountUSD6 = toBigIntSafe(rec?.amountUSD6 ?? rec?.[1] ?? 0);
+        const kindRaw = rec?.kind ?? rec?.[2];
+        const pid = toNumber(rec?.pid ?? rec?.[3] ?? 0);
+        const reasonRaw = rec?.reason ?? rec?.[4];
+        const kindKey = normalizeMissedKind(kindRaw);
+        const reason = bytes32ToString(reasonRaw) || 'cap';
+        return {
+          id: `${offset + idx}-${at}-${pid}-${kindKey}`,
+          at,
+          amountUsd: fromMicroUSD(amountUSD6),
+          amountUsdRaw: amountUSD6.toString(),
+          kind: kindKey,
+          pid,
+          reason,
+        };
+      });
+
+      return {
+        offset,
+        limit,
+        entries,
+      };
+    } catch (error) {
+      console.error('getMissedIncomeSlice error:', error);
+      throw error;
+    }
+  },
+
   getSpotIncomeTransactions: async (
     userAddress,
     { offset = 0, limit = 20 } = {}
@@ -2078,6 +2304,14 @@ export const useStore = create((set, get) => ({
         OceanViewV2ABI,
         Contract["OceanViewV2"]
       );
+      const portfolioManager = makeContract(
+        PortFolioManagerABI,
+        Contract["PortFolioManager"]
+      );
+      const cappingIncomeManager = makeContract(
+        CappingIncomeManagerABI,
+        Contract["CappingIncomeManager"]
+      );
 
       if (oceanViewV2) {
         try {
@@ -2115,6 +2349,26 @@ export const useStore = create((set, get) => ({
               pick(entry, "capProgressBps", 7) ?? 0
             );
 
+            // Remaining-to-cap from CappingIncomeManager (wei) -> USD6 via PortfolioManager
+            let remainingToCapWei = "0";
+            let remainingCapUsdMicro = "0";
+            try {
+              if (cappingIncomeManager && Number.isFinite(pid)) {
+                const remWei = await cappingIncomeManager.methods.remainingToCapWei(pid).call();
+                remainingToCapWei = String(remWei ?? "0");
+                if (remWei && remWei !== "0" && portfolioManager) {
+                  try {
+                    const usd6 = await portfolioManager.methods.getPackageValueInUSD(remWei).call();
+                    remainingCapUsdMicro = String(usd6 ?? "0");
+                  } catch (convErr) {
+                    console.warn("getPackageValueInUSD failed (portfolio summaries v2):", convErr?.message || convErr);
+                  }
+                }
+              }
+            } catch (remErr) {
+              console.warn("remainingToCapWei (portfolio summaries v2) failed:", remErr?.message || remErr);
+            }
+
             const normalized = {
               pid,
               principalUsdRaw: principalUsdMicro,
@@ -2131,6 +2385,9 @@ export const useStore = create((set, get) => ({
               createdAt,
               frozenUntil,
               capProgressBps,
+              remainingToCapWei,
+              remainingCapUsdMicro,
+              remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
             };
 
             if (portfolioManager) {
@@ -2197,6 +2454,28 @@ export const useStore = create((set, get) => ({
           }
         }
 
+        // Remaining-to-cap from CappingIncomeManager (wei) -> USD6 via PortfolioManager
+        let remainingToCapWei = "0";
+        let remainingCapUsdMicro = "0";
+        try {
+          if (Number.isFinite(pid)) {
+            const cm = new web3.eth.Contract(CappingIncomeManagerABI, Contract["CappingIncomeManager"]);
+            const remWei = await cm.methods.remainingToCapWei(pid).call();
+            remainingToCapWei = String(remWei ?? "0");
+            if (remWei && remWei !== "0") {
+              try {
+                const pm = new web3.eth.Contract(PortFolioManagerABI, Contract["PortFolioManager"]);
+                const usd6 = await pm.methods.getPackageValueInUSD(remWei).call();
+                remainingCapUsdMicro = String(usd6 ?? "0");
+              } catch (convErr) {
+                console.warn("getPackageValueInUSD failed (portfolio summaries legacy):", convErr?.message || convErr);
+              }
+            }
+          }
+        } catch (remErr) {
+          console.warn("remainingToCapWei (portfolio summaries legacy) failed:", remErr?.message || remErr);
+        }
+
         const normalized = {
           pid,
           principalUsdRaw,
@@ -2212,6 +2491,9 @@ export const useStore = create((set, get) => ({
           createdAt,
           frozenUntil,
           capProgressBps,
+          remainingToCapWei,
+          remainingCapUsdMicro,
+          remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
         };
 
         if (portfolioManager) {
@@ -2262,6 +2544,114 @@ export const useStore = create((set, get) => ({
       };
     } catch (error) {
       console.error('ComprehensiveView.getOverallCapStatus error:', error);
+      return null;
+    }
+  },
+
+  // Fetch team summary (directs, total team size, business volumes) from ComprehensiveView
+  getTeamSummary: async (userAddress, maxDepth = 50) => {
+    try {
+      if (!userAddress) return null;
+      const viewContract = new web3.eth.Contract(
+        ComprehensiveViewABI,
+        Contract["ComprehensiveView"]
+      );
+      const raw = await viewContract.methods
+        .getTeamSummary(userAddress, maxDepth)
+        .call();
+
+      const pick = (key, index) =>
+        raw?.summary?.[key] != null
+          ? raw.summary[key]
+          : raw?.[key] != null
+          ? raw[key]
+          : raw?.summary?.[index] ?? raw?.[index];
+
+      const totalDirects = pick("totalDirects", 0) ?? 0;
+      const totalTeamSize = pick("totalTeamSize", 1) ?? 0;
+      const qualifiedBusinessUSD = pick("qualifiedBusinessUSD", 2) ?? 0;
+      const rawTeamBusinessUSD = pick("rawTeamBusinessUSD", 3) ?? 0;
+
+      return {
+        totalDirects: toNumber(totalDirects),
+        totalTeamSize: toNumber(totalTeamSize),
+        qualifiedBusinessUSD: toNumber(qualifiedBusinessUSD),
+        rawTeamBusinessUSD: toNumber(rawTeamBusinessUSD),
+      };
+    } catch (error) {
+      console.error('ComprehensiveView.getTeamSummary error:', error);
+      return null;
+    }
+  },
+
+  // Fetch per-direct self and team portfolio USD using ComprehensiveView
+  getDirectsPortfolioAndTeamVolumes: async (userAddress) => {
+    try {
+      if (!hasAddress(userAddress)) return null;
+      const viewContract = new web3.eth.Contract(
+        ComprehensiveViewABI,
+        Contract["ComprehensiveView"]
+      );
+      const raw = await viewContract.methods
+        .getDirectsPortfolioAndTeamVolumes(userAddress)
+        .call();
+
+      // Normalize tuple outputs regardless of struct/array encoding
+      const directs = raw?.directs ?? raw?.[0] ?? [];
+      const selfPortfolioUsd = raw?.selfPortfolioUsd ?? raw?.[1] ?? [];
+      const teamPortfolioUsd = raw?.teamPortfolioUsd ?? raw?.[2] ?? [];
+
+      const map = new Map();
+      const entries = [];
+      const n = Math.max(directs.length || 0, selfPortfolioUsd.length || 0, teamPortfolioUsd.length || 0);
+      for (let i = 0; i < n; i += 1) {
+        const addr = (directs[i] ?? '').toLowerCase();
+        if (!hasAddress(directs[i])) continue;
+        const selfUsd = fromMicroUSD(selfPortfolioUsd[i] ?? 0);
+        const teamUsd = fromMicroUSD(teamPortfolioUsd[i] ?? 0);
+        const entry = { address: directs[i], selfUsd, teamUsd };
+        map.set(addr, entry);
+        entries.push(entry);
+      }
+
+      return {
+        directs,
+        selfPortfolioUsd: selfPortfolioUsd.map((v) => fromMicroUSD(v)),
+        teamPortfolioUsd: teamPortfolioUsd.map((v) => fromMicroUSD(v)),
+        map, // Map<lowercase address, { address, selfUsd, teamUsd }>
+        entries,
+      };
+    } catch (error) {
+      console.error('ComprehensiveView.getDirectsPortfolioAndTeamVolumes error:', error);
+      return null;
+    }
+  },
+
+  // Fetch single team member details for a user (self)
+  getTeamMemberDetails: async (memberAddress) => {
+    try {
+      if (!memberAddress) return null;
+      const viewContract = new web3.eth.Contract(
+        ComprehensiveViewABI,
+        Contract["ComprehensiveView"]
+      );
+      const raw = await viewContract.methods
+        .getTeamMemberDetails(memberAddress)
+        .call();
+
+      const pick = (key) => raw?.details?.[key] ?? raw?.[key];
+
+      return {
+        member: pick('member') ?? memberAddress,
+        totalPortfolioValueUSD: toNumber(pick('totalPortfolioValueUSD') ?? 0),
+        totalEarningsUSD: toNumber(pick('totalEarningsUSD') ?? 0),
+        teamBusinessUSD: toNumber(pick('teamBusinessUSD') ?? 0),
+        slabLevel: toNumber(pick('slabLevel') ?? 0),
+        royaltyLevel: toNumber(pick('royaltyLevel') ?? 0),
+        isSlabEligible: Boolean(pick('isSlabEligible') ?? false),
+      };
+    } catch (error) {
+      console.error('ComprehensiveView.getTeamMemberDetails error:', error);
       return null;
     }
   },

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -13,58 +14,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import NumberPopup from '../components/NumberPopup';
-import { formatUSD, formatRAMA } from '../utils/contractData';
-
-const MISSED_INCOME_SUMMARY = {
-  capReachedOn: '2024-08-12',
-  totalMissedUsd: 18420,
-  totalMissedRama: 75250,
-  activeDaysWithoutTopup: 47,
-  nextUnlockWindow: 'Top up or create a new portfolio to restart income.',
-};
-
-const MISSED_CATEGORIES = [
-  {
-    key: 'roi',
-    title: 'Portfolio ROI',
-    amountUsd: 7920,
-    share: '43%',
-    description:
-      'Daily ROI earnings that could not be credited after the 4× lifetime cap was reached.',
-    accent: 'text-neon-green',
-    border: 'border-neon-green/40',
-  },
-  {
-    key: 'spot',
-    title: 'Spot Income',
-    amountUsd: 3650,
-    share: '20%',
-    description:
-      'Direct trading spot income that paused once portfolio earnings hit the maximum cap.',
-    accent: 'text-cyan-300',
-    border: 'border-cyan-400/40',
-  },
-  {
-    key: 'slab',
-    title: 'Slab Income',
-    amountUsd: 4280,
-    share: '23%',
-    description:
-      'Team slab rewards that were calculated but withheld while the portfolio exceeded its cap.',
-    accent: 'text-neon-orange',
-    border: 'border-neon-orange/40',
-  },
-  {
-    key: 'override',
-    title: 'Override & Royalty',
-    amountUsd: 2570,
-    share: '14%',
-    description:
-      'Same-slab override and royalty payouts that require an active earning portfolio.',
-    accent: 'text-neon-purple',
-    border: 'border-neon-purple/40',
-  },
-];
+import { useStore } from '../../store/useUserInfoStore';
+import { formatUSD } from '../utils/contractData';
 
 const RECOVERY_STEPS = [
   {
@@ -87,30 +38,101 @@ const RECOVERY_STEPS = [
   },
 ];
 
-const TIMELINE_ENTRIES = [
-  {
-    label: 'Cap Reached',
-    date: '12 Aug 2024',
-    note: 'Lifetime 4× cap achieved on portfolio #1023. Auto-paused all payouts.',
-  },
-  {
-    label: 'First Missed ROI',
-    date: '13 Aug 2024',
-    note: '$220.50 ROI could not be credited. Balance redirected to safety buffer.',
-  },
-  {
-    label: 'Team Volume Growth',
-    date: '28 Aug 2024',
-    note: 'Team added $18,400 volume—eligible slab rewards missed due to inactive cap.',
-  },
-  {
-    label: 'Royalty Snapshot',
-    date: '06 Sep 2024',
-    note: 'Monthly royalty review flagged account as “cap-locked”. Payout skipped.',
-  },
-];
-
 export default function MissedIncome() {
+  const userAddress = typeof window !== 'undefined' ? localStorage.getItem('userAddress') : null;
+  const getMissedIncomeOverview = useStore((s) => s.getMissedIncomeOverview);
+  const getMissedIncomeSlice = useStore((s) => s.getMissedIncomeSlice);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [overview, setOverview] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!userAddress) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const [ov, sl] = await Promise.all([
+          getMissedIncomeOverview(userAddress),
+          getMissedIncomeSlice(userAddress, 0, 50),
+        ]);
+        if (!cancelled) {
+          setOverview(ov);
+          setTimeline(sl?.entries || []);
+        }
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setError(err?.message || 'Unable to load missed income.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getMissedIncomeOverview, getMissedIncomeSlice]);
+
+  const capDate = useMemo(() => {
+    if (!overview?.capReachedAt) return null;
+    try {
+      return new Date(overview.capReachedAt * 1000);
+    } catch {
+      return null;
+    }
+  }, [overview]);
+
+  const categories = useMemo(() => {
+    const missed = overview?.missed || {};
+    const total = Number(overview?.totalMissedUsd || 0) || 0;
+    const pct = (v) => (total > 0 ? `${Math.round((v / total) * 100)}%` : '0%');
+    return [
+      {
+        key: 'spot',
+        title: 'Spot Income',
+        amountUsd: missed.spotUsd || 0,
+        share: pct(missed.spotUsd || 0),
+        description:
+          'Direct trading/spot income paused while your portfolio is cap-locked.',
+        accent: 'text-cyan-300',
+        border: 'border-cyan-400/40',
+      },
+      {
+        key: 'slab',
+        title: 'Slab Income',
+        amountUsd: missed.slabUsd || 0,
+        share: pct(missed.slabUsd || 0),
+        description:
+          'Team slab rewards calculated but withheld during cap lock.',
+        accent: 'text-neon-orange',
+        border: 'border-neon-orange/40',
+      },
+      {
+        key: 'override',
+        title: 'Slab Override',
+        amountUsd: missed.slabOverrideUsd || 0,
+        share: pct(missed.slabOverrideUsd || 0),
+        description:
+          'Same-slab override payouts held until a new portfolio activates.',
+        accent: 'text-neon-purple',
+        border: 'border-neon-purple/40',
+      },
+    ];
+  }, [overview]);
+
+  const timelineUi = useMemo(() => {
+    return (timeline || []).map((e) => {
+      const d = new Date((Number(e.at) || 0) * 1000);
+      const dateStr = Number.isFinite(d.getTime()) ? d.toLocaleDateString() : '';
+      const label = `${(e.kind || 'missed').toUpperCase()} Missed`;
+      const note = `Missed ${formatUSD(e.amountUsd || 0)} on portfolio #${e.pid} · reason: ${e.reason}`;
+      return { date: dateStr, label, note };
+    });
+  }, [timeline]);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <header className="cyber-glass border border-red-400/40 bg-red-500/5 rounded-3xl p-6 sm:p-8 relative overflow-hidden">
@@ -124,22 +146,31 @@ export default function MissedIncome() {
             <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Missed Income Dashboard
             </h1>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/40 text-red-200 rounded-xl px-4 py-2 text-xs">
+                {error}
+              </div>
+            )}
             <p className="text-sm sm:text-base text-red-100/80 max-w-3xl">
-              Your primary portfolio reached its 4× lifetime earnings cap on{' '}
-              <span className="font-semibold text-white">
-                {MISSED_INCOME_SUMMARY.capReachedOn}
-              </span>
-              . Since then, all income streams have been paused. Review the missed rewards and take
-              action to reactivate payouts.
+              {overview?.capLocked
+                ? (
+                  <>
+                    Your portfolio is currently cap-locked{capDate ? (
+                      <> since <span className="font-semibold text-white">{capDate.toLocaleDateString()}</span></>
+                    ) : null}. Missed income below reflects what could not be credited during the lock.
+                  </>
+                ) : (
+                  <>Your account has an open, uncapped portfolio. Any held balances below are now claimable.</>
+                )}
             </p>
             <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-red-200/80">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-red-500/40">
                 <CalendarClock size={14} />
-                {MISSED_INCOME_SUMMARY.activeDaysWithoutTopup} days without top-up
+                {overview?.daysSinceCap ?? 0} days since last cap
               </span>
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-red-500/40">
                 <RefreshCw size={14} />
-                {MISSED_INCOME_SUMMARY.nextUnlockWindow}
+                {overview?.capLocked ? 'Top up or create a new portfolio to restart income.' : 'Active portfolio detected — you can claim held balances.'}
               </span>
             </div>
           </div>
@@ -150,18 +181,18 @@ export default function MissedIncome() {
                 Total Missed Income (USD)
               </p>
               <NumberPopup
-                value={formatUSD(MISSED_INCOME_SUMMARY.totalMissedUsd)}
+                value={formatUSD(overview?.totalMissedUsd || 0)}
                 label="Total missed"
                 className="text-2xl sm:text-3xl font-bold text-red-300"
               />
             </div>
             <div className="cyber-glass border border-cyan-400/40 rounded-xl p-4 text-center">
               <p className="text-xs uppercase tracking-wider text-cyan-200/80 mb-2">
-                Total Missed (RAMA estimate)
+                Held Balances (USD)
               </p>
               <NumberPopup
-                value={`${formatRAMA(MISSED_INCOME_SUMMARY.totalMissedRama)} RAMA`}
-                label="Missed RAMA"
+                value={formatUSD((overview?.held?.royaltyUsd || 0) + (overview?.held?.rewardsUsd || 0))}
+                label="Royalty + Rewards"
                 className="text-2xl sm:text-3xl font-bold text-cyan-300"
               />
             </div>
@@ -170,7 +201,7 @@ export default function MissedIncome() {
       </header>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {MISSED_CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <div
             key={category.key}
             className={`cyber-glass border ${category.border} rounded-2xl p-5 sm:p-6 flex flex-col gap-4 transition-all hover:border-white/40`}
@@ -257,9 +288,9 @@ export default function MissedIncome() {
           </div>
 
           <div className="space-y-4">
-            {TIMELINE_ENTRIES.map((entry, idx) => (
+            {(timelineUi || []).map((entry, idx) => (
               <div key={idx} className="relative pl-6">
-                {idx !== TIMELINE_ENTRIES.length - 1 && (
+                {idx !== (timelineUi?.length || 0) - 1 && (
                   <span className="absolute left-2 top-5 bottom-0 w-px bg-gradient-to-b from-cyan-500/50 via-cyan-500/20 to-transparent" />
                 )}
                 <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-cyan-500/60 bg-dark-950" />
@@ -272,6 +303,9 @@ export default function MissedIncome() {
                 </div>
               </div>
             ))}
+            {!loading && (!timelineUi || !timelineUi.length) && (
+              <div className="text-xs text-cyan-300/70">No missed income records yet.</div>
+            )}
           </div>
         </div>
       </section>
@@ -319,8 +353,8 @@ export default function MissedIncome() {
             <h3 className="text-sm font-semibold text-cyan-200">Protection Status</h3>
           </div>
           <p className="text-xs text-cyan-200/70">
-            Missed income remains eligible for reinstatement once a new cap is created within 90
-            days from the pause date.
+            Royalty and one-time rewards keep accruing in hold while cap-locked. Create a new
+            portfolio to release them and resume all streams.
           </p>
           <Link
             to="/dashboard/settings"

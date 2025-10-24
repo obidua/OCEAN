@@ -276,7 +276,8 @@ export default function SafeWallet() {
   const detailCreditedUsd = portfolioDetail ? Number(portfolioDetail.creditedUsd ?? 0) : 0;
   const detailPendingUsd = portfolioDetail ? Number(portfolioDetail.pendingUsd ?? 0) : 0;
   const detailTotalAccrued = detailCreditedUsd + detailPendingUsd;
-  const detailRemainingUsd = Math.max(0, detailCapUsd - detailTotalAccrued);
+  const detailRemainingUsdFallback = Math.max(0, detailCapUsd - detailTotalAccrued);
+  const detailRemainingUsd = portfolioDetail?.remainingCapUsd ?? detailRemainingUsdFallback;
   const detailProgress = detailCapUsd > 0 ? Math.min(100, (detailTotalAccrued / detailCapUsd) * 100) : 0;
   const detailProgressLabel = detailProgress.toFixed(2);
   const detailCapLabel = portfolioDetail

@@ -41,6 +41,7 @@ const truncateAddress = (addr) => {
 
 export default function TeamNetwork() {
   const getTeamNetworkData = useStore((state) => state.getTeamNetworkData);
+  const getDirectsPortfolioAndTeamVolumes = useStore((state) => state.getDirectsPortfolioAndTeamVolumes);
   const navigate = useNavigate();
 
   const [copied, setCopied] = useState(false);
@@ -52,6 +53,7 @@ export default function TeamNetwork() {
   const [error, setError] = useState(null);
 
   const [network, setNetwork] = useState(null);
+  const [directVolumesMap, setDirectVolumesMap] = useState(null);
   const directListRef = useRef(null);
   const autoScrollFrame = useRef(null);
   const autoScrollPaused = useRef(false);
@@ -67,6 +69,7 @@ export default function TeamNetwork() {
   const loadNetwork = useCallback(async () => {
     if (!userAddress || !getTeamNetworkData) {
       setNetwork(null);
+      setDirectVolumesMap(null);
       return;
     }
     setIsLoading(true);
@@ -76,15 +79,27 @@ export default function TeamNetwork() {
         maxDepth: 10,
         detailLimit: 100,
       });
+      // Also fetch directs' self/team volumes from ComprehensiveView and keep a quick lookup map
+      let volMap = null;
+      if (getDirectsPortfolioAndTeamVolumes) {
+        try {
+          const volumes = await getDirectsPortfolioAndTeamVolumes(userAddress);
+          volMap = volumes?.map ?? null;
+        } catch (e) {
+          console.warn('Failed to fetch directs volumes:', e);
+        }
+      }
+      setDirectVolumesMap(volMap);
       setNetwork(data);
     } catch (err) {
       console.error('TeamNetwork load error:', err);
       setError(err?.message || 'Failed to load team network data');
       setNetwork(null);
+      setDirectVolumesMap(null);
     } finally {
       setIsLoading(false);
     }
-  }, [userAddress, getTeamNetworkData]);
+  }, [userAddress, getTeamNetworkData, getDirectsPortfolioAndTeamVolumes]);
 
   useEffect(() => {
     loadNetwork();
@@ -131,8 +146,10 @@ export default function TeamNetwork() {
   const dynamicDirects = useMemo(() => {
     if (!directMembersActive.length) return null;
     return directMembersActive.map((member) => {
-      const stakeUsd = member.stake?.usd ?? 0;
-      const teamVolumeUsd = member.teamVolume?.qualifiedUsd ?? 0;
+      const key = (member.address ?? '').toLowerCase();
+      const fromComp = directVolumesMap?.get ? directVolumesMap.get(key) : null;
+      const stakeUsd = fromComp?.selfUsd ?? member.stake?.usd ?? 0;
+      const teamVolumeUsd = fromComp?.teamUsd ?? member.teamVolume?.qualifiedUsd ?? 0;
       return {
         address: truncateAddress(member.address),
         addressFull: member.address,
@@ -146,7 +163,7 @@ export default function TeamNetwork() {
         raw: member,
       };
     });
-  }, [directMembers]);
+  }, [directMembers, directVolumesMap]);
 
   const directList = (dynamicDirects ?? []).map((item) => {
     const stakeUsd = item.stakedUSD ?? 0;
@@ -182,8 +199,9 @@ export default function TeamNetwork() {
           ? info.joinedAt.toISOString().slice(0, 10)
           : '';
         const id = info?.id ? `USR-${String(info.id).padStart(4, '0')}` : '';
-        const stakeUsd = info?.stake?.usd ?? 0;
-        const teamVolumeUsd = info?.teamVolume?.qualifiedUsd ?? 0;
+        const fromComp = directVolumesMap?.get ? directVolumesMap.get(addressRaw) : null;
+        const stakeUsd = fromComp?.selfUsd ?? info?.stake?.usd ?? 0;
+        const teamVolumeUsd = fromComp?.teamUsd ?? info?.teamVolume?.qualifiedUsd ?? 0;
         rows.push({
           userId: id || `ADDR-${idx + 1}`,
           address: truncateAddress(addr),
@@ -205,7 +223,7 @@ export default function TeamNetwork() {
       result[key] = rows;
     }
     return result;
-  }, [network, memberDetailMap]);
+  }, [network, memberDetailMap, directVolumesMap]);
 
   const levelData = dynamicLevelData ?? EMPTY_LEVEL_DATA;
 

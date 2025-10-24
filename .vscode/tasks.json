@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Repo: Push",
+      "type": "shell",
+      "command": "bash",
+      "args": ["scripts/push.sh"],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

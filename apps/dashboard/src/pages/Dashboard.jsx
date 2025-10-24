@@ -8,6 +8,9 @@ import LivePriceFeed from '../components/LivePriceFeed';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useStore } from '../../store/useUserInfoStore';
 import { PortfolioStatus } from '../types/contract';
+import { useWaitForTransactionReceipt } from 'wagmi';
+import { useTransaction } from '../../config/register';
+import { useAppKitAccount } from '@reown/appkit/react';
 
 export default function Dashboard() {
   const [portfolioIds, setPortFolioId] = useState([]);
@@ -26,6 +29,13 @@ export default function Dashboard() {
   const [incomeTotalsLoading, setIncomeTotalsLoading] = useState(false);
   const [incomeTotalsError, setIncomeTotalsError] = useState('');
   const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [isClaimingGrowth, setIsClaimingGrowth] = useState(false);
+  const [claimError, setClaimError] = useState(null);
+  const [roiTotals, setRoiTotals] = useState(null);
+  const [roiTotalsLoading, setRoiTotalsLoading] = useState(false);
+
+  const { address, isConnected } = useAppKitAccount();
+  const { handleSendTx, hash, isSuccess, isError, receipt } = useTransaction();
 
   const getTOtalPortFolio = useStore((s) => s.getTOtalPortFolio);
   const getPortFoliById = useStore((s) => s.getPortFoliById);
@@ -34,8 +44,14 @@ export default function Dashboard() {
   const convertRamaToUsd = useStore((s) => s.RamaTOUsd);
   const getIncomeTotals = useStore((s) => s.getIncomeTotals);
   const getComprehensiveCapStatus = useStore((s) => s.getComprehensiveCapStatus);
+  const getTeamSummary = useStore((s) => s.getTeamSummary);
+  const getTeamMemberDetails = useStore((s) => s.getTeamMemberDetails);
+  const claimAccruedROI = useStore((s) => s.claimAccruedROI);
+  const getROITotals = useStore((s) => s.getROITotals);
   const [comprehensiveCapStatus, setComprehensiveCapStatus] = useState(null);
   const [comprehensiveCapError, setComprehensiveCapError] = useState(null);
+  const [teamSummary, setTeamSummary] = useState(null);
+  const [teamMemberDetails, setTeamMemberDetails] = useState(null);
   const userAddressStore = useStore((s) => s.userAddress);
   const userAddress =
     userAddressStore || (typeof window !== 'undefined' ? localStorage.getItem('userAddress') : null);
@@ -63,11 +79,13 @@ export default function Dashboard() {
       setDashError(null);
       setComprehensiveCapError(null);
       try {
-        const [portfolioInfo, dashboardInfo, earningsTrend, capStatus] = await Promise.all([
+        const [portfolioInfo, dashboardInfo, earningsTrend, capStatus, teamSum, teamDet] = await Promise.all([
           getTOtalPortFolio(userAddress),
           getDashboardDetails(userAddress),
           get7DayEarningTrend(userAddress),
           getComprehensiveCapStatus(userAddress),
+          typeof getTeamSummary === 'function' ? getTeamSummary(userAddress, 50) : null,
+          typeof getTeamMemberDetails === 'function' ? getTeamMemberDetails(userAddress) : null,
         ]);
 
         if (cancelled) return;
@@ -101,7 +119,9 @@ export default function Dashboard() {
           setFortFolioDetails(portfolioInfo?.ProtFolioDetail ?? null);
         }
         setLast7Days(Array.isArray(earningsTrend) ? earningsTrend : []);
-        setComprehensiveCapStatus(capStatus ?? null);
+  setComprehensiveCapStatus(capStatus ?? null);
+  setTeamSummary(teamSum ?? null);
+    setTeamMemberDetails(teamDet ?? null);
         setComprehensiveCapError(null);
 
         if (convertRamaToUsd) {
@@ -165,6 +185,102 @@ export default function Dashboard() {
   useEffect(() => {
     refreshIncomeTotals();
   }, [refreshIncomeTotals]);
+
+  // Load ROI totals (unclaimed ROI) to keep Dashboard consistent with Accrued Rewards page
+  useEffect(() => {
+    let cancelled = false;
+    const loadRoiTotals = async () => {
+      if (!userAddress || typeof getROITotals !== 'function') {
+        setRoiTotals(null);
+        setRoiTotalsLoading(false);
+        return;
+      }
+      setRoiTotalsLoading(true);
+      try {
+        const totals = await getROITotals(userAddress);
+        if (cancelled) return;
+        setRoiTotals(totals || null);
+      } catch (err) {
+        console.warn('Failed to load ROI totals:', err);
+        if (!cancelled) setRoiTotals(null);
+      } finally {
+        if (!cancelled) setRoiTotalsLoading(false);
+      }
+    };
+    loadRoiTotals();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getROITotals]);
+
+  // Accrued Growth claim handler
+  const handleClaimGrowth = useCallback(async () => {
+    try {
+      setIsClaimingGrowth(true);
+      setClaimError(null);
+
+      if (!isConnected || !address) {
+        throw new Error('Please connect your wallet to claim rewards.');
+      }
+
+      const unclaimedUsd = roiTotals?.unclaimedUsd ?? 0;
+      if (!(unclaimedUsd > 0)) {
+        throw new Error('No unclaimed ROI available to claim.');
+      }
+
+      const tx = await claimAccruedROI(address);
+      if (!tx) {
+        throw new Error('Unable to build claim transaction. Please try again.');
+      }
+
+      handleSendTx(tx);
+    } catch (err) {
+      console.error('Claim growth error:', err);
+      setClaimError(err?.message || 'Failed to claim accrued ROI');
+      setIsClaimingGrowth(false);
+    }
+  }, [claimAccruedROI, handleSendTx, address, isConnected, roiTotals]);
+
+  // Monitor claim transaction
+  useEffect(() => {
+    if (isSuccess && receipt && isClaimingGrowth) {
+      console.log('Claim successful, refreshing dashboard data...');
+      setIsClaimingGrowth(false);
+      setClaimError(null);
+      
+      // Reload dashboard data
+      const reload = async () => {
+        if (!userAddress) return;
+        try {
+          const [portfolioInfo, dashboardInfo] = await Promise.all([
+            getTOtalPortFolio(userAddress),
+            getDashboardDetails(userAddress)
+          ]);
+          if (dashboardInfo) {
+            setDashboardDetails(dashboardInfo);
+          }
+          await refreshIncomeTotals();
+          // Refresh ROI totals so the box updates after a claim
+          if (typeof getROITotals === 'function') {
+            try {
+              const totals = await getROITotals(userAddress);
+              setRoiTotals(totals || null);
+            } catch (e) {
+              console.warn('Failed to refresh ROI totals after claim:', e);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh after claim:', error);
+        }
+      };
+      reload();
+    }
+    
+    if (isError && isClaimingGrowth) {
+      setClaimError('Transaction failed. Please try again.');
+      setIsClaimingGrowth(false);
+    }
+  }, [isSuccess, isError, receipt, isClaimingGrowth, userAddress, getTOtalPortFolio, getDashboardDetails, refreshIncomeTotals]);
 
   const loadPortfolioById = async (pid) => {
     try {
@@ -283,7 +399,9 @@ export default function Dashboard() {
   const creditedUsdValue = dashboardPortfolio?.creditedUsd ?? portFolioDetails?.creditedUsd ?? 0;
   const pendingUsdValue = dashboardPortfolio?.pendingUsd ?? 0;
   const totalAccruedRewardUsd = creditedUsdValue + pendingUsdValue;
-  const remainingRewardUsd = Math.max(0, portfolioCapUsd - totalAccruedRewardUsd);
+  const remainingRewardUsdFallback = Math.max(0, portfolioCapUsd - totalAccruedRewardUsd);
+  const remainingRewardUsd =
+    (dashboardPortfolio?.remainingCapUsd ?? portFolioDetails?.remainingCapUsd ?? remainingRewardUsdFallback);
 
   const cap4xUsd = comprehensiveCapStatus ? formatCapUsd(comprehensiveCapStatus.cap4xUSD6) : 0;
   const totalPortfolioUsd = comprehensiveCapStatus ? formatCapUsd(comprehensiveCapStatus.totalPortfolioValueUSD6) : portfolioCapUsd;
@@ -362,10 +480,12 @@ export default function Dashboard() {
   ];
   const safeWalletRama = summaryReady ? DashBoardDetail?.safeWallet?.rama ?? 0 : 0;
   const directMembers =
+    teamSummary?.totalDirects ??
     DashBoardDetail?.slabPanel?.directMembers ??
     DashBoardDetail?.userStatus?.directs ??
     0;
   const slabLevel =
+    teamMemberDetails?.slabLevel ??
     DashBoardDetail?.slabPanel?.slabIndex ??
     DashBoardDetail?.userStatus?.slabLevel ??
     0;
@@ -384,6 +504,7 @@ export default function Dashboard() {
   ];
   const slabName = slabNames[slabLevel - 1] ?? 'None';
   const totalTeamMembers =
+    teamSummary?.totalTeamSize ??
     DashBoardDetail?.teamCount ??
     DashBoardDetail?.slabPanel?.teamCount ??
     DashBoardDetail?.userStatus?.teamCount ??
@@ -411,7 +532,10 @@ export default function Dashboard() {
     DashBoardDetail?.totals?.qualifiedVolumeUsd ??
     0);
   const royaltyLevel =
-    userStatus?.royaltyLevel ?? DashBoardDetail?.totals?.royaltyLevel ?? 0;
+    teamMemberDetails?.royaltyLevel ??
+    userStatus?.royaltyLevel ??
+    DashBoardDetail?.totals?.royaltyLevel ??
+    0;
   const royaltyPayouts = summaryReady ? royaltyUsd : null;
   const combinedBackendUsd = slabUsd + royaltyUsd + overrideUsd;
   const readyToClaimUsd = totalClaimableUsd;
@@ -634,9 +758,16 @@ export default function Dashboard() {
             )}
           </p>
           {!summaryLoading && (
-            <p className="text-xs text-neon-orange/70 relative z-10">
-              Directs: {formatCount(directMembers)}
-            </p>
+            <div className="space-y-1 relative z-10">
+              <p className="text-xs text-neon-orange/70">
+                Directs: {formatCount(directMembers)}
+              </p>
+              {teamMemberDetails && (
+                <p className="text-xs text-neon-orange/70">
+                  Team Business: {formatUSD(microToUsd(teamMemberDetails.teamBusinessUSD))}
+                </p>
+              )}
+            </div>
           )}
           <div className="flex items-center gap-1 text-xs text-neon-orange/70 relative z-10">
             <span>View Team</span>
@@ -997,22 +1128,35 @@ export default function Dashboard() {
                 <TrendingUp size={20} className="text-neon-green" />
               </div>
               <div>
-                <p className="text-sm text-neon-green font-medium uppercase tracking-wide">Accrued Growth</p>
+                <p className="text-sm text-neon-green font-medium uppercase tracking-wide">Unclaimed ROI</p>
                 <p className="text-xs text-cyan-300/90">Available to claim</p>
               </div>
             </div>
             <NumberPopup
-              value={formatUSD(DashBoardDetail?.accruedGrowthUsd ?? 0)}
-              label="Accrued Growth"
+              value={formatUSD(roiTotals?.unclaimedUsd ?? 0)}
+              label="Unclaimed ROI"
               className="text-2xl sm:text-3xl font-bold mb-4 text-neon-green relative z-10"
-              isLoading={summaryLoading}
+              isLoading={summaryLoading || roiTotalsLoading}
             />
-            <Link
-              to="/dashboard/earnings"
-              className="block w-full py-2.5 sm:py-3 bg-gradient-to-r from-cyan-500 to-neon-green hover:from-cyan-400 hover:to-neon-green/90 rounded-lg text-sm sm:text-base font-bold transition-all text-dark-950 text-center relative z-10 group-hover:shadow-neon-green"
+            <button
+              onClick={handleClaimGrowth}
+              disabled={isClaimingGrowth || !((roiTotals?.unclaimedUsd ?? 0) > 0)}
+              className="block w-full py-2.5 sm:py-3 bg-gradient-to-r from-cyan-500 to-neon-green hover:from-cyan-400 hover:to-neon-green/90 rounded-lg text-sm sm:text-base font-bold transition-all text-dark-950 text-center relative z-10 group-hover:shadow-neon-green disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Claim Now
-            </Link>
+              {isClaimingGrowth ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Claiming...</span>
+                </>
+              ) : (
+                'Claim Now'
+              )}
+            </button>
+            {claimError && (
+              <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400 relative z-10">
+                {claimError}
+              </div>
+            )}
           </div>
 
           <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
