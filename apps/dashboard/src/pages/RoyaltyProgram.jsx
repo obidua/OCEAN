@@ -58,6 +58,9 @@ export default function RoyaltyProgram() {
   const [showClaimModal, setShowClaimModal] = useState(false);
 
   const getRoyaltyOverview = useStore((s) => s.getRoyaltyOverview);
+  const getRoyaltyClaimHistory = useStore((s) => s.getRoyaltyClaimHistory);
+  const claimRoyaltyReward = useStore((s) => s.claimRoyaltyReward);
+  const [claimTransaction, setClaimTransaction] = useState(null);
   const { data: txHash, sendTransaction } = useSendTransaction();
 
   useEffect(() => {
@@ -91,35 +94,36 @@ export default function RoyaltyProgram() {
     };
   }, [userAddress, getRoyaltyOverview]);
 
-  // Mock claim history - replace with actual contract calls when available
+  // Fetch real claim history from RoyaltyPaid events
   useEffect(() => {
     if (!userAddress) return;
     
+    let cancelled = false;
     setLoadingHistory(true);
-    // Simulate loading history
-    setTimeout(() => {
-      const mockHistory = [];
-      const payouts = royaltyDetails?.paidMonths || 0;
-      
-      for (let i = 0; i < Math.min(payouts, 12); i++) {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        const monthEpoch = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}`;
-        
-        mockHistory.push({
-          monthEpoch,
-          tier: Math.min(royaltyDetails?.currentLevel || 1, 14),
-          tierName: ROYALTY_TIER_NAMES[Math.min((royaltyDetails?.currentLevel || 1) - 1, 13)],
-          amountUsd: royaltyDetails?.royaltyIncomeUsd / Math.max(payouts, 1),
-          amountRama: royaltyDetails?.royaltyIncomeRama / Math.max(payouts, 1),
-          claimedAt: Math.floor(date.getTime() / 1000),
-        });
+
+    const loadHistory = async () => {
+      try {
+        const history = await getRoyaltyClaimHistory(userAddress, 50);
+        if (!cancelled) {
+          setClaimHistory(history);
+        }
+      } catch (err) {
+        console.error('Failed to load royalty claim history:', err);
+        if (!cancelled) {
+          setClaimHistory([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingHistory(false);
+        }
       }
-      
-      setClaimHistory(mockHistory);
-      setLoadingHistory(false);
-    }, 500);
-  }, [userAddress, royaltyDetails?.paidMonths, royaltyDetails?.currentLevel, royaltyDetails?.royaltyIncomeUsd, royaltyDetails?.royaltyIncomeRama]);
+    };
+
+    loadHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getRoyaltyClaimHistory]);
 
   const tiers = useMemo(() => {
     // Prefer normalized tiers from store (already in USD units)
@@ -172,11 +176,33 @@ export default function RoyaltyProgram() {
     setShowClaimModal(true);
     
     try {
-      // TODO: Implement actual claim transaction from RoyaltyManager contract
-      console.log('Claiming royalty...');
+      // NOTE: RoyaltyManager.claimRoyalty() requires a Merkle proof (bytes32[] proof).
+      // This proof must be generated off-chain by a backend API or script.
+      // For now, we attempt to claim with an empty proof. This will fail unless:
+      //   1) The contract allows empty proofs (unlikely), or
+      //   2) You integrate with a backend that provides the proof.
+      
+      // Extract claim parameters from royaltyDetails
+      const monthId = royaltyDetails?.nextMonthEpoch || 0;
+      const tierIdx = (royaltyDetails?.currentLevel || 1) - 1; // 0-indexed
+      const amountRama = royaltyDetails?.royaltyIncomeRama || 0;
+      const amountInUSD = royaltyDetails?.royaltyIncomeUsd || 0;
+      const proof = []; // Placeholder: replace with actual Merkle proof from backend
+
+      const tx = await claimRoyaltyReward(
+        connectedAddress,
+        monthId,
+        amountRama,
+        amountInUSD,
+        tierIdx,
+        proof
+      );
+
+      setClaimTransaction(tx);
     } catch (err) {
-      console.error(err);
+      console.error('Royalty claim preparation failed:', err);
       setShowClaimModal(false);
+      alert(err?.message || 'Failed to prepare claim transaction');
     }
   };
 

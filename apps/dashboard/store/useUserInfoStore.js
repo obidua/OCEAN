@@ -85,6 +85,23 @@ const USD_MICRO = 1e6;
 const RAMA_DECIMALS = 1e18;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+const ROYALTY_TIER_NAMES = [
+  'Coral Starter',
+  'Pearl Diver',
+  'Sea Explorer',
+  'Wave Rider',
+  'Tide Surge',
+  'Deep Blue',
+  'Ocean Guardian',
+  'Marine Commander',
+  'Aqua Captain',
+  'Current Master',
+  'Sea Legend',
+  'Trident Icon',
+  'Poseidon Crown',
+  'Ocean Supreme',
+];
+
 const hasAddress = (addr) =>
   typeof addr === "string" &&
   addr.startsWith("0x") &&
@@ -2946,6 +2963,119 @@ export const useStore = create((set, get) => ({
       };
     } catch (error) {
       console.error("getRoyaltyOverview error:", error);
+      throw error;
+    }
+  },
+
+  // Fetch royalty claim history from RoyaltyPaid events
+  getRoyaltyClaimHistory: async (userAddress, limit = 50) => {
+    try {
+      if (!userAddress) return [];
+
+      const royaltyManager = makeContract(
+        RoyaltyManagerABI,
+        Contract["RoyaltyManager"]
+      );
+      if (!royaltyManager) return [];
+
+      // Attempt to get RoyaltyPaid events for the user.
+      // Event signature: RoyaltyPaid(address indexed user, uint64 indexed monthId, uint8 tierIdx, uint256 ramaAmount)
+      // We'll parse them backwards (most recent first).
+      try {
+        const latestBlock = await web3.eth.getBlockNumber();
+        // Only scan last ~100k blocks to avoid timeout. Adjust as needed.
+        const fromBlock = Math.max(0, Number(latestBlock) - 100000);
+
+        const events = await royaltyManager.getPastEvents("RoyaltyPaid", {
+          filter: { user: userAddress },
+          fromBlock,
+          toBlock: "latest",
+        });
+
+        // Parse events into a history array
+        const history = events
+          .map((evt) => {
+            const monthId = toNumber(evt.returnValues.monthId || 0);
+            const tierIdx = toNumber(evt.returnValues.tierIdx || 0);
+            const ramaAmount = fromWeiToRama(evt.returnValues.ramaAmount || 0);
+
+            // Approximate USD from RAMA if possible (could also store or calculate)
+            // For now, use a rough conversion. In production, you'd store or compute from oracle.
+            const usdAmount = ramaAmount * 0.01; // placeholder rate
+
+            return {
+              monthEpoch: monthId,
+              tier: tierIdx + 1,
+              tierName: ROYALTY_TIER_NAMES[tierIdx] || 'Unknown',
+              amountUsd: usdAmount,
+              amountRama: ramaAmount,
+              claimedAt: evt.blockNumber ? Math.floor(Date.now() / 1000) : 0, // fallback; could fetch block timestamp
+              txHash: evt.transactionHash,
+            };
+          })
+          .reverse()
+          .slice(0, limit);
+
+        return history;
+      } catch (err) {
+        console.warn("Unable to fetch RoyaltyPaid events:", err);
+        return [];
+      }
+    } catch (error) {
+      console.error("getRoyaltyClaimHistory error:", error);
+      return [];
+    }
+  },
+
+  // Build a claim transaction for royalty (requires Merkle proof from backend/off-chain).
+  claimRoyaltyReward: async (fromAddress, monthId, amountRama, amountInUSD, tierIdx, proof = []) => {
+    try {
+      if (!fromAddress) throw new Error('No connected wallet address');
+      if (!monthId) throw new Error('monthId is required');
+      if (!amountRama || !amountInUSD || tierIdx == null) {
+        throw new Error('Missing claim parameters (amountRama, amountInUSD, tierIdx)');
+      }
+
+      const royaltyManager = makeContract(
+        RoyaltyManagerABI,
+        Contract['RoyaltyManager']
+      );
+      if (!royaltyManager) throw new Error('RoyaltyManager contract not available');
+
+      // Convert amounts to wei / micro as needed
+      const amountRamaWei = toBigIntSafe(BigInt(Math.trunc(amountRama * RAMA_DECIMALS))).toString();
+      const amountUSDMicro = toBigIntSafe(BigInt(Math.trunc(amountInUSD * USD_MICRO))).toString();
+
+      // claimRoyalty(uint64 monthId, uint256 amountRama, uint256 amountInUSD, uint8 tierIdx, bytes32[] proof)
+      const data = royaltyManager.methods
+        .claimRoyalty(monthId, amountRamaWei, amountUSDMicro, tierIdx, proof)
+        .encodeABI();
+
+      const gasPrice = await web3.eth.getGasPrice();
+      let gasLimit;
+      try {
+        gasLimit = await web3.eth.estimateGas({
+          from: fromAddress,
+          to: Contract['RoyaltyManager'],
+          data,
+        });
+      } catch (err) {
+        console.error('Gas estimation failed for claimRoyalty:', err);
+        throw new Error('Gas estimation failed. The claim may not be valid or proof may be incorrect.');
+      }
+
+      const toHex = web3.utils.toHex;
+      const tx = {
+        from: fromAddress,
+        to: Contract['RoyaltyManager'],
+        data,
+        gas: toHex(gasLimit),
+        gasPrice: toHex(gasPrice),
+      };
+
+      return tx;
+    } catch (error) {
+      console.error('claimRoyaltyReward error:', error);
       throw error;
     }
   },
