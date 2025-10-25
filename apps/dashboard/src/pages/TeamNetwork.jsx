@@ -42,6 +42,7 @@ const truncateAddress = (addr) => {
 export default function TeamNetwork() {
   const getTeamNetworkData = useStore((state) => state.getTeamNetworkData);
   const getDirectsPortfolioAndTeamVolumes = useStore((state) => state.getDirectsPortfolioAndTeamVolumes);
+  const getLegCapPercentages = useStore((state) => state.getLegCapPercentages);
   const navigate = useNavigate();
 
   const [copied, setCopied] = useState(false);
@@ -54,6 +55,7 @@ export default function TeamNetwork() {
 
   const [network, setNetwork] = useState(null);
   const [directVolumesMap, setDirectVolumesMap] = useState(null);
+  const [legCapData, setLegCapData] = useState({ leg1: 40, leg2: 30, leg3: 30 });
   const directListRef = useRef(null);
   const autoScrollFrame = useRef(null);
   const autoScrollPaused = useRef(false);
@@ -104,6 +106,23 @@ export default function TeamNetwork() {
   useEffect(() => {
     loadNetwork();
   }, [loadNetwork]);
+
+  // Load leg cap percentages
+  useEffect(() => {
+    if (!userAddress || !getLegCapPercentages) return;
+    
+    const loadLegCaps = async () => {
+      try {
+        const caps = await getLegCapPercentages(userAddress);
+        setLegCapData(caps);
+      } catch (err) {
+        console.error('Failed to load leg caps:', err);
+        // Keep default values on error
+      }
+    };
+    
+    loadLegCaps();
+  }, [userAddress, getLegCapPercentages]);
 
   useEffect(() => {
     if (!network?.levels) return;
@@ -543,7 +562,9 @@ export default function TeamNetwork() {
                 <h3 className="font-semibold text-cyan-300 mb-4">Volume Calculation</h3>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-cyan-400 mb-2">40:30:30 Rule</p>
+                    <p className="text-sm font-medium text-cyan-400 mb-2">
+                      {legCapData.leg1}:{legCapData.leg2}:{legCapData.leg3} Rule
+                    </p>
                     <p className="text-xs text-cyan-300/90 mb-3">
                       For 3 legs, volume is calculated with caps
                     </p>
@@ -551,20 +572,35 @@ export default function TeamNetwork() {
                       <div className="p-2.5 cyber-glass border border-cyan-500/20 rounded-lg">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-cyan-300">Leg 1</span>
-                          <span className="text-xs font-bold text-cyan-300">40% Cap</span>
+                          <span className="text-xs font-bold text-cyan-300">{legCapData.leg1}% Cap</span>
                         </div>
+                        {legCapData.volumes && (
+                          <div className="text-xs text-cyan-300/70 mt-1">
+                            Volume: ${normalizeUsdDisplay(legCapData.volumes.leg1).toFixed(2)}
+                          </div>
+                        )}
                       </div>
                       <div className="p-2.5 cyber-glass border border-neon-green/20 rounded-lg">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-neon-green">Leg 2</span>
-                          <span className="text-xs font-bold text-neon-green">30% Cap</span>
+                          <span className="text-xs font-bold text-neon-green">{legCapData.leg2}% Cap</span>
                         </div>
+                        {legCapData.volumes && (
+                          <div className="text-xs text-neon-green/70 mt-1">
+                            Volume: ${normalizeUsdDisplay(legCapData.volumes.leg2).toFixed(2)}
+                          </div>
+                        )}
                       </div>
                       <div className="p-2.5 cyber-glass border border-neon-orange/20 rounded-lg">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-neon-orange">Leg 3</span>
-                          <span className="text-xs font-bold text-neon-orange">30% Cap</span>
+                          <span className="text-xs font-bold text-neon-orange">{legCapData.leg3}% Cap</span>
                         </div>
+                        {legCapData.volumes && (
+                          <div className="text-xs text-neon-orange/70 mt-1">
+                            Volume: ${normalizeUsdDisplay(legCapData.volumes.leg3).toFixed(2)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

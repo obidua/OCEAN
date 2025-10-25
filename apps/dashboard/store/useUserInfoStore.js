@@ -3269,6 +3269,49 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  // Get leg cap percentages from SlabManager (getLegsTop2AndRest)
+  getLegCapPercentages: async (userAddress) => {
+    try {
+      if (!userAddress) return { leg1: 40, leg2: 30, leg3: 30 };
+
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      if (!slabManager) return { leg1: 40, leg2: 30, leg3: 30 };
+
+      // getLegsTop2AndRest returns (L1, L2, Lrest) volumes with caps applied
+      const legsData = await slabManager.methods.getLegsTop2AndRest(userAddress).call();
+      
+      const l1 = toNumber(legsData.L1 || legsData[0] || 0);
+      const l2 = toNumber(legsData.L2 || legsData[1] || 0);
+      const lrest = toNumber(legsData.Lrest || legsData[2] || 0);
+      
+      const total = l1 + l2 + lrest;
+      
+      // Calculate percentages from actual volumes
+      if (total === 0) {
+        return { leg1: 40, leg2: 30, leg3: 30 }; // Default fallback
+      }
+      
+      const leg1Percent = Math.round((l1 / total) * 100);
+      const leg2Percent = Math.round((l2 / total) * 100);
+      const leg3Percent = Math.round((lrest / total) * 100);
+      
+      return {
+        leg1: leg1Percent,
+        leg2: leg2Percent,
+        leg3: leg3Percent,
+        volumes: {
+          leg1: fromMicroUSD(l1),
+          leg2: fromMicroUSD(l2),
+          leg3: fromMicroUSD(lrest),
+          total: fromMicroUSD(total),
+        }
+      };
+    } catch (error) {
+      console.error("getLegCapPercentages error:", error);
+      return { leg1: 40, leg2: 30, leg3: 30 }; // Fallback to default
+    }
+  },
+
   getSlabLevel: async (userAddress) => {
     try {
       if (!userAddress) throw new Error("Missing user address");
