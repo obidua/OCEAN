@@ -177,8 +177,8 @@ export default function AccruedRewards() {
       setDashboard(dashboardData);
 
     } catch (err) {
-      console.error('Failed to load ROI data:', err);
-      const errorMessage = err?.message || 'Failed to load ROI data';
+      console.error('Failed to load  data:', err);
+      const errorMessage = err?.message || 'Failed to load  data';
       setError(
         errorMessage.includes('network') || errorMessage.includes('connect') ?
         'Please check your wallet connection and network' :
@@ -218,8 +218,8 @@ export default function AccruedRewards() {
 
       handleSendTx(tx);
     } catch (err) {
-      console.error('Failed to claim ROI:', err);
-      setError(err?.message || 'Failed to claim ROI');
+      console.error('Failed to claim rewards:', err);
+      setError(err?.message || 'Failed to claim rewards');
       setIsClaiming(false);
       setShowClaimModal(false);
     } 
@@ -327,7 +327,7 @@ export default function AccruedRewards() {
               ) : (
                 <span className="flex items-center gap-2">
                   <Coins size={16} />
-                  <span>Claim All ROI</span>
+                  <span>Claim All Reward</span>
                 </span>
               )}
             </button>
@@ -345,7 +345,7 @@ export default function AccruedRewards() {
           <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 space-y-2">
             <div className="flex items-center gap-2 text-cyan-300/70">
               <Coins size={18} />
-              <span className="text-xs uppercase tracking-wide">Total Claimed ROI</span>
+              <span className="text-xs uppercase tracking-wide">Total Claimed Reward</span>
             </div>
             <NumberPopup
               value={dashboard?.totals?.claimed?.usd || 0}
@@ -360,7 +360,7 @@ export default function AccruedRewards() {
           <div className="cyber-glass rounded-xl border border-emerald-500/30 p-4 space-y-2">
             <div className="flex items-center gap-2 text-emerald-300/70">
               <TrendingUp size={18} />
-              <span className="text-xs uppercase tracking-wide">Unclaimed ROI</span>
+              <span className="text-xs uppercase tracking-wide">Unclaimed Reward</span>
             </div>
             <NumberPopup
               value={dashboard?.totals?.unclaimed?.usd || 0}
@@ -388,7 +388,7 @@ export default function AccruedRewards() {
           <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 space-y-2">
             <div className="flex items-center gap-2 text-cyan-300/70">
               <TrendingUp size={18} />
-              <span className="text-xs uppercase tracking-wide">Portfolios with ROI</span>
+              <span className="text-xs uppercase tracking-wide">Portfolios with Reward</span>
             </div>
             <p className="text-2xl font-bold text-cyan-100">
               {portfolios.filter(p => p.roi?.accrued > 0).length}
@@ -399,16 +399,18 @@ export default function AccruedRewards() {
           </div>
         </div>
 
-        <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 sm:p-6">
+       <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <h2 className="text-xl font-semibold text-cyan-100">All Portfolios</h2>
+            <h2 className="text-xl font-semibold text-cyan-100">
+              All Portfolios
+            </h2>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setFilterActive(!filterActive)}
                 className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-colors ${
                   filterActive
-                    ? 'border-emerald-500/50 text-emerald-300 bg-emerald-500/10'
-                    : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10'
+                    ? "border-emerald-500/50 text-emerald-300 bg-emerald-500/10"
+                    : "border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -441,12 +443,18 @@ export default function AccruedRewards() {
                 {loading ? (
                   <tr>
                     <td colSpan={4} className="py-8 text-center">
-                      <Loader2 size={24} className="animate-spin mx-auto text-cyan-400" />
+                      <Loader2
+                        size={24}
+                        className="animate-spin mx-auto text-cyan-400"
+                      />
                     </td>
                   </tr>
                 ) : filteredPortfolios.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-cyan-300/70">
+                    <td
+                      colSpan={4}
+                      className="py-8 text-center text-cyan-300/70"
+                    >
                       No portfolios with pending rewards found.
                     </td>
                   </tr>
@@ -460,7 +468,10 @@ export default function AccruedRewards() {
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-cyan-200">
-                              #{portfolio.portfolioId.toString().padStart(4, '0')}
+                              #
+                              {portfolio.portfolioId
+                                .toString()
+                                .padStart(4, "0")}
                             </span>
                             {portfolio.roi?.meta?.tier > 0 && (
                               <span className="px-1.5 py-0.5 text-xs bg-cyan-500/10 text-cyan-300 rounded">
@@ -469,28 +480,24 @@ export default function AccruedRewards() {
                             )}
                           </div>
                           <span className="text-xs text-cyan-300/60 mt-1">
-                            Created: {new Date(portfolio.roi.meta.createdAt * 1000).toLocaleDateString()}
+                            Created:{" "}
+                            {new Date(
+                              portfolio.roi.meta.createdAt * 1000
+                            ).toLocaleDateString()}
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex flex-col">
-                          <NumberPopup
-                            value={portfolio.roi?.accrued || 0}
-                            formatter={formatUSD}
-                            className="text-emerald-400 font-semibold"
-                          />
-                          <div className="text-xs text-cyan-300/60">
-                            {formatRAMAPrecise(portfolio.roi?.ramaAmount || 0)} RAMA
-                          </div>
+                      <td className="py-3 px-4 flex-col">
+                        <div className="flex flex-col text-right gap-1">
+                          ${portfolio.roi?.accrued || 0}
+                        </div>
+                        <div className="text-xs text-right text-cyan-300/60">
+                          {formatRAMAPrecise(portfolio.roi?.ramaAmount || 0)}{" "}
+                          RAMA
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                         <NumberPopup
-                            value={portfolio.roi?.principalUsd || 0}
-                            formatter={formatUSD}
-                            className="text-cyan-100"
-                          />
+                        ${portfolio.roi?.principalUsd || 0}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex flex-col items-end gap-2">
@@ -517,8 +524,13 @@ export default function AccruedRewards() {
                               </div>
                             )}
                           </div>
-                          {portfolio.roi?.meta?.frozenUntil > Date.now() / 1000 ? (
-                            <Tooltip content={`Frozen until: ${new Date(portfolio.roi.meta.frozenUntil * 1000).toLocaleString()}`}>
+                          {portfolio.roi?.meta?.frozenUntil >
+                          Date.now() / 1000 ? (
+                            <Tooltip
+                              content={`Frozen until: ${new Date(
+                                portfolio.roi.meta.frozenUntil * 1000
+                              ).toLocaleString()}`}
+                            >
                               <div className="text-xs text-cyan-300/60 flex items-center gap-1">
                                 <Timer size={12} />
                                 <span>Frozen</span>
@@ -541,9 +553,9 @@ export default function AccruedRewards() {
         isOpen={showClaimModal}
         onClose={handleClaimModalClose}
         txHash={hash}
-        title="Claim Accrued ROI"
+        title="Claim Accrued"
         description="Claiming your portfolio growth rewards"
-        successMessage="Your ROI rewards have been claimed successfully!"
+        successMessage="Your rewards have been claimed successfully!"
         onSuccess={handleClaimSuccess}
         amount={dashboard?.totals?.unclaimed?.usd ? formatUSD(dashboard.totals.unclaimed.usd) : null}
         amountLabel="Claiming Amount"

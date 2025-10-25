@@ -11,6 +11,7 @@ import { useAccount, useDisconnect } from 'wagmi';
 import { useStore } from '../../store/useUserInfoStore';
 import AddressWithCopy from './AddressWithCopy';
 import CopyButton from './CopyButton';
+import { useAppKitAccount } from '@reown/appkit/react';
 
 const mainNavItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-neon-green' },
@@ -56,6 +57,9 @@ export default function Sidebar() {
   const clearUserAddress = useStore((s) => s.clearUserAddress);
   const [resolvedUserId, setResolvedUserId] = useState(null);
   const [resolvingUserId, setResolvingUserId] = useState(false);
+
+
+  const { address, isConnected } = useAppKitAccount();
 
   const connectedAddress =
     wagmiAddress ??
@@ -180,7 +184,7 @@ export default function Sidebar() {
         {connectedAddress && (
           <div className="mb-6 cyber-glass border border-cyan-500/30 rounded-xl p-4 space-y-2">
             <p className="text-xs font-semibold text-cyan-400/70 uppercase tracking-wider">
-              Connected Wallet
+              {isConnected ? "Connected Wallet":"View Mode"}
             </p>
             <AddressWithCopy
               address={connectedAddress}

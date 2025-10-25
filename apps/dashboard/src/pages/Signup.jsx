@@ -10,11 +10,12 @@ import {
   Loader2,
   CheckCircle,
   AlertTriangle,
+  Shield,
 } from 'lucide-react';
 import { Clipboard } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useBalance } from 'wagmi';
-import { useAppKitAccount } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { useStore } from '../../store/useUserInfoStore';
 import { useTransaction } from '../../config/register';
 import { useDisconnect, useWaitForTransactionReceipt } from 'wagmi';
@@ -54,6 +55,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const location = useLocation();
 
+   const { open } = useAppKit();
+   const { address, isConnected } = useAppKitAccount();
   const { disconnect, disconnectAsync } = useDisconnect();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -73,7 +76,6 @@ export default function Signup() {
   const sponsorValidatedRef = useRef(false);
   const sponsorInputRef = useRef(null);
 
-  const { address, isConnected } = useAppKitAccount();
   const { data: balanceData } = useBalance({ address: address });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -395,7 +397,7 @@ useEffect(() => {
 
       try { localStorage.removeItem('userAddress'); } catch {}
     } finally {
-      window.location.replace('/login');
+      // window.location.replace('/login');
     }
   };
 
@@ -682,7 +684,7 @@ useEffect(() => {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-neon-green/50 bg-neon-green/20">
-                          <Check className="text-neon-green" size={18} />
+                          {isConnected ?<Check className="text-neon-green" size={18} /> :<Shield className="text-neon-green" size={18} />}
                         </div>
                         <div>
                           <p className="text-xs uppercase tracking-wide text-neon-green/80">
@@ -724,10 +726,12 @@ useEffect(() => {
                         </button>
                         <button
                           type="button"
-                          onClick={handleDisconnect}
-                          className="px-3 py-2 text-xs font-semibold rounded-lg border border-red-500/60 text-red-200 transition-colors hover:bg-red-500/10"
+                          onClick={async()=>{
+                            isConnected ? handleDisconnect() : await open()
+                          }}
+                          className={`px-3 py-2 text-xs font-semibold rounded-lg border ${isConnected ? "border-red-500/60 text-red-200 transition-colors hover:bg-red-500/10":"border-green-500/60 text-green-200 transition-colors hover:bg-green-500/10"}`}
                         >
-                          Disconnect
+                          {isConnected ?"Disconnect":"Connect"}
                         </button>
                       </div>
                     </div>
@@ -921,11 +925,11 @@ useEffect(() => {
                   <button
                     type="submit"
                     disabled={isSubmitting || !sponsorValidated}
-                    className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500 to-neon-green py-4 text-sm font-semibold uppercase tracking-wide text-dark-950 transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                    className={`relative w-full overflow-hidden rounded-2xl ${!isConnected?"bg-gradient-to-r from-cyan-500 to-red-600":"bg-gradient-to-r from-cyan-500 to-neon-green"} py-4 text-sm font-semibold uppercase tracking-wide text-dark-950 transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     <span className="relative z-10 flex items-center justify-center gap-3">
-                      <span>{isSubmitting ? 'Creating Account…' : 'Create Account'}</span>
-                      <ArrowRight size={20} />
+                      <span>{isConnected ? (isSubmitting ? 'Creating Account…' : 'Create Account'):"Wallet Not Connectd"}</span>
+                      {isConnected && <ArrowRight size={20} />}
                     </span>
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-neon-green opacity-0 transition-opacity duration-200 hover:opacity-100" />
                   </button>

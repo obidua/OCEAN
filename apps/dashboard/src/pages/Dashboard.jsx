@@ -1,6 +1,6 @@
 // src/screens/Dashboard.jsx
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TrendingUp, Wallet, Users, Award, DollarSign, Clock, Zap, Gift, Trophy, ArrowUpRight, Loader2, X, RefreshCw } from 'lucide-react';
+import { TrendingUp, Wallet, Users, Award, DollarSign, Clock, Zap, Gift, Trophy, ArrowUpRight, Loader2, X, RefreshCw, Copy, User2Icon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatUSD, formatRAMA } from '../utils/contractData';
 import NumberPopup from '../components/NumberPopup';
@@ -655,6 +655,20 @@ export default function Dashboard() {
     }
   }, [portfolioStatus]);
 
+
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${userAddress}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy referral link:", err);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1133,6 +1147,38 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-4 sm:space-y-6">
+
+          <div className="cyber-glass border border-neon-green/50 hover:border-neon-green rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden group transition-all">
+            <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-cyan-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/70 to-transparent" />
+
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <div className="p-2 bg-neon-green/20 rounded-lg flex-shrink-0 border border-neon-green/40">
+                <User2Icon size={20} className="text-neon-green" />
+              </div>
+              <div>
+                <p className="text-sm text-neon-green font-medium uppercase tracking-wide">
+                  Your Referral Link
+                </p>
+              </div>
+            </div>
+
+            <div className="relative z-10">
+              <div className="bg-slate-900/50 border border-cyan-500/30 rounded-lg p-3 flex items-center justify-between gap-2">
+                <span className="text-xs sm:text-sm text-cyan-300 truncate">
+                  {`${window.location.origin}/signup?ref=${userAddress.slice(0,5)+"...."+userAddress.slice(-4)}`}
+                </span>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1 text-xs font-medium text-neon-green hover:text-white transition-colors"
+                >
+                  <Copy size={14} />
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="cyber-glass border border-neon-green/50 hover:border-neon-green rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden group transition-all">
             <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-cyan-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/70 to-transparent" />
