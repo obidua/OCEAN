@@ -45,6 +45,9 @@ export default function StakeInvest() {
   const [safeWalletBalance, setSafeWalletBalance] = useState(0); // RAMA
   const [ramaPrice, setRamaPrice] = useState(0);
 
+  const [safeWalletUsd, setSafeWalletUsd] = useState(0);
+  const [connectedWalletUsd, setConnectedWalletUsd] = useState(0);
+
   // Current user info
   const [currentUserId, setCurrentUserId] = useState(null);
 
@@ -145,6 +148,33 @@ export default function StakeInvest() {
   useEffect(() => {
     GetRamaToUsd()
   }, [])
+
+
+  //getting safe wallet balance in usd
+  useEffect(()=>{
+    const fetchSafeWalletUsd = async () => {
+      try {
+        const usdValue = await RamaTOUsd(safeWalletBalance);
+        setSafeWalletUsd(usdValue);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    fetchSafeWalletUsd();
+  }, [safeWalletBalance]);
+
+   //getting safe wallet balance in usd
+  useEffect(()=>{
+    const fetchConnectedWalletUsd = async () => {
+      try {
+        const usdValue = await RamaTOUsd(walletBalanceNum);
+        setConnectedWalletUsd(usdValue);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    fetchConnectedWalletUsd();
+  }, [walletBalanceNum]);
 
 
   useEffect(() => {
@@ -851,6 +881,7 @@ export default function StakeInvest() {
                     </div>
                     <div className="text-left space-y-1">
                       <p className="text-lg font-bold text-cyan-300">{walletBalanceDisplay}</p>
+                      <p>{connectedWalletUsd.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
                     </div>
                   </button>
 
@@ -867,6 +898,7 @@ export default function StakeInvest() {
                     </div>
                     <div className="text-left space-y-1">
                       <p className="text-lg font-bold text-neon-green">{safeWalletBalance.toFixed(4)} RAMA</p>
+                      <p>{safeWalletUsd.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
                     </div>
                   </button>
                 </div>
