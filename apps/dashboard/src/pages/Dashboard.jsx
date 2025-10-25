@@ -11,6 +11,7 @@ import { PortfolioStatus } from '../types/contract';
 import { useWaitForTransactionReceipt } from 'wagmi';
 import { useTransaction } from '../../config/register';
 import { useAppKitAccount } from '@reown/appkit/react';
+import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
 
 export default function Dashboard() {
   const [portfolioIds, setPortFolioId] = useState([]);
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [claimError, setClaimError] = useState(null);
   const [roiTotals, setRoiTotals] = useState(null);
   const [roiTotalsLoading, setRoiTotalsLoading] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
 
   const { address, isConnected } = useAppKitAccount();
   const { handleSendTx, hash, isSuccess, isError, receipt } = useTransaction();
@@ -218,6 +220,7 @@ export default function Dashboard() {
     try {
       setIsClaimingGrowth(true);
       setClaimError(null);
+      setShowClaimModal(true);
 
       if (!isConnected || !address) {
         throw new Error('Please connect your wallet to claim rewards.');
@@ -238,8 +241,44 @@ export default function Dashboard() {
       console.error('Claim growth error:', err);
       setClaimError(err?.message || 'Failed to claim accrued ROI');
       setIsClaimingGrowth(false);
+      setShowClaimModal(false);
     }
   }, [claimAccruedROI, handleSendTx, address, isConnected, roiTotals]);
+
+  const handleClaimModalClose = () => {
+    setShowClaimModal(false);
+    setIsClaimingGrowth(false);
+    setClaimError(null);
+  };
+
+  const handleClaimSuccess = () => {
+    // Reload dashboard data
+    const reload = async () => {
+      if (!userAddress) return;
+      try {
+        const [portfolioInfo, dashboardInfo] = await Promise.all([
+          getTOtalPortFolio(userAddress),
+          getDashboardDetails(userAddress)
+        ]);
+        if (dashboardInfo) {
+          setDashboardDetails(dashboardInfo);
+        }
+        await refreshIncomeTotals();
+        // Refresh ROI totals so the box updates after a claim
+        if (typeof getROITotals === 'function') {
+          try {
+            const totals = await getROITotals(userAddress);
+            setRoiTotals(totals || null);
+          } catch (e) {
+            console.warn('Failed to refresh ROI totals after claim:', e);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to refresh after claim:', error);
+      }
+    };
+    reload();
+  };
 
   // Monitor claim transaction
   useEffect(() => {
@@ -247,40 +286,14 @@ export default function Dashboard() {
       console.log('Claim successful, refreshing dashboard data...');
       setIsClaimingGrowth(false);
       setClaimError(null);
-      
-      // Reload dashboard data
-      const reload = async () => {
-        if (!userAddress) return;
-        try {
-          const [portfolioInfo, dashboardInfo] = await Promise.all([
-            getTOtalPortFolio(userAddress),
-            getDashboardDetails(userAddress)
-          ]);
-          if (dashboardInfo) {
-            setDashboardDetails(dashboardInfo);
-          }
-          await refreshIncomeTotals();
-          // Refresh ROI totals so the box updates after a claim
-          if (typeof getROITotals === 'function') {
-            try {
-              const totals = await getROITotals(userAddress);
-              setRoiTotals(totals || null);
-            } catch (e) {
-              console.warn('Failed to refresh ROI totals after claim:', e);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to refresh after claim:', error);
-        }
-      };
-      reload();
     }
     
     if (isError && isClaimingGrowth) {
       setClaimError('Transaction failed. Please try again.');
       setIsClaimingGrowth(false);
+      setShowClaimModal(false);
     }
-  }, [isSuccess, isError, receipt, isClaimingGrowth, userAddress, getTOtalPortFolio, getDashboardDetails, refreshIncomeTotals]);
+  }, [isSuccess, isError, receipt, isClaimingGrowth]);
 
   const loadPortfolioById = async (pid) => {
     try {
@@ -1364,6 +1377,19 @@ export default function Dashboard() {
           </div>
         </>
       )}
+
+      {/* Progressive Transaction Modal */}
+      <ProgressiveTransactionModal
+        isOpen={showClaimModal}
+        onClose={handleClaimModalClose}
+        txHash={hash}
+        title="Claim Accrued ROI"
+        description="Claiming your portfolio growth rewards"
+        successMessage="Your ROI rewards have been claimed successfully!"
+        onSuccess={handleClaimSuccess}
+        amount={roiTotals?.unclaimedUsd ? formatUSD(roiTotals.unclaimedUsd) : null}
+        amountLabel="Claiming Amount"
+      />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import NumberPopup from '../components/NumberPopup';
 import Tooltip from '../components/Tooltip';
 import { formatUSD } from '../utils/contractData';
 import { useAppKitAccount } from '@reown/appkit/react';
+import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
 
 const formatRAMAPrecise = (value) => {
   const num = Number(value) || 0;
@@ -94,6 +95,7 @@ export default function AccruedRewards() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [claimHistory, setClaimHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -199,6 +201,7 @@ export default function AccruedRewards() {
   const handleClaim = useCallback(async () => {
     try {
       setIsClaiming(true);
+      setShowClaimModal(true);
       
       if (!dashboard || dashboard.totals.unclaimed.usd <= 0) {
         throw new Error('No rewards available to claim.');
@@ -218,8 +221,18 @@ export default function AccruedRewards() {
       console.error('Failed to claim ROI:', err);
       setError(err?.message || 'Failed to claim ROI');
       setIsClaiming(false);
+      setShowClaimModal(false);
     } 
-  }, [claimAccruedROI, handleSendTx, dashboard]);
+  }, [claimAccruedROI, handleSendTx, dashboard, isConnected, address]);
+
+  const handleClaimModalClose = () => {
+    setShowClaimModal(false);
+    setIsClaiming(false);
+  };
+
+  const handleClaimSuccess = async () => {
+    await loadData();
+  };
 
   const handleViewHistory = async () => {
     setShowHistoryModal(true);
@@ -239,15 +252,13 @@ export default function AccruedRewards() {
     if (!isClaiming) return;
 
     if (isSuccess && receipt) {
-      (async () => {
-        await loadData();
-        setIsClaiming(false);
-      })();
+      setIsClaiming(false);
     } else if (isError) {
       setError('Transaction failed or was reverted');
       setIsClaiming(false);
+      setShowClaimModal(false);
     }
-  }, [isSuccess, isError, receipt, isClaiming, loadData]);
+  }, [isSuccess, isError, receipt, isClaiming]);
 
   const filteredPortfolios = useMemo(() => {
     let result = [...portfolios];
@@ -524,6 +535,19 @@ export default function AccruedRewards() {
           </div>
         </div>
       </div>
+
+      {/* Progressive Transaction Modal */}
+      <ProgressiveTransactionModal
+        isOpen={showClaimModal}
+        onClose={handleClaimModalClose}
+        txHash={hash}
+        title="Claim Accrued ROI"
+        description="Claiming your portfolio growth rewards"
+        successMessage="Your ROI rewards have been claimed successfully!"
+        onSuccess={handleClaimSuccess}
+        amount={dashboard?.totals?.unclaimed?.usd ? formatUSD(dashboard.totals.unclaimed.usd) : null}
+        amountLabel="Claiming Amount"
+      />
     </>
   );
 }

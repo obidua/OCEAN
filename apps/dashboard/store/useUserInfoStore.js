@@ -304,6 +304,43 @@ export const useStore = create((set, get) => ({
 
       const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
       if (!roiDistributor) throw new Error("ROI Distributor contract not available");
+      // 1) Pre-check unclaimed ROI to prevent revert
+      let unclaimed;
+      try {
+        unclaimed = await roiDistributor.methods.getUnclaimedROI(fromAddress).call();
+      } catch (e) {
+        console.error('Failed to fetch unclaimed ROI preview:', e);
+      }
+
+      const usdTotalMicro = toBigIntSafe(unclaimed?.usdTotalMicro ?? 0n);
+      const epochsCount = toNumber(unclaimed?.epochsCount ?? 0);
+      if (usdTotalMicro === 0n || epochsCount === 0) {
+        // Try to provide a helpful ETA if available
+        let etaMsg = '';
+        try {
+          const nextTs = await roiDistributor.methods.nextDistributionTs().call();
+          const tsNum = toNumber(nextTs);
+          if (tsNum > 0) {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = Math.max(0, tsNum - now);
+            const h = Math.floor(diff / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            const when = new Date(tsNum * 1000).toLocaleString();
+            etaMsg = ` Next distribution in ${h}h ${m}m (at ${when}).`;
+          }
+        } catch {}
+        throw new Error(`No ROI available to claim yet.${etaMsg}`);
+      }
+
+      // 2) Optional static call to catch precise revert reason early
+      try {
+        await roiDistributor.methods.claimROI().call({ from: fromAddress });
+      } catch (callErr) {
+        // Surface revert reason if present
+        const msg = callErr?.data?.message || callErr?.message || 'Claim simulation reverted';
+        console.error('Simulated claimROI reverted:', msg);
+        throw new Error(`Claim not available: ${msg}`);
+      }
 
       const data =  roiDistributor.methods.claimROI().encodeABI();
 
@@ -317,6 +354,17 @@ export const useStore = create((set, get) => ({
         });
       } catch (err) {
         console.error('Gas estimation failed for claimROI:', err);
+        const reason = err?.data?.message || err?.message || '';
+        // Map common patterns to friendlier text
+        if (/revert/i.test(reason) && /no|zero|empty|unclaim/i.test(reason)) {
+          throw new Error('No ROI available to claim yet. Please try after the next distribution.');
+        }
+        if (/paused/i.test(reason)) {
+          throw new Error('Claims are currently paused. Please try later.');
+        }
+        if (/insufficient funds/i.test(reason)) {
+          throw new Error('Insufficient funds for gas. Please add RAMA for gas and try again.');
+        }
         throw new Error('Gas estimation failed. The transaction may fail.');
       }
 
@@ -3667,6 +3715,116 @@ export const useStore = create((set, get) => ({
   // =====================================================================
   // One-Time Rewards 
   // =====================================================================
+
+  // Get user's total claimed rewards from RewardVault
+  getUserRewardTotals: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+      const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
+      if (!rewardVault) throw new Error("RewardVault contract not available");
+
+      const [totalsRaw, pendingTotalRaw] = await Promise.all([
+        rewardVault.methods.getUserTotals(userAddress).call(),
+        rewardVault.methods.getPendingRewardTotalUSD(userAddress).call().catch(() => "0"),
+      ]);
+
+      const claimedUsdMicro = toBigIntSafe(totalsRaw?.[0] ?? totalsRaw?.usdTotal ?? 0);
+      const claimedRamaWei = toBigIntSafe(totalsRaw?.[1] ?? totalsRaw?.ramaTotal ?? 0);
+      const pendingUsdMicro = toBigIntSafe(pendingTotalRaw ?? 0);
+
+      return {
+        claimedUsd: fromMicroUSD(claimedUsdMicro),
+        claimedRama: fromWeiToRama(claimedRamaWei.toString()),
+        claimedUsdMicro: claimedUsdMicro.toString(),
+        claimedRamaWei: claimedRamaWei.toString(),
+        pendingUsd: fromMicroUSD(pendingUsdMicro),
+        pendingUsdMicro: pendingUsdMicro.toString(),
+      };
+    } catch (error) {
+      console.error("getUserRewardTotals error:", error);
+      throw error;
+    }
+  },
+
+  // Claim pending one-time rewards via RewardVault.releasePending
+  claimOneTimeReward: async (fromAddress) => {
+    try {
+      if (!fromAddress) throw new Error("No connected wallet address found");
+      const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
+      if (!rewardVault) throw new Error("RewardVault contract not available");
+
+      const data = rewardVault.methods.releasePending(fromAddress).encodeABI();
+      const gasPrice = await web3.eth.getGasPrice();
+
+      let gasLimit;
+      try {
+        gasLimit = await web3.eth.estimateGas({
+          from: fromAddress,
+          to: Contract["RewardVault"],
+          data,
+        });
+      } catch (err) {
+        console.error("Gas estimation failed for claimOneTimeReward:", err);
+        throw new Error("Gas estimation failed. The transaction may fail.");
+      }
+
+      const toHex = web3.utils.toHex;
+      const tx = {
+        from: fromAddress,
+        to: Contract["RewardVault"],
+        data,
+        gas: toHex(gasLimit),
+        gasPrice: toHex(gasPrice),
+      };
+
+      return tx;
+    } catch (error) {
+      console.error("Error building claimOneTimeReward transaction:", error);
+      throw error;
+    }
+  },
+
+  // Get user's claimed reward history from RewardVault
+  getRewardClaimHistory: async (userAddress, offset = 0, limit = 20) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+      const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
+      if (!rewardVault) throw new Error("RewardVault contract not available");
+
+      const [claimsRaw, countRaw] = await Promise.all([
+        rewardVault.methods.getUserClaimsSlice(userAddress, offset, limit).call(),
+        rewardVault.methods.getUserClaimsCount(userAddress).call(),
+      ]);
+
+      const claims = (claimsRaw ?? []).map((claim, idx) => {
+        const milestoneIdx = toNumber(claim?.milestoneIdx ?? claim?.[0] ?? 0);
+        const usdRewardMicro = toBigIntSafe(claim?.usdReward ?? claim?.[1] ?? 0);
+        const ramaAmountWei = toBigIntSafe(claim?.ramaAmount ?? claim?.[2] ?? 0);
+        const qualifiedUsdAtMicro = toBigIntSafe(claim?.qualifiedUsdAt ?? claim?.[3] ?? 0);
+        const timestamp = toNumber(claim?.timestamp ?? claim?.[4] ?? 0);
+
+        return {
+          id: `${milestoneIdx}-${timestamp}-${idx}`,
+          milestoneIdx,
+          milestoneName: `Milestone ${milestoneIdx + 1}`,
+          usdReward: fromMicroUSD(usdRewardMicro),
+          ramaAmount: fromWeiToRama(ramaAmountWei.toString()),
+          qualifiedUsdAt: fromMicroUSD(qualifiedUsdAtMicro),
+          timestamp,
+          claimedAt: timestamp,
+        };
+      });
+
+      return {
+        claims,
+        totalCount: toNumber(countRaw),
+        hasMore: claims.length === limit,
+      };
+    } catch (error) {
+      console.error("getRewardClaimHistory error:", error);
+      throw error;
+    }
+  },
 
   // Fetch global milestones (thresholds/rewards) without requiring a user address.
   // Uses RewardVault + SlabManager and normalizes to USD floats.

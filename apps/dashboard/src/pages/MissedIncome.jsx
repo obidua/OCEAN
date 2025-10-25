@@ -28,7 +28,7 @@ const RECOVERY_STEPS = [
     title: 'Launch a New Portfolio',
     details:
       'Diversify into a new package and split earnings across multiple caps for smoother long-term growth.',
-    action: { label: 'Open Portfolio Wizard', to: '/dashboard/portfolio' },
+    action: { label: 'Open Portfolio Wizard', to: '/dashboard/stake' },
   },
   {
     title: 'Talk to Success Coach',
