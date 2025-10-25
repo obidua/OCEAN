@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- Homepage -->
+  <url>
+    <loc>https://oceandefi.uk/</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- About -->
+  <url>
+    <loc>https://oceandefi.uk/about</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Features -->
+  <url>
+    <loc>https://oceandefi.uk/features</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- How It Works -->
+  <url>
+    <loc>https://oceandefi.uk/how-it-works</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Login -->
+  <url>
+    <loc>https://oceandefi.uk/login</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Signup -->
+  <url>
+    <loc>https://oceandefi.uk/signup</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Dashboard -->
+  <url>
+    <loc>https://oceandefi.uk/dashboard</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Stake & Invest -->
+  <url>
+    <loc>https://oceandefi.uk/dashboard/stake</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Team Network -->
+  <url>
+    <loc>https://oceandefi.uk/dashboard/team</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Royalty Program -->
+  <url>
+    <loc>https://oceandefi.uk/dashboard/royalty</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Accrued Rewards -->
+  <url>
+    <loc>https://oceandefi.uk/dashboard/accrued-rewards</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blockchain Basics -->
+  <url>
+    <loc>https://oceandefi.uk/blockchain-basics</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Smart Contracts -->
+  <url>
+    <loc>https://oceandefi.uk/smart-contracts</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Ramestta Blockchain -->
+  <url>
+    <loc>https://oceandefi.uk/ramestta-blockchain</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- RAMA Tokenomics -->
+  <url>
+    <loc>https://oceandefi.uk/rama-tokenomics</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Validator Security -->
+  <url>
+    <loc>https://oceandefi.uk/validator-security</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Safe Wallet -->
+  <url>
+    <loc>https://oceandefi.uk/safe-wallet</loc>
+    <lastmod>2025-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+</urlset>

@@ -1,0 +1,12 @@
+# robots.txt for Ocean DeFi
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /*.json$
+
+# Sitemap location
+Sitemap: https://oceandefi.uk/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

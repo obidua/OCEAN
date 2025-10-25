@@ -1,4 +1,5 @@
 import Approute from './Approute';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { projectId, metadata, networks, wagmiAdapter } from '../config'
 import { createAppKit } from '@reown/appkit/react'
@@ -31,6 +32,7 @@ function App() {
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <Approute />
+        <PWAInstallPrompt />
       </QueryClientProvider>
     </WagmiProvider>
   );
