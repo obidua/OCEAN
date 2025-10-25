@@ -3668,6 +3668,112 @@ export const useStore = create((set, get) => ({
   // One-Time Rewards 
   // =====================================================================
 
+  // Fetch global milestones (thresholds/rewards) without requiring a user address.
+  // Uses RewardVault + SlabManager and normalizes to USD floats.
+  getGlobalOneTimeMilestones: async () => {
+    try {
+      const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+
+      const [allMilestonesRaw, rewardMilestonesRaw] = await Promise.all([
+        rewardVault
+          ? rewardVault.methods.getAllMilestones().call().catch(() => [[], []])
+          : Promise.resolve([[], []]),
+        slabManager
+          ? slabManager.methods.getRewardMilestones().call().catch(() => [])
+          : Promise.resolve([]),
+      ]);
+
+  const thresholdsRaw = Array.isArray(allMilestonesRaw?.[0]) ? allMilestonesRaw[0] : [];
+  const rewardsRaw = Array.isArray(allMilestonesRaw?.[1]) ? allMilestonesRaw[1] : [];
+      const rewardMilestonesArray = Array.isArray(rewardMilestonesRaw) ? rewardMilestonesRaw : [];
+
+      const isNonZero = (v) => {
+        if (v == null) return false;
+        const n = Number(v);
+        return Number.isFinite(n) && n !== 0;
+      };
+      const anyContractNonZero =
+        (Array.isArray(thresholdsRaw) && thresholdsRaw.some(isNonZero)) ||
+        (Array.isArray(rewardsRaw) && rewardsRaw.some(isNonZero)) ||
+        (Array.isArray(rewardMilestonesArray) && rewardMilestonesArray.some(isNonZero));
+
+      const fallbackMilestones = ONE_TIME_REWARDS_FALLBACK;
+      const count = Math.max(
+        thresholdsRaw.length,
+        rewardsRaw.length,
+        rewardMilestonesArray.length,
+        fallbackMilestones.length
+      );
+
+      const milestones = [];
+      let usedFallback = !anyContractNonZero;
+      for (let idx = 0; idx < count; idx += 1) {
+        const fallback = fallbackMilestones[idx] ?? null;
+        let thresholdUsd = 0;
+        if (thresholdsRaw[idx] != null && isNonZero(thresholdsRaw[idx])) {
+          // RewardVault.getAllMilestones returns USD micro
+          thresholdUsd = fromMicroUSD(thresholdsRaw[idx]);
+        } else if (rewardMilestonesArray[idx] != null && isNonZero(rewardMilestonesArray[idx])) {
+          // SlabManager.getRewardMilestones returns USD micro thresholds
+          thresholdUsd = fromMicroUSD(rewardMilestonesArray[idx]);
+        } else if (fallback) {
+          thresholdUsd = Number(fallback.requiredVolumeUSD) / USD_MICRO;
+          usedFallback = true;
+        }
+
+        let rewardUsd = 0;
+        if (rewardsRaw[idx] != null && isNonZero(rewardsRaw[idx])) {
+          // RewardVault.getAllMilestones returns USD micro
+          rewardUsd = fromMicroUSD(rewardsRaw[idx]);
+        } else if (fallback) {
+          rewardUsd = Number(fallback.rewardUSD) / USD_MICRO;
+          usedFallback = true;
+        }
+
+        milestones.push({
+          idx,
+          thresholdUsd,
+          rewardUsd,
+          claimed: false,
+          unlocked: false,
+          claimable: false,
+          achieved: false,
+          achievedAt: null,
+          status: "locked",
+          progressPct: 0,
+        });
+      }
+
+      // Cache dynamic fallback locally for future offline use
+      try {
+        const cached = milestones.map((m) => ({
+          requiredVolumeUSD: Math.round((m.thresholdUsd || 0) * USD_MICRO).toString(),
+          rewardUSD: Math.round((m.rewardUsd || 0) * USD_MICRO).toString(),
+        }));
+        localStorage.setItem("ONE_TIME_REWARDS_DYNAMIC", JSON.stringify(cached));
+      } catch { /* ignore */ }
+
+      return { milestones, milestoneSource: usedFallback ? "fallback" : "contract" };
+    } catch (error) {
+      console.error("getGlobalOneTimeMilestones error:", error);
+      // Final fallback to constants
+      const milestones = (ONE_TIME_REWARDS_FALLBACK || []).map((r, idx) => ({
+        idx,
+        thresholdUsd: Number(r.requiredVolumeUSD) / USD_MICRO,
+        rewardUsd: Number(r.rewardUSD) / USD_MICRO,
+        claimed: false,
+        unlocked: false,
+        claimable: false,
+        achieved: false,
+        achievedAt: null,
+        status: "locked",
+        progressPct: 0,
+      }));
+      return { milestones, milestoneSource: "fallback" };
+    }
+  },
+
   getOneTimeRewardsOverview: async (userAddress) => {
     try {
       if (!userAddress) throw new Error("Missing user address");
@@ -3766,7 +3872,8 @@ export const useStore = create((set, get) => ({
           : Promise.resolve("0"),
       ]);
 
-      const qualifiedVolumeFromSlab = fromWadToUsd(qualifiedBusinessRaw ?? 0);
+  // Qualified business from SlabManager is reported in USD micro (per on-chain data), not WAD
+  const qualifiedVolumeFromSlab = fromMicroUSD(qualifiedBusinessRaw ?? 0);
       let qualifiedVolumeUsd = Number.isFinite(qualifiedVolumeFromSlab)
         ? qualifiedVolumeFromSlab
         : 0;
@@ -3819,6 +3926,15 @@ export const useStore = create((set, get) => ({
       }
 
       const fallbackMilestones = ONE_TIME_REWARDS_FALLBACK;
+      const isNonZero = (v) => {
+        if (v == null) return false;
+        const n = Number(v);
+        return Number.isFinite(n) && n !== 0;
+      };
+      const anyContractNonZero =
+        (Array.isArray(thresholdsRaw) && thresholdsRaw.some(isNonZero)) ||
+        (Array.isArray(rewardsRaw) && rewardsRaw.some(isNonZero)) ||
+        (Array.isArray(rewardMilestonesArray) && rewardMilestonesArray.some(isNonZero));
       const achievedKeys = achievedMap.size
         ? Array.from(achievedMap.keys())
         : [];
@@ -3835,24 +3951,29 @@ export const useStore = create((set, get) => ({
       );
 
       const milestones = [];
-      let usedFallback = false;
+      let usedFallback = !anyContractNonZero;
       for (let idx = 0; idx < milestoneCount; idx += 1) {
         const fallback = fallbackMilestones[idx] ?? null;
 
         let thresholdUsd = 0;
-        if (thresholdsRaw[idx] != null) {
-          thresholdUsd = fromWadToUsd(thresholdsRaw[idx]);
-        } else if (rewardMilestonesArray[idx] != null) {
-          thresholdUsd = fromWadToUsd(rewardMilestonesArray[idx]);
+        if (thresholdsRaw[idx] != null && isNonZero(thresholdsRaw[idx])) {
+          // RewardVault.getAllMilestones returns USD micro
+          thresholdUsd = fromMicroUSD(thresholdsRaw[idx]);
+        } else if (rewardMilestonesArray[idx] != null && isNonZero(rewardMilestonesArray[idx])) {
+          // SlabManager.getRewardMilestones returns USD micro thresholds as well
+          thresholdUsd = fromMicroUSD(rewardMilestonesArray[idx]);
         } else if (fallback) {
           thresholdUsd = Number(fallback.requiredVolumeUSD) / USD_MICRO;
+          usedFallback = true;
         }
 
         let rewardUsd = 0;
-        if (rewardsRaw[idx] != null) {
-          rewardUsd = fromWadToUsd(rewardsRaw[idx]);
+        if (rewardsRaw[idx] != null && isNonZero(rewardsRaw[idx])) {
+          // RewardVault.getAllMilestones returns USD micro
+          rewardUsd = fromMicroUSD(rewardsRaw[idx]);
         } else if (fallback) {
           rewardUsd = Number(fallback.rewardUSD) / USD_MICRO;
+          usedFallback = true;
         }
 
         const claimed = claimedFlags[idx] ?? false;
@@ -3926,7 +4047,7 @@ export const useStore = create((set, get) => ({
 
       const pendingRewardUsd = usedFallback
         ? 0
-        : fromWadToUsd(pendingRewardRaw ?? 0);
+        : fromMicroUSD(pendingRewardRaw ?? 0);
 
       let pendingRewardRama = 0;
       if (

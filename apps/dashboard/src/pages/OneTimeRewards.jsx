@@ -31,12 +31,40 @@ export default function OneTimeRewards() {
   const getOneTimeRewardsOverview = useStore(
     (s) => s.getOneTimeRewardsOverview
   );
+  const getGlobalOneTimeMilestones = useStore(
+    (s) => s.getGlobalOneTimeMilestones
+  );
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       if (!userAddress) {
-        setOverview(null);
+        // No wallet: load public milestones (from contracts) so fallbacks stay up to date.
+        setLoading(true);
+        setError(null);
+        try {
+          const pub = await getGlobalOneTimeMilestones();
+          setOverview({
+            claimedCount: 0,
+            achievedCount: 0,
+            totalEarnedUsd: 0,
+            totalEarnedRama: 0,
+            pendingRewardUsd: 0,
+            pendingRewardRama: 0,
+            qualifiedVolumeUsd: 0,
+            directs: 0,
+            milestones: pub?.milestones || [],
+            remainingUsd: (pub?.milestones || []).reduce((s, m) => s + (m.rewardUsd || 0), 0),
+            claimableMilestones: [],
+            milestoneSource: pub?.milestoneSource || 'contract',
+          });
+        } catch (err) {
+          console.error(err);
+          setOverview(null);
+          setError(err?.message || 'Unable to load milestone data.');
+        } finally {
+          setLoading(false);
+        }
         return;
       }
       setLoading(true);
@@ -90,8 +118,9 @@ export default function OneTimeRewards() {
     [milestonesCore]
   );
 
-  const milestoneSource = overview?.milestoneSource ?? 'contract';
-  const isFallback = milestoneSource === 'fallback';
+  // Treat missing overview as fallback so top tiles display constant-based totals
+  const milestoneSource = overview?.milestoneSource ?? 'fallback';
+  const isFallback = !overview?.milestones?.length || milestoneSource === 'fallback';
 
   const totalMilestones = milestones.length;
   const claimedCount =
@@ -107,12 +136,20 @@ export default function OneTimeRewards() {
   const qualifiedVolume = overview?.qualifiedVolumeUsd ?? 0;
   const qualifiedVolumeDisplay = isFallback ? '—' : formatUSD(qualifiedVolume);
 
-  const remainingUsd = overview?.remainingUsd ?? 0;
-  const remainingUsdDisplay = isFallback
-    ? '—'
-    : formatUSD(remainingUsd);
+  // When using fallback milestones, compute a meaningful aggregate for the tiles
+  const fallbackTotals = useMemo(() => {
+    if (!isFallback) return null;
+    const totalPotentialUsd = milestonesCore.reduce(
+      (sum, m) => sum + (Number(m?.rewardUsd) || 0),
+      0
+    );
+    return { totalPotentialUsd };
+  }, [isFallback, milestonesCore]);
+
+  const remainingUsd = overview?.remainingUsd ?? fallbackTotals?.totalPotentialUsd ?? 0;
+  const remainingUsdDisplay = formatUSD(remainingUsd);
   const pendingRewardUsdDisplay = isFallback
-    ? '—'
+    ? formatUSD(fallbackTotals?.totalPotentialUsd ?? 0)
     : formatUSD(pendingRewardUsd);
   const pendingRewardRamaDisplay = isFallback
     ? '—'

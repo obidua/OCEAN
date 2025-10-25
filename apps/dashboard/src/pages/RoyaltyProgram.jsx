@@ -82,15 +82,22 @@ export default function RoyaltyProgram() {
   }, [userAddress, getRoyaltyOverview]);
 
   const tiers = useMemo(() => {
-    if (royaltyDetails?.tiers?.length) return royaltyDetails.tiers;
-    return royaltyDetails?.tiers?.map((level) => ({
-      thresholdUsd: parseFloat(level?.thresholdUsd) / 1e8,
-      monthlyUsd: parseFloat(level.monthlyUsd) / 1e8,
+    // Prefer normalized tiers from store (already in USD units)
+    if (Array.isArray(royaltyDetails?.tiers) && royaltyDetails.tiers.length) {
+      return royaltyDetails.tiers.map((t) => ({
+        thresholdUsd: Number(t?.thresholdUsd) || 0,
+        monthlyUsd: Number(t?.monthlyUsd) || 0,
+      }));
+    }
+    // Fallback to static constants if needed
+    return ROYALTY_LEVELS.map((level) => ({
+      thresholdUsd: Number(level.requiredVolumeUSD) / 1e6,
+      monthlyUsd: Number(level.monthlyRoyaltyUSD) / 1e6,
     }));
   }, [royaltyDetails]);
 
-  const currentLevel = parseFloat(royaltyDetails?.slabAchiev?.royaltyAchievements.length) ?? 0;
-  const currentTier = currentLevel > 0 ? tiers[royaltyDetails?.slabAchiev?.royaltyAchievements.length - 1] : null;
+  const currentLevel = Number(royaltyDetails?.currentLevel) || 0;
+  const currentTier = currentLevel > 0 ? tiers[currentLevel - 1] : null;
   const payoutsReceived = royaltyDetails?.paidMonths ?? 0;
   const canClaim = royaltyDetails?.canClaim ?? false;
   const paused = royaltyDetails?.paused ?? false;
@@ -149,7 +156,7 @@ export default function RoyaltyProgram() {
           <p className="text-5xl font-bold mb-2">{currentLevel}</p>
           {currentTier && (
             <p className="text-lg opacity-90">
-              {formatUSD(parseFloat(currentTier.monthlyUsd)/1e12)} / month
+              {formatUSD(currentTier.monthlyUsd)} / month
             </p>
           )}
         </div>
@@ -209,8 +216,8 @@ export default function RoyaltyProgram() {
             const levelNum = idx + 1;
             const isAchieved = levelNum <= currentLevel;
             const isCurrent = levelNum === currentLevel;
-            const thresholdUsd = parseFloat(tier.thresholdUsd)/1e12;
-            const monthlyUsd = parseFloat(tier.monthlyUsd)/1e12;
+            const thresholdUsd = Number(tier.thresholdUsd) || 0;
+            const monthlyUsd = Number(tier.monthlyUsd) || 0;
 
             return (
               <div

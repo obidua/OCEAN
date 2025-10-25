@@ -560,7 +560,7 @@ export default function StakeInvest() {
         const symbol = balance?.data?.symbol?.toString() || 'RAMA';
         const rama = Number.isFinite(raw) ? raw / 1e18 : 0;
         setWalletBalanceNum(rama);
-        setWalletBalanceDisplay(`${rama.toFixed(5)} ${symbol}`);
+        setWalletBalanceDisplay(`${rama.toFixed(4)} ${symbol}`);
 
       } catch (error) {
         console.log(error)
@@ -866,7 +866,7 @@ export default function StakeInvest() {
                       <p className="text-sm font-medium text-neon-green">Safe Wallet</p>
                     </div>
                     <div className="text-left space-y-1">
-                      <p className="text-lg font-bold text-neon-green">{safeWalletBalance.toFixed(2)} RAMA</p>
+                      <p className="text-lg font-bold text-neon-green">{safeWalletBalance.toFixed(4)} RAMA</p>
                     </div>
                   </button>
                 </div>
