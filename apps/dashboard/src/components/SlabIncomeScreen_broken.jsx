@@ -1,0 +1,671 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Award,
+  TrendingUp,
+  Users,
+  AlertCircle,
+  Layers,
+  ArrowDown,
+  Table,
+  LayoutGrid,
+  BarChart3,
+} from "lucide-react";
+import { useStore } from "../../store/useUserInfoStore";
+import {
+  SLAB_LEVELS,
+  formatUSD,
+  formatPercentage,
+  formatRAMA,
+} from "../utils/contractData";
+import NumberPopup from "./NumberPopup";
+import VolumeAnalytics from "./VolumeAnalytics";
+import VolumeSummary from "./VolumeSummary";
+
+const SLAB_TIER_NAMES = [
+  "Coral Reef",
+  "Shallow Waters",
+  "Tide Pool",
+  "Wave Crest",
+  "Open Sea",
+  "Deep Current",
+  "Ocean Floor",
+  "Abyssal Zone",
+  "Mariana Trench",
+  "Pacific Master",
+  "Ocean Sovereign",
+];
+
+
+
+export default function SlabIncomeScreen({SlabIncomeData}) {
+  
+  // Responsive number formatting function
+  const formatResponsiveUSD = (value) => {
+    if (!value || value === 0) return '$0';
+    
+    const num = parseFloat(value);
+    if (num >= 1000000) {
+      return `$${(num / 1000000).toLocaleString(undefined, { 
+        minimumFractionDigits: 0, 
+        maximumFractionDigits: 1 
+      })}M`;
+    } else if (num >= 1000) {
+      return `$${(num / 1000).toLocaleString(undefined, { 
+        minimumFractionDigits: 0, 
+        maximumFractionDigits: 1 
+      })}K`;
+    } else {
+      return `$${num.toLocaleString(undefined, { 
+        minimumFractionDigits: 0, 
+        maximumFractionDigits: 0 
+      })}`;
+    }
+  };
+
+  const formatResponsiveRAMA = (value) => {
+    if (!value || value === 0) return '0 RAMA';
+    
+    const num = parseFloat(value);
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M RAMA`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K RAMA`;
+    } else {
+      return `${num.toFixed(0)} RAMA`;
+    }
+  };
+  
+  // Get user address from store
+  const userAddressFromStore = useStore((state) => state.userAddress);
+  const userAddress = userAddressFromStore || localStorage.getItem('userAddress');
+  
+  const {
+    error,
+    loading,
+    slabLevel,
+    qualifiedVolumeUsd,
+    directs,
+    slabStatusLabel,
+    slabIncomeUsd,
+    slabIncomeRama,
+    slabIncomeAvailableUsd,
+    slabIncomeAvailableRama,
+    overrideIncomeUsd,
+    overrideIncomeRama,
+    royaltyIncomeUsd,
+    royaltyIncomeRama,
+    newDirects,
+    // Enhanced data
+    progressData,
+    achievementsData,
+    legBreakdown,
+    slabPercents,
+    rewardMilestones,
+    royaltyTiers,
+    nextAchievements
+  } = SlabIncomeData;
+
+  // Helper function to render progress bars
+  const ProgressBar = ({ label, current, target, percentage, color = "cyan" }) => {
+    const clampedPercentage = Math.min(percentage || 0, 100);
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-cyan-300">{label}</span>
+          <span className="text-cyan-400">{clampedPercentage.toFixed(1)}%</span>
+        </div>
+        <div className="w-full bg-dark-900/50 rounded-full h-2">
+          <div 
+            className={`h-2 rounded-full bg-gradient-to-r from-${color}-500 to-${color}-400 transition-all duration-300`}
+            style={{ width: `${clampedPercentage}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-cyan-400/70">
+          <span>${current?.toLocaleString() || 0}</span>
+          <span>${target?.toLocaleString() || 0}</span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/40 text-red-200 rounded-xl px-4 py-3 text-sm">
+          {error}
+        </div>
+      )}
+      {loading && (
+        <div className="text-sm text-cyan-200 flex items-center gap-2">
+          <AlertCircle size={16} /> Syncing slab data…
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="cyber-glass border border-neon-green/50 rounded-2xl p-4 lg:p-6 text-white relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-cyan-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/70 to-transparent" />
+          <div className="flex items-center gap-2 lg:gap-3 mb-4 relative z-10">
+            <div className="p-1.5 lg:p-2 bg-neon-green/20 rounded-lg backdrop-blur-sm border border-neon-green/30">
+              <Award size={20} className="text-neon-green lg:w-[24px] lg:h-[24px]" />
+            </div>
+            <div>
+              <p className="text-sm text-neon-green font-medium uppercase tracking-wide">
+                Current Slab Level
+              </p>
+              <p className="text-xs text-cyan-300/90">
+                Your qualification tier
+              </p>
+            </div>
+          </div>
+          <p className="text-3xl lg:text-5xl font-bold mb-2 text-neon-green relative z-10 break-words">
+            {slabLevel || "—"}
+          </p>
+          <p className="text-sm lg:text-lg text-cyan-300 relative z-10 break-words">
+            {slabLevel > 0 && SLAB_LEVELS[slabLevel - 1]
+              ? `${formatPercentage(
+                  SLAB_LEVELS[slabLevel - 1].percentageBPS
+                )} Income Share`
+              : "—"}
+          </p>
+        </div>
+
+                <div className="cyber-glass border border-blue-400/50 rounded-2xl p-4 lg:p-6 text-white relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-purple-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-400/70 to-transparent" />
+          <div className="flex items-center gap-2 lg:gap-3 mb-4 relative z-10">
+            <div className="p-1.5 lg:p-2 bg-blue-400/20 rounded-lg backdrop-blur-sm border border-blue-400/30">
+              <TrendingUp size={20} className="text-blue-400 lg:w-[24px] lg:h-[24px]" />
+            </div>
+            <div>
+              <p className="text-sm text-blue-400 font-medium uppercase tracking-wide">
+                Business Volume
+              </p>
+              <p className="text-xs text-cyan-300/90">
+                Total portfolio activity
+              </p>
+            </div>
+          </div>
+          <p className="text-3xl lg:text-5xl font-bold mb-2 text-blue-400 relative z-10 break-words">
+            {formatResponsiveUSD(totalBV)}
+          </p>
+          <p className="text-sm lg:text-lg text-cyan-300 relative z-10 break-words">
+            Accumulated Volume
+          </p>
+        </div>
+
+        <div className="cyber-glass border border-orange-400/50 rounded-2xl p-4 lg:p-6 text-white relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 to-red-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-400/70 to-transparent" />
+          <div className="flex items-center gap-2 lg:gap-3 mb-4 relative z-10">
+            <div className="p-1.5 lg:p-2 bg-orange-400/20 rounded-lg backdrop-blur-sm border border-orange-400/30">
+              <Coins size={20} className="text-orange-400 lg:w-[24px] lg:h-[24px]" />
+            </div>
+            <div>
+              <p className="text-sm text-orange-400 font-medium uppercase tracking-wide">
+                Available Rewards
+              </p>
+              <p className="text-xs text-cyan-300/90">
+                Claimable RAMA tokens
+              </p>
+            </div>
+          </div>
+          <p className="text-3xl lg:text-5xl font-bold mb-2 text-orange-400 relative z-10 break-words">
+            {formatResponsiveRAMA(availableRewards)}
+          </p>
+          <p className="text-sm lg:text-lg text-cyan-300 relative z-10 break-words">
+            Ready to claim
+          </p>
+        </div>
+      </div>
+
+      {/* Slab Income Section */}
+      <div className="cyber-glass border border-neon-orange/40 rounded-2xl p-4 lg:p-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-neon-orange/10 to-neon-pink/10 opacity-40" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="flex items-center gap-2 lg:gap-3">
+              <div className="p-1.5 lg:p-2 bg-neon-orange/20 rounded-lg border border-neon-orange/30">
+                <Users size={18} className="text-neon-orange lg:w-[22px] lg:h-[22px]" />
+              </div>
+              <div>
+                <p className="text-sm text-neon-orange font-medium uppercase tracking-wide">
+                  Slab Income
+                </p>
+                <p className="text-xs text-cyan-300/80">
+                  Pending & claimable amounts
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2 relative z-10">
+            <p className="text-sm text-cyan-300/80">
+              Total:{" "}
+              <span className="font-semibold text-neon-orange break-words">
+                {formatResponsiveUSD(slabIncomeUsd)}
+              </span>{" "}
+              ≈ {formatResponsiveRAMA(slabIncomeRama)}
+            </p>
+            <p className="text-sm text-cyan-300/80">
+              Available now:{" "}
+              <span className="font-semibold text-neon-orange break-words">
+                {formatResponsiveUSD(slabIncomeAvailableUsd)}
+              </span>{" "}
+              ≈ {formatResponsiveRAMA(slabIncomeAvailableRama)}
+            </p>
+            <p className="text-xs text-cyan-300/70">
+              Same-slab override pending: {formatResponsiveUSD(overrideIncomeUsd)} •{" "}
+              {formatResponsiveRAMA(overrideIncomeRama)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      
+
+      
+
+      <div className="cyber-glass rounded-2xl p-6 border-2 border-neon-green">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-neon-green mb-2 uppercase tracking-wide">
+            Complete Slab Income Structure
+          </h2>
+          <p className="text-sm text-cyan-300/90">
+            Slab Income is based on{" "}
+            <span className="text-neon-green font-semibold">
+              difference income
+            </span>{" "}
+            - you earn the percentage difference between your slab level and
+            your team member's slab level on their business volume.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4">
+            <h3 className="text-base font-bold text-cyan-300 mb-3">
+              How Difference Income Works
+            </h3>
+            <div className="space-y-2 text-sm">
+              <p className="text-cyan-300">
+                <span className="text-neon-green font-semibold">Example:</span>
+              </p>
+              <p className="text-cyan-300">
+                • You are at Slab {slabLevel || "—"} and earn{" "}
+                {slabLevel > 0 && SLAB_LEVELS[slabLevel - 1]
+                  ? formatPercentage(SLAB_LEVELS[slabLevel - 1].percentageBPS)
+                  : "—"}{" "}
+                daily on qualified volume.
+              </p>
+              <p className="text-cyan-300">
+                • If your direct partner is one slab lower, you earn the
+                percentage difference on their business volume.
+              </p>
+              <p className="text-cyan-300">
+                • Example: You at 15%, your partner at 10% → you earn 5% on
+                their new business volume.
+              </p>
+            </div>
+          </div>
+
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4">
+            <h3 className="text-base font-bold text-cyan-300 mb-3">
+              Key Highlights
+            </h3>
+            <ul className="space-y-2 text-sm text-cyan-300/90">
+              <li>
+                • Required qualified volume builds using the 40:30:30 leg
+                balancing rule.
+              </li>
+              <li>
+                • You need a minimum number of direct referrals at each slab
+                tier.
+              </li>
+              <li>
+                • Slab income can be claimed daily when you meet the
+                qualification requirements.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto bg-dark-950/40 rounded-xl border border-cyan-500/20">
+          <table className="min-w-full text-left text-cyan-200 text-sm">
+            <thead className="uppercase text-xs text-cyan-300/70 border-b border-cyan-500/20">
+              <tr>
+                <th className="py-3 px-4">Level</th>
+                <th className="py-3 px-4">Tier Name</th>
+                <th className="py-3 px-4">Qualified Volume</th>
+                <th className="py-3 px-4">Income Share</th>
+                <th className="py-3 px-4">Directs Required</th>
+                <th className="py-3 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SLAB_LEVELS.map((slab, idx) => {
+                const slabNum = idx + 1;
+                const isCurrent = slabNum === slabLevel;
+                const isAchieved = slabNum < slabLevel;
+                return (
+                  <tr
+                    key={slabNum}
+                    className={`border-b border-cyan-500/10 transition-colors ${
+                      isCurrent
+                        ? "bg-neon-green/5 hover:bg-neon-green/10"
+                        : isAchieved
+                        ? "bg-emerald-500/5 hover:bg-emerald-500/10"
+                        : "hover:bg-cyan-500/5"
+                    }`}
+                  >
+                    <td className="py-3 px-4">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                          isCurrent
+                            ? "bg-gradient-to-br from-neon-green to-cyan-500 text-dark-950"
+                            : isAchieved
+                            ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white"
+                            : "cyber-glass border border-cyan-500/30 text-cyan-300/50"
+                        }`}
+                      >
+                        {slabNum}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`font-semibold ${
+                          isCurrent
+                            ? "text-neon-green"
+                            : isAchieved
+                            ? "text-emerald-400"
+                            : "text-cyan-300/50"
+                        }`}
+                      >
+                        {SLAB_TIER_NAMES[idx]}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-cyan-300">
+                      {formatUSD(slab.requiredVolumeUSD)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`font-bold text-lg ${
+                          isCurrent
+                            ? "text-neon-green"
+                            : isAchieved
+                            ? "text-emerald-400"
+                            : "text-cyan-300/50"
+                        }`}
+                      >
+                        {formatPercentage(slab.percentageBPS)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-cyan-300">
+                      {slab.minDirects}
+                    </td>
+                    <td className="py-3 px-4">
+                      {isCurrent ? (
+                        <span className="px-3 py-1 bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950 rounded-full text-xs font-bold">
+                          Current Level
+                        </span>
+                      ) : isAchieved ? (
+                        <span className="px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full text-xs font-bold">
+                          Achieved
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 cyber-glass border border-cyan-500/30 text-cyan-300/50 rounded-full text-xs font-medium">
+                          Locked
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Enhanced Progress Section */}
+        {progressData && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-cyan-400 mb-4">Achievement Progress</h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              <ProgressBar
+                label="Next Slab"
+                current={qualifiedVolumeUsd}
+                target={progressData.nextSlabThreshold}
+                percentage={progressData.progressToNextSlab}
+                color="neon-green"
+              />
+              <ProgressBar
+                label="Next Reward"
+                current={qualifiedVolumeUsd}
+                target={progressData.nextRewardThreshold}
+                percentage={progressData.progressToNextReward}
+                color="yellow"
+              />
+              <ProgressBar
+                label="Next Royalty"
+                current={qualifiedVolumeUsd}
+                target={progressData.nextRoyaltyThreshold}
+                percentage={progressData.progressToNextRoyalty}
+                color="purple"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Income Breakdown */}
+        {(royaltyIncomeUsd > 0 || newDirects > 0) && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-cyan-400 mb-4">Enhanced Income Data</h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {royaltyIncomeUsd > 0 && (
+                <div className="text-center p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                  <p className="text-purple-400 text-sm font-medium">Royalty Income</p>
+                  <p className="text-2xl font-bold text-purple-300">${royaltyIncomeUsd.toLocaleString()}</p>
+                  <p className="text-sm text-purple-400/70">{formatRAMA(royaltyIncomeRama)} RAMA</p>
+                </div>
+              )}
+              {newDirects > 0 && (
+                <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <p className="text-green-400 text-sm font-medium">New Directs Since Claim</p>
+                  <p className="text-2xl font-bold text-green-300">{newDirects}</p>
+                  <p className="text-sm text-green-400/70">Fresh registrations</p>
+                </div>
+              )}
+              {legBreakdown && (
+                <>
+                  <div className="text-center p-4 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+                    <p className="text-cyan-400 text-sm font-medium">L1 Volume</p>
+                    <p className="text-xl font-bold text-cyan-300">${legBreakdown.L1?.toLocaleString() || 0}</p>
+                  </div>
+                  <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                    <p className="text-blue-400 text-sm font-medium">L2 Volume</p>
+                    <p className="text-xl font-bold text-blue-300">${legBreakdown.L2?.toLocaleString() || 0}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Volume Analytics */}
+        {userAddress && (
+          <div className="space-y-6">
+            <div className="cyber-glass border border-cyan-500/40 rounded-2xl p-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-neon-green/10 opacity-40" />
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
+                  <BarChart3 size={22} className="text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-cyan-300 font-medium uppercase tracking-wide">
+                    Enhanced Volume Analytics
+                  </p>
+                  <p className="text-xs text-cyan-300/80">
+                    Real-time business volume tracking from SlabManager
+                  </p>
+                </div>
+              </div>
+              <div className="relative z-10">
+                <VolumeAnalytics userAddress={userAddress} showDetailed={true} maxLegs={8} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Achievement Timeline */}
+        {achievementsData && (achievementsData.slabs?.length > 0 || achievementsData.rewards?.length > 0) && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-cyan-400 mb-4">Recent Achievements</h3>
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {achievementsData.slabs?.slice(-5).reverse().map((achievement, idx) => (
+                <div key={`slab-${achievement.id}`} className="flex items-center gap-3 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    {achievement.id}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-green-400 font-medium">Slab {achievement.id} Achieved</p>
+                    <p className="text-sm text-green-300/70">
+                      {achievement.achievedDate?.toLocaleDateString()} - ${achievement.totalQualified?.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {achievementsData.rewards?.slice(-3).reverse().map((achievement, idx) => (
+                <div key={`reward-${achievement.id}`} className="flex items-center gap-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                  <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    R{achievement.id}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-yellow-400 font-medium">Reward Milestone {achievement.id}</p>
+                    <p className="text-sm text-yellow-300/70">
+                      {achievement.achievedDate?.toLocaleDateString()} - ${achievement.totalQualified?.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* System Information */}
+        {(slabPercents || rewardMilestones || royaltyTiers) && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4 lg:p-6">
+            <h3 className="text-lg lg:text-xl font-bold text-cyan-400 mb-4 flex items-center gap-2">
+              <div className="w-6 h-6 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                <Award size={14} />
+              </div>
+              System Configuration
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+              {/* Slab Percentages */}
+              {slabPercents && (
+                <div className="cyber-glass border border-cyan-500/20 rounded-lg p-4">
+                  <h4 className="text-sm lg:text-base font-semibold text-cyan-300 mb-3 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                    Slab Percentages
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                    {slabPercents.map((percent, idx) => (
+                      <div key={idx} className="flex justify-between items-center py-2 px-3 bg-dark-800/50 rounded-lg hover:bg-dark-700/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-cyan-500/20 rounded text-xs flex items-center justify-center text-cyan-400 font-bold">
+                            {idx + 1}
+                          </div>
+                          <span className="text-sm text-cyan-300">Slab {idx + 1}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded">
+                          {percent}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Reward Milestones */}
+              {rewardMilestones && (
+                <div className="cyber-glass border border-yellow-500/20 rounded-lg p-4">
+                  <h4 className="text-sm lg:text-base font-semibold text-yellow-300 mb-3 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    Reward Milestones
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                    {rewardMilestones.slice(0, 10).map((milestone, idx) => (
+                      <div key={idx} className="flex justify-between items-center py-2 px-3 bg-dark-800/50 rounded-lg hover:bg-dark-700/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-yellow-500/20 rounded text-xs flex items-center justify-center text-yellow-400 font-bold">
+                            {idx + 1}
+                          </div>
+                          <span className="text-sm text-yellow-300">Level {idx + 1}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded">
+                          ${milestone ? (milestone / 1000000).toLocaleString(undefined, { 
+                            minimumFractionDigits: 0, 
+                            maximumFractionDigits: 1 
+                          }) + (milestone >= 1000000 ? 'M' : 'K') : '0'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Royalty Tiers */}
+              {royaltyTiers && (
+                <div className="cyber-glass border border-purple-500/20 rounded-lg p-4 md:col-span-2 xl:col-span-1">
+                  <h4 className="text-sm lg:text-base font-semibold text-purple-300 mb-3 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                    Royalty Tiers
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                    {royaltyTiers.slice(0, 10).map((tier, idx) => (
+                      <div key={idx} className="py-2 px-3 bg-dark-800/50 rounded-lg hover:bg-dark-700/50 transition-colors">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-purple-500/20 rounded text-xs flex items-center justify-center text-purple-400 font-bold">
+                              {idx + 1}
+                            </div>
+                            <span className="text-xs text-purple-300">Threshold</span>
+                          </div>
+                          <span className="text-sm font-semibold text-purple-400 bg-purple-500/10 px-2 py-1 rounded">
+                            ${tier.threshold ? (tier.threshold / 1000).toLocaleString() + 'K' : '0'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center ml-8">
+                          <span className="text-xs text-purple-300/70">Reward</span>
+                          <span className="text-sm font-semibold text-green-400 bg-green-500/10 px-2 py-1 rounded">
+                            ${tier.reward?.toLocaleString() || '0'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Legend */}
+            <div className="mt-4 pt-4 border-t border-cyan-500/20">
+              <div className="flex flex-wrap gap-4 text-xs text-cyan-300/70">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                  <span>Percentage rates for slab income calculations</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span>Volume thresholds for one-time rewards</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <span>Royalty tier requirements and payouts</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+      </div>
+    </div>
+  );
+}

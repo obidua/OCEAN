@@ -17,6 +17,7 @@ import RewardVaultABI from './Contract_ABI/RewardVault.json';
 import SafeWalletABI from './Contract_ABI/SafeWallet.json';
 import RoiDistributionABI from './Contract_ABI/RoiDistributor.json';
 import { dayShortFromUnix } from "../src/utils/helper";
+import { checkEnvironmentConfig, resolveContractAddress, validateRuntimeConfig } from "../src/utils/envCheck.js";
 import {
   ROYALTY_LEVELS as ROYALTY_LEVELS_FALLBACK,
   ONE_TIME_REWARDS as ONE_TIME_REWARDS_FALLBACK,
@@ -91,6 +92,12 @@ const Contract = {
   OceanQueryUpgradeable: resolveAddress("OCEANQUERYUPGRADEABLE", "0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db"),
 };
 
+// Validate environment configuration on module load
+const isConfigValid = validateRuntimeConfig();
+if (!isConfigValid) {
+  console.error('⚠️ Environment configuration validation failed!');
+  checkEnvironmentConfig(); // Show detailed info for debugging
+}
 
 const RPC_URL =
   resolveEnvValue("RPC_URL") ||
@@ -3627,148 +3634,286 @@ export const useStore = create((set, get) => ({
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
-        throw new Error("SlabManager contract not available");
+        console.warn("SlabManager contract not available, using fallback data");
+        return {
+          slabLevel: 0,
+          qualifiedVolumeUsd: 0,
+          directs: 0,
+          canClaim: false,
+          currentEpoch: Math.floor(Date.now() / 1000),
+          lastClaimEpoch: 0,
+          newDirects: 0,
+          slabIncomeUsd: 0,
+          slabIncomeAvailableUsd: 0,
+          slabIncomeRama: 0,
+          slabIncomeAvailableRama: 0,
+          overrideIncomeUsd: 0,
+          overrideIncomeRama: 0,
+          royaltyIncomeUsd: 0,
+          royaltyIncomeRama: 0,
+          sameSlabPartners: { firstWave: [], secondWave: [], thirdWave: [] },
+          legsDetailed: [],
+          legBreakdown: { L1: 0, L2: 0, Lrest: 0, total: 0 },
+          achievementsData: { slabs: [], rewards: [], royalties: [] },
+          progressData: {
+            currentSlab: 0,
+            nextSlabThreshold: 0,
+            nextRewardThreshold: 0,
+            nextRoyaltyThreshold: 0,
+            progressToNextSlab: 0,
+            progressToNextReward: 0,
+            progressToNextRoyalty: 0
+          }
+        };
       }
 
-      // Get comprehensive user overview from SlabManager
-      const userOverview = await slabManager.methods.getUserOverview(userAddress).call();
+      console.log("🔗 Fetching SlabManager data for:", userAddress);
+      console.log("📍 SlabManager contract address:", Contract["SlabManager"]);
 
-      // Extract data from the returned struct
-      const {
-        qualifiedBusinessUSD,
-        currentSlabIdx,
-        currentL1,
-        currentL2,
-        currentLrest,
-        allLegs,
-        achievedSlabs,
-        achievedRewards,
-        achievedRoyalties,
-        nextSlabThreshold,
-        nextRewardThreshold,
-        nextRoyaltyThreshold,
-        canClaimSlab,
-        lastClaimAt,
-        new50DirectsSinceClaim
-      } = userOverview;
+      // Get comprehensive user overview from SlabManager with error handling
+      let userOverview;
+      try {
+        userOverview = await slabManager.methods.getUserOverview(userAddress).call();
+        console.log("✅ SlabManager.getUserOverview success:", userOverview);
+      } catch (overviewError) {
+        console.error("❌ SlabManager.getUserOverview failed:", overviewError);
+        
+        // Try individual function calls as fallback
+        try {
+          const [
+            qualifiedBusinessUSD,
+            currentSlabIdx,
+            legsTop2AndRest,
+            canClaimSlab
+          ] = await Promise.all([
+            slabManager.methods.getQualifiedBusinessUSD(userAddress).call(),
+            slabManager.methods.getSlabIndex(userAddress).call(),
+            slabManager.methods.getLegsTop2AndRest(userAddress).call(),
+            slabManager.methods.canClaim(userAddress).call()
+          ]);
 
-      // Convert values to appropriate formats
-      const qualifiedVolumeUsd = fromMicroUSD(qualifiedBusinessUSD);
-      const slabLevel = Number(currentSlabIdx);
-      const directs = Number(currentL1) + Number(currentL2) + Number(currentLrest);
+          userOverview = {
+            qualifiedBusinessUSD,
+            currentSlabIdx,
+            currentL1: legsTop2AndRest[0] || 0,
+            currentL2: legsTop2AndRest[1] || 0,
+            currentLrest: legsTop2AndRest[2] || 0,
+            allLegs: [],
+            achievedSlabs: [],
+            achievedRewards: [],
+            achievedRoyalties: [],
+            nextSlabThreshold: 0,
+            nextRewardThreshold: 0,
+            nextRoyaltyThreshold: 0,
+            canClaimSlab,
+            lastClaimAt: 0,
+            new50DirectsSinceClaim: 0
+          };
+
+          console.log("🔄 Fallback data retrieved:", userOverview);
+        } catch (fallbackError) {
+          console.error("❌ Fallback calls failed:", fallbackError);
+          throw new Error(`SlabManager contract calls failed: ${fallbackError.message}`);
+        }
+      }
+
+      // Enhanced data extraction with safe fallbacks
+      const extractSafeValue = (obj, key, fallback = 0) => {
+        try {
+          const value = obj?.[key];
+          if (value === null || value === undefined) return fallback;
+          return typeof value === 'string' || typeof value === 'bigint' ? value : fallback;
+        } catch {
+          return fallback;
+        }
+      };
+
+      // Extract data from the returned struct with safe fallbacks
+      const qualifiedBusinessUSD = extractSafeValue(userOverview, 'qualifiedBusinessUSD', 0);
+      const currentSlabIdx = extractSafeValue(userOverview, 'currentSlabIdx', 0);
+      const currentL1 = extractSafeValue(userOverview, 'currentL1', 0);
+      const currentL2 = extractSafeValue(userOverview, 'currentL2', 0);
+      const currentLrest = extractSafeValue(userOverview, 'currentLrest', 0);
+      const allLegs = userOverview?.allLegs || [];
+      const achievedSlabs = userOverview?.achievedSlabs || [];
+      const achievedRewards = userOverview?.achievedRewards || [];
+      const achievedRoyalties = userOverview?.achievedRoyalties || [];
+      const nextSlabThreshold = extractSafeValue(userOverview, 'nextSlabThreshold', 0);
+      const nextRewardThreshold = extractSafeValue(userOverview, 'nextRewardThreshold', 0);
+      const nextRoyaltyThreshold = extractSafeValue(userOverview, 'nextRoyaltyThreshold', 0);
+      const canClaimSlab = Boolean(userOverview?.canClaimSlab);
+      const lastClaimAt = extractSafeValue(userOverview, 'lastClaimAt', 0);
+      const new50DirectsSinceClaim = extractSafeValue(userOverview, 'new50DirectsSinceClaim', 0);
+
+      // Convert values to appropriate formats with safe conversion
+      const safeFromMicroUSD = (value) => {
+        try {
+          return fromMicroUSD(value || 0);
+        } catch {
+          return 0;
+        }
+      };
+
+      const qualifiedVolumeUsd = safeFromMicroUSD(qualifiedBusinessUSD);
+      // Convert 0-based contract index to 1-based display level
+      const slabLevel = (Number(currentSlabIdx) || 0) + 1;
+      const directs = (Number(currentL1) || 0) + (Number(currentL2) || 0) + (Number(currentLrest) || 0);
       const canClaim = Boolean(canClaimSlab);
-      const lastClaimEpoch = Number(lastClaimAt);
+      const lastClaimEpoch = Number(lastClaimAt) || 0;
       const currentEpoch = Math.floor(Date.now() / 1000);
-      const newDirects = Number(new50DirectsSinceClaim);
+      const newDirects = Number(new50DirectsSinceClaim) || 0;
 
-      // Calculate slab income from achieved slabs
+      // Calculate slab income from achieved slabs with safety checks
       let slabIncomeUsd = 0;
       let slabIncomeAvailableUsd = 0;
       
-      if (achievedSlabs && achievedSlabs.length > 0) {
+      if (Array.isArray(achievedSlabs) && achievedSlabs.length > 0) {
         achievedSlabs.forEach(slab => {
-          const slabAmount = fromMicroUSD(slab.qualifiedL1) + fromMicroUSD(slab.qualifiedL2) + fromMicroUSD(slab.qualifiedLrest);
-          slabIncomeUsd += slabAmount;
-          if (canClaim) {
-            slabIncomeAvailableUsd += slabAmount;
+          try {
+            const slabAmount = safeFromMicroUSD(slab.qualifiedL1) + 
+                              safeFromMicroUSD(slab.qualifiedL2) + 
+                              safeFromMicroUSD(slab.qualifiedLrest);
+            slabIncomeUsd += slabAmount;
+            if (canClaim) {
+              slabIncomeAvailableUsd += slabAmount;
+            }
+          } catch (error) {
+            console.warn("Error processing slab achievement:", error);
           }
         });
       }
 
-      // Convert to RAMA (simplified calculation)
-      const slabIncomeRama = slabIncomeUsd / 0.1;
-      const slabIncomeAvailableRama = slabIncomeAvailableUsd / 0.1;
+      // Convert to RAMA (using safer calculation)
+      const getRamaPrice = () => {
+        try {
+          return get().ramaPrice || 0.1; // fallback to 0.1
+        } catch {
+          return 0.1;
+        }
+      };
+      
+      const ramaPrice = getRamaPrice();
+      const slabIncomeRama = ramaPrice > 0 ? slabIncomeUsd / ramaPrice : 0;
+      const slabIncomeAvailableRama = ramaPrice > 0 ? slabIncomeAvailableUsd / ramaPrice : 0;
 
-      // Calculate override income from achieved rewards
+      // Calculate override income from achieved rewards with safety checks
       let overrideIncomeUsd = 0;
       let overrideIncomeRama = 0;
       
-      if (achievedRewards && achievedRewards.length > 0) {
+      if (Array.isArray(achievedRewards) && achievedRewards.length > 0) {
         achievedRewards.forEach(reward => {
-          const rewardAmount = fromMicroUSD(reward.qualifiedL1) + fromMicroUSD(reward.qualifiedL2) + fromMicroUSD(reward.qualifiedLrest);
-          overrideIncomeUsd += rewardAmount;
+          try {
+            const rewardAmount = safeFromMicroUSD(reward.qualifiedL1) + 
+                                safeFromMicroUSD(reward.qualifiedL2) + 
+                                safeFromMicroUSD(reward.qualifiedLrest);
+            overrideIncomeUsd += rewardAmount;
+          } catch (error) {
+            console.warn("Error processing reward achievement:", error);
+          }
         });
-        overrideIncomeRama = overrideIncomeUsd / 0.1;
+        overrideIncomeRama = ramaPrice > 0 ? overrideIncomeUsd / ramaPrice : 0;
       }
 
-      // Process royalty achievements
+      // Process royalty achievements with safety checks
       let royaltyIncomeUsd = 0;
       let royaltyIncomeRama = 0;
       
-      if (achievedRoyalties && achievedRoyalties.length > 0) {
+      if (Array.isArray(achievedRoyalties) && achievedRoyalties.length > 0) {
         achievedRoyalties.forEach(royalty => {
-          const royaltyAmount = fromMicroUSD(royalty.qualifiedL1) + fromMicroUSD(royalty.qualifiedL2) + fromMicroUSD(royalty.qualifiedLrest);
-          royaltyIncomeUsd += royaltyAmount;
+          try {
+            const royaltyAmount = safeFromMicroUSD(royalty.qualifiedL1) + 
+                                 safeFromMicroUSD(royalty.qualifiedL2) + 
+                                 safeFromMicroUSD(royalty.qualifiedLrest);
+            royaltyIncomeUsd += royaltyAmount;
+          } catch (error) {
+            console.warn("Error processing royalty achievement:", error);
+          }
         });
-        royaltyIncomeRama = royaltyIncomeUsd / 0.1;
+        royaltyIncomeRama = ramaPrice > 0 ? royaltyIncomeUsd / ramaPrice : 0;
       }
 
-      // Build detailed leg information
-      const legsDetailed = allLegs ? allLegs.map(leg => ({
-        address: leg.leg,
-        volume: fromMicroUSD(leg.volume),
-        volumeRaw: leg.volume
-      })) : [];
+      // Build detailed leg information with safety checks
+      const legsDetailed = Array.isArray(allLegs) ? allLegs.map(leg => {
+        try {
+          return {
+            address: leg.leg || '',
+            volume: safeFromMicroUSD(leg.volume),
+            volumeRaw: leg.volume || 0
+          };
+        } catch {
+          return { address: '', volume: 0, volumeRaw: 0 };
+        }
+      }) : [];
 
       // Build same slab partners from allLegs data
       const sameSlabPartners = {
-        firstWave: legsDetailed.slice(0, 3),
-        secondWave: legsDetailed.slice(3, 6),
-        thirdWave: legsDetailed.slice(6, 9),
+        firstWave: legsDetailed.slice(0, 3) || [],
+        secondWave: legsDetailed.slice(3, 6) || [],
+        thirdWave: legsDetailed.slice(6, 9) || [],
         all: legsDetailed
       };
 
-      // Process achievements with timestamps
-      const achievementsData = {
-        slabs: achievedSlabs ? achievedSlabs.map(slab => ({
-          id: Number(slab.id),
-          achievedAt: Number(slab.achievedAt),
-          achievedDate: new Date(Number(slab.achievedAt) * 1000),
-          qualifiedL1: fromMicroUSD(slab.qualifiedL1),
-          qualifiedL2: fromMicroUSD(slab.qualifiedL2),
-          qualifiedLrest: fromMicroUSD(slab.qualifiedLrest),
-          totalQualified: fromMicroUSD(slab.qualifiedL1) + fromMicroUSD(slab.qualifiedL2) + fromMicroUSD(slab.qualifiedLrest)
-        })) : [],
-        rewards: achievedRewards ? achievedRewards.map(reward => ({
-          id: Number(reward.id),
-          achievedAt: Number(reward.achievedAt),
-          achievedDate: new Date(Number(reward.achievedAt) * 1000),
-          qualifiedL1: fromMicroUSD(reward.qualifiedL1),
-          qualifiedL2: fromMicroUSD(reward.qualifiedL2),
-          qualifiedLrest: fromMicroUSD(reward.qualifiedLrest),
-          totalQualified: fromMicroUSD(reward.qualifiedL1) + fromMicroUSD(reward.qualifiedL2) + fromMicroUSD(reward.qualifiedLrest)
-        })) : [],
-        royalties: achievedRoyalties ? achievedRoyalties.map(royalty => ({
-          id: Number(royalty.id),
-          achievedAt: Number(royalty.achievedAt),
-          achievedDate: new Date(Number(royalty.achievedAt) * 1000),
-          qualifiedL1: fromMicroUSD(royalty.qualifiedL1),
-          qualifiedL2: fromMicroUSD(royalty.qualifiedL2),
-          qualifiedLrest: fromMicroUSD(royalty.qualifiedLrest),
-          totalQualified: fromMicroUSD(royalty.qualifiedL1) + fromMicroUSD(royalty.qualifiedL2) + fromMicroUSD(royalty.qualifiedLrest)
-        })) : []
+      // Process achievements with timestamps and safety checks
+      const processAchievements = (achievements, type) => {
+        if (!Array.isArray(achievements)) return [];
+        return achievements.map(item => {
+          try {
+            return {
+              id: Number(item.id) || 0,
+              achievedAt: Number(item.achievedAt) || 0,
+              achievedDate: new Date((Number(item.achievedAt) || 0) * 1000),
+              qualifiedL1: safeFromMicroUSD(item.qualifiedL1),
+              qualifiedL2: safeFromMicroUSD(item.qualifiedL2),
+              qualifiedLrest: safeFromMicroUSD(item.qualifiedLrest),
+              totalQualified: safeFromMicroUSD(item.qualifiedL1) + 
+                            safeFromMicroUSD(item.qualifiedL2) + 
+                            safeFromMicroUSD(item.qualifiedLrest)
+            };
+          } catch (error) {
+            console.warn(`Error processing ${type} achievement:`, error);
+            return {
+              id: 0,
+              achievedAt: 0,
+              achievedDate: new Date(),
+              qualifiedL1: 0,
+              qualifiedL2: 0,
+              qualifiedLrest: 0,
+              totalQualified: 0
+            };
+          }
+        });
       };
 
-      // Create progress tracking data
+      const achievementsData = {
+        slabs: processAchievements(achievedSlabs, 'slab'),
+        rewards: processAchievements(achievedRewards, 'reward'),
+        royalties: processAchievements(achievedRoyalties, 'royalty')
+      };
+
+      // Create progress tracking data with safety checks
+      const nextSlabThresholdUsd = safeFromMicroUSD(nextSlabThreshold);
+      const nextRewardThresholdUsd = safeFromMicroUSD(nextRewardThreshold);
+      const nextRoyaltyThresholdUsd = safeFromMicroUSD(nextRoyaltyThreshold);
+
       const progressData = {
         currentSlab: slabLevel,
-        nextSlabThreshold: fromMicroUSD(nextSlabThreshold),
-        nextRewardThreshold: fromMicroUSD(nextRewardThreshold),
-        nextRoyaltyThreshold: fromMicroUSD(nextRoyaltyThreshold),
-        progressToNextSlab: nextSlabThreshold > 0 ? (qualifiedVolumeUsd / fromMicroUSD(nextSlabThreshold)) * 100 : 100,
-        progressToNextReward: nextRewardThreshold > 0 ? (qualifiedVolumeUsd / fromMicroUSD(nextRewardThreshold)) * 100 : 100,
-        progressToNextRoyalty: nextRoyaltyThreshold > 0 ? (qualifiedVolumeUsd / fromMicroUSD(nextRoyaltyThreshold)) * 100 : 100
+        nextSlabThreshold: nextSlabThresholdUsd,
+        nextRewardThreshold: nextRewardThresholdUsd,
+        nextRoyaltyThreshold: nextRoyaltyThresholdUsd,
+        progressToNextSlab: nextSlabThresholdUsd > 0 ? Math.min(100, (qualifiedVolumeUsd / nextSlabThresholdUsd) * 100) : 100,
+        progressToNextReward: nextRewardThresholdUsd > 0 ? Math.min(100, (qualifiedVolumeUsd / nextRewardThresholdUsd) * 100) : 100,
+        progressToNextRoyalty: nextRoyaltyThresholdUsd > 0 ? Math.min(100, (qualifiedVolumeUsd / nextRoyaltyThresholdUsd) * 100) : 100
       };
 
-      // Leg breakdown for UI
+      // Leg breakdown for UI with safety checks
       const legBreakdown = {
-        L1: fromMicroUSD(currentL1),
-        L2: fromMicroUSD(currentL2),
-        Lrest: fromMicroUSD(currentLrest),
-        total: fromMicroUSD(currentL1) + fromMicroUSD(currentL2) + fromMicroUSD(currentLrest)
+        L1: safeFromMicroUSD(currentL1),
+        L2: safeFromMicroUSD(currentL2),
+        Lrest: safeFromMicroUSD(currentLrest),
+        total: safeFromMicroUSD(currentL1) + safeFromMicroUSD(currentL2) + safeFromMicroUSD(currentLrest)
       };
 
-      return {
+      const result = {
         // Basic info
         slabLevel,
         qualifiedVolumeUsd,
@@ -3805,15 +3950,64 @@ export const useStore = create((set, get) => ({
           directRefs: directs,
           canClaim,
           lastClaimAt: lastClaimEpoch,
-          nextSlabThreshold: fromMicroUSD(nextSlabThreshold),
-          nextRewardThreshold: fromMicroUSD(nextRewardThreshold),
-          nextRoyaltyThreshold: fromMicroUSD(nextRoyaltyThreshold),
+          nextSlabThreshold: nextSlabThresholdUsd,
+          nextRewardThreshold: nextRewardThresholdUsd,
+          nextRoyaltyThreshold: nextRoyaltyThresholdUsd,
           newDirects
         }
       };
+
+      console.log("✅ getSlabIncomeOverview result:", result);
+      return result;
+
     } catch (error) {
-      console.error("getSlabIncomeOverview error:", error);
-      throw error;
+      console.error("❌ getSlabIncomeOverview error:", error);
+      
+      // Return safe fallback data instead of throwing
+      console.warn("🔄 Returning fallback slab data due to error");
+      return {
+        slabLevel: 0,
+        qualifiedVolumeUsd: 0,
+        directs: 0,
+        canClaim: false,
+        currentEpoch: Math.floor(Date.now() / 1000),
+        lastClaimEpoch: 0,
+        newDirects: 0,
+        slabIncomeUsd: 0,
+        slabIncomeAvailableUsd: 0,
+        slabIncomeRama: 0,
+        slabIncomeAvailableRama: 0,
+        overrideIncomeUsd: 0,
+        overrideIncomeRama: 0,
+        royaltyIncomeUsd: 0,
+        royaltyIncomeRama: 0,
+        sameSlabPartners: { firstWave: [], secondWave: [], thirdWave: [] },
+        legsDetailed: [],
+        legBreakdown: { L1: 0, L2: 0, Lrest: 0, total: 0 },
+        achievementsData: { slabs: [], rewards: [], royalties: [] },
+        progressData: {
+          currentSlab: 0,
+          nextSlabThreshold: 0,
+          nextRewardThreshold: 0,
+          nextRoyaltyThreshold: 0,
+          progressToNextSlab: 0,
+          progressToNextReward: 0,
+          progressToNextRoyalty: 0
+        },
+        slabAchiev: { slabs: [], rewards: [], royalties: [] },
+        summary: {
+          slabLevel: 0,
+          qualifiedVolumeUsd: 0,
+          directRefs: 0,
+          canClaim: false,
+          lastClaimAt: 0,
+          nextSlabThreshold: 0,
+          nextRewardThreshold: 0,
+          nextRoyaltyThreshold: 0,
+          newDirects: 0
+        },
+        error: error.message
+      };
     }
   },
 
@@ -3825,17 +4019,20 @@ export const useStore = create((set, get) => ({
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
-        throw new Error("SlabManager contract not available");
+        console.warn("SlabManager contract not available for details, using fallback");
+        return {
+          slabPercents: Array(11).fill(0),
+          rewardMilestones: [],
+          royaltyTiers: [],
+          currentEpoch: Math.floor(Date.now() / 1000),
+          canClaim: false
+        };
       }
 
-      // Get additional data in parallel
-      const [
-        slabPercents,
-        rewardMilestones,
-        royaltyTiers,
-        currentEpoch,
-        canClaim
-      ] = await Promise.all([
+      console.log("🔗 Fetching SlabManager details for:", userAddress);
+
+      // Get additional data in parallel with individual error handling
+      const results = await Promise.allSettled([
         slabManager.methods.getSlabPercents().call(),
         slabManager.methods.getRewardMilestones().call(),
         slabManager.methods.getRoyaltyTiers().call(),
@@ -3843,19 +4040,73 @@ export const useStore = create((set, get) => ({
         slabManager.methods.canClaim(userAddress).call()
       ]);
 
-      return {
-        slabPercents: slabPercents.map(p => Number(p)),
-        rewardMilestones: rewardMilestones.map(m => fromMicroUSD(m)),
-        royaltyTiers: royaltyTiers.map(tier => ({
-          threshold: fromMicroUSD(tier.thresholdUSD),
-          reward: fromMicroUSD(tier.rewardUSD)
-        })),
-        currentEpoch: Number(currentEpoch),
-        canClaim: Boolean(canClaim)
+      // Process results with fallbacks
+      const slabPercents = results[0].status === 'fulfilled' 
+        ? (results[0].value || []).map(p => Number(p) || 0)
+        : Array(11).fill(0).map((_, i) => [5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25][i] || 0);
+
+      const rewardMilestones = results[1].status === 'fulfilled'
+        ? (results[1].value || []).map(m => {
+            try {
+              return fromMicroUSD(m || 0);
+            } catch {
+              return 0;
+            }
+          })
+        : [];
+
+      const royaltyTiers = results[2].status === 'fulfilled'
+        ? (results[2].value || []).map(tier => {
+            try {
+              return {
+                threshold: fromMicroUSD(tier.thresholdUSD || 0),
+                reward: fromMicroUSD(tier.rewardUSD || 0)
+              };
+            } catch {
+              return { threshold: 0, reward: 0 };
+            }
+          })
+        : [];
+
+      const currentEpoch = results[3].status === 'fulfilled'
+        ? Number(results[3].value) || Math.floor(Date.now() / 1000)
+        : Math.floor(Date.now() / 1000);
+
+      const canClaim = results[4].status === 'fulfilled'
+        ? Boolean(results[4].value)
+        : false;
+
+      // Log any failures for debugging
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const methods = ['getSlabPercents', 'getRewardMilestones', 'getRoyaltyTiers', 'currentEpoch', 'canClaim'];
+          console.warn(`❌ SlabManager.${methods[index]} failed:`, result.reason);
+        }
+      });
+
+      const detailsResult = {
+        slabPercents,
+        rewardMilestones,
+        royaltyTiers,
+        currentEpoch,
+        canClaim
       };
+
+      console.log("✅ getSlabManagerDetails result:", detailsResult);
+      return detailsResult;
+
     } catch (error) {
-      console.error("getSlabManagerDetails error:", error);
-      throw error;
+      console.error("❌ getSlabManagerDetails error:", error);
+      
+      // Return safe fallback data
+      return {
+        slabPercents: Array(11).fill(0).map((_, i) => [5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25][i] || 0),
+        rewardMilestones: [],
+        royaltyTiers: [],
+        currentEpoch: Math.floor(Date.now() / 1000),
+        canClaim: false,
+        error: error.message
+      };
     }
   },
 
@@ -4014,7 +4265,8 @@ export const useStore = create((set, get) => ({
 
       // Calculate volume metrics
       const totalQualified = fromMicroUSD(qualifiedBusinessUSD || 0);
-      const currentSlabIndex = parseInt(slabIndex || 0);
+      // Convert 0-based contract index to 1-based display level
+      const currentSlabIndex = parseInt(slabIndex || 0) + 1;
 
       // Volume performance analysis
       const volumePerformance = {
@@ -4125,6 +4377,176 @@ export const useStore = create((set, get) => ({
   },
 
   // Get remaining progress for next achievements
+  // Enhanced function to get comprehensive user overview using contract's getUserOverview
+  getSlabUserOverview: async (userAddress) => {
+    try {
+      if (!userAddress) {
+        console.error('❌ getSlabUserOverview: Missing user address');
+        return {
+          success: false,
+          error: 'User address is required',
+          data: null
+        };
+      }
+
+      console.log('🔍 Getting comprehensive slab user overview for:', userAddress);
+      
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      if (!slabManager) {
+        throw new Error('SlabManager contract not available');
+      }
+
+      // Use the comprehensive getUserOverview function from the contract
+      const userOverview = await slabManager.methods.getUserOverview(userAddress).call();
+      console.log('📊 Raw user overview from contract:', userOverview);
+
+      // Process the comprehensive data
+      const result = {
+        // Basic user metrics
+        qualifiedBusinessUSD: Number(userOverview.qualifiedBusinessUSD || 0),
+        currentSlabIdx: Number(userOverview.currentSlabIdx || 0), // 0-based from contract
+        displaySlabLevel: (Number(userOverview.currentSlabIdx || 0)) + 1, // 1-based for UI
+        
+        // Current leg volumes (capped for slab calculations)
+        currentL1: Number(userOverview.currentL1 || 0),
+        currentL2: Number(userOverview.currentL2 || 0),
+        currentLrest: Number(userOverview.currentLrest || 0),
+        
+        // All legs detailed information
+        allLegs: (userOverview.allLegs || []).map((leg, index) => ({
+          address: leg.leg || '',
+          volume: Number(leg.volume || 0),
+          rank: index + 1
+        })),
+        
+        // Achieved slabs with full details
+        achievedSlabs: (userOverview.achievedSlabs || []).map(slab => ({
+          id: Number(slab.id || 0), // 0-based contract index
+          displayLevel: (Number(slab.id || 0)) + 1, // 1-based for UI
+          achievedAt: Number(slab.achievedAt || 0),
+          achievedDate: new Date((Number(slab.achievedAt || 0)) * 1000),
+          qualifiedL1: Number(slab.qualifiedL1 || 0),
+          qualifiedL2: Number(slab.qualifiedL2 || 0),
+          qualifiedLrest: Number(slab.qualifiedLrest || 0)
+        })),
+        
+        // Achieved rewards
+        achievedRewards: (userOverview.achievedRewards || []).map(reward => ({
+          id: Number(reward.id || 0),
+          achievedAt: Number(reward.achievedAt || 0),
+          achievedDate: new Date((Number(reward.achievedAt || 0)) * 1000),
+          qualifiedL1: Number(reward.qualifiedL1 || 0),
+          qualifiedL2: Number(reward.qualifiedL2 || 0),
+          qualifiedLrest: Number(reward.qualifiedLrest || 0)
+        })),
+        
+        // Achieved royalties
+        achievedRoyalties: (userOverview.achievedRoyalties || []).map(royalty => ({
+          id: Number(royalty.id || 0),
+          achievedAt: Number(royalty.achievedAt || 0),
+          achievedDate: new Date((Number(royalty.achievedAt || 0)) * 1000),
+          qualifiedL1: Number(royalty.qualifiedL1 || 0),
+          qualifiedL2: Number(royalty.qualifiedL2 || 0),
+          qualifiedLrest: Number(royalty.qualifiedLrest || 0)
+        })),
+        
+        // Next level thresholds
+        nextSlabThreshold: Number(userOverview.nextSlabThreshold || 0),
+        nextRewardThreshold: Number(userOverview.nextRewardThreshold || 0),
+        nextRoyaltyThreshold: Number(userOverview.nextRoyaltyThreshold || 0),
+        
+        // Claiming status
+        canClaimSlab: Boolean(userOverview.canClaimSlab || false),
+        lastClaimAt: Number(userOverview.lastClaimAt || 0),
+        new50DirectsSinceClaim: Number(userOverview.new50DirectsSinceClaim || 0)
+      };
+
+      console.log('✅ Processed slab user overview:', result);
+      
+      return {
+        success: true,
+        data: result,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('❌ getSlabUserOverview failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        data: null,
+        timestamp: new Date().toISOString()
+      };
+    }
+  },
+
+  // Get detailed achievement progress using getRemainingForNext
+  getDetailedAchievementProgress: async (userAddress, achievementKind = 0) => {
+    try {
+      if (!userAddress) {
+        console.error('❌ getDetailedAchievementProgress: Missing user address');
+        return {
+          success: false,
+          error: 'User address is required',
+          data: null
+        };
+      }
+
+      console.log('🎯 Getting detailed achievement progress for:', userAddress, 'kind:', achievementKind);
+      
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      if (!slabManager) {
+        throw new Error('SlabManager contract not available');
+      }
+
+      // Get next achievement requirements
+      const progressData = await slabManager.methods.getRemainingForNext(userAddress, achievementKind).call();
+      console.log('📈 Raw progress data:', progressData);
+
+      const result = {
+        targetUSD: Number(progressData.progress?.targetUSD || progressData.targetUSD || 0),
+        totalNeeded: Number(progressData.progress?.totalNeeded || progressData.totalNeeded || 0),
+        L1_needed: Number(progressData.progress?.L1_needed || progressData.L1_needed || 0),
+        L2_needed: Number(progressData.progress?.L2_needed || progressData.L2_needed || 0),
+        Lrest_needed: Number(progressData.progress?.Lrest_needed || progressData.Lrest_needed || 0),
+        isAchieved: Boolean(progressData.progress?.isAchieved || progressData.isAchieved || false),
+        achievementKind: achievementKind, // 0 = Slab, 1 = Reward, 2 = Royalty
+        progressPercentage: 0
+      };
+
+      // Calculate progress percentage
+      if (result.targetUSD > 0 && result.totalNeeded >= 0) {
+        const achieved = Math.max(0, result.targetUSD - result.totalNeeded);
+        result.progressPercentage = Math.min(100, (achieved / result.targetUSD) * 100);
+      }
+
+      console.log('✅ Processed achievement progress:', result);
+      
+      return {
+        success: true,
+        data: result,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('❌ getDetailedAchievementProgress failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        data: {
+          targetUSD: 0,
+          totalNeeded: 0,
+          L1_needed: 0,
+          L2_needed: 0,
+          Lrest_needed: 0,
+          isAchieved: false,
+          progressPercentage: 0
+        },
+      };
+    }
+  },
+
+  // Get next achievement progress (enhanced version)
   getNextAchievementProgress: async (userAddress) => {
     try {
       if (!userAddress) throw new Error("Missing user address");
@@ -4132,33 +4554,128 @@ export const useStore = create((set, get) => ({
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
-        throw new Error("SlabManager contract not available");
+        console.warn("SlabManager contract not available for achievement progress, using fallback");
+        return {
+          nextSlab: {
+            targetUSD: 0,
+            totalNeeded: 0,
+            L1Needed: 0,
+            L2Needed: 0,
+            LrestNeeded: 0,
+            isAchieved: false
+          },
+          nextReward: {
+            targetUSD: 0,
+            totalNeeded: 0,
+            L1Needed: 0,
+            L2Needed: 0,
+            LrestNeeded: 0,
+            isAchieved: false
+          },
+          nextRoyalty: {
+            targetUSD: 0,
+            totalNeeded: 0,
+            L1Needed: 0,
+            L2Needed: 0,
+            LrestNeeded: 0,
+            isAchieved: false
+          }
+        };
       }
 
-      // Get progress for different achievement types
-      const [slabProgress, rewardProgress, royaltyProgress] = await Promise.all([
+      console.log("🔗 Fetching achievement progress for:", userAddress);
+
+      // Get progress for different achievement types with individual error handling
+      const results = await Promise.allSettled([
         slabManager.methods.getRemainingForNext(userAddress, 0).call(), // 0 = SLAB
-        slabManager.methods.getRemainingForNext(userAddress, 1).call(), // 1 = REWARD
+        slabManager.methods.getRemainingForNext(userAddress, 1).call(), // 1 = REWARD  
         slabManager.methods.getRemainingForNext(userAddress, 2).call()  // 2 = ROYALTY
       ]);
 
-      const processProgress = (progress) => ({
-        targetUSD: fromMicroUSD(progress.targetUSD),
-        totalNeeded: fromMicroUSD(progress.totalNeeded),
-        L1Needed: fromMicroUSD(progress.L1_needed),
-        L2Needed: fromMicroUSD(progress.L2_needed),
-        LrestNeeded: fromMicroUSD(progress.Lrest_needed),
-        isAchieved: Boolean(progress.isAchieved)
-      });
+      const processProgress = (result, type) => {
+        if (result.status === 'rejected') {
+          console.warn(`❌ SlabManager.getRemainingForNext(${type}) failed:`, result.reason);
+          return {
+            targetUSD: 0,
+            totalNeeded: 0,
+            L1Needed: 0,
+            L2Needed: 0,
+            LrestNeeded: 0,
+            isAchieved: false
+          };
+        }
 
-      return {
-        nextSlab: processProgress(slabProgress),
-        nextReward: processProgress(rewardProgress),
-        nextRoyalty: processProgress(royaltyProgress)
+        try {
+          const progress = result.value;
+          const safeFromMicroUSD = (value) => {
+            try {
+              return fromMicroUSD(value || 0);
+            } catch {
+              return 0;
+            }
+          };
+
+          return {
+            targetUSD: safeFromMicroUSD(progress.targetUSD),
+            totalNeeded: safeFromMicroUSD(progress.totalNeeded),
+            L1Needed: safeFromMicroUSD(progress.L1_needed),
+            L2Needed: safeFromMicroUSD(progress.L2_needed),
+            LrestNeeded: safeFromMicroUSD(progress.Lrest_needed),
+            isAchieved: Boolean(progress.isAchieved)
+          };
+        } catch (error) {
+          console.warn(`Error processing ${type} achievement progress:`, error);
+          return {
+            targetUSD: 0,
+            totalNeeded: 0,
+            L1Needed: 0,
+            L2Needed: 0,
+            LrestNeeded: 0,
+            isAchieved: false
+          };
+        }
       };
+
+      const progressResult = {
+        nextSlab: processProgress(results[0], 'SLAB'),
+        nextReward: processProgress(results[1], 'REWARD'),
+        nextRoyalty: processProgress(results[2], 'ROYALTY')
+      };
+
+      console.log("✅ getNextAchievementProgress result:", progressResult);
+      return progressResult;
+
     } catch (error) {
-      console.error("getNextAchievementProgress error:", error);
-      throw error;
+      console.error("❌ getNextAchievementProgress error:", error);
+      
+      // Return safe fallback data
+      return {
+        nextSlab: {
+          targetUSD: 0,
+          totalNeeded: 0,
+          L1Needed: 0,
+          L2Needed: 0,
+          LrestNeeded: 0,
+          isAchieved: false
+        },
+        nextReward: {
+          targetUSD: 0,
+          totalNeeded: 0,
+          L1Needed: 0,
+          L2Needed: 0,
+          LrestNeeded: 0,
+          isAchieved: false
+        },
+        nextRoyalty: {
+          targetUSD: 0,
+          totalNeeded: 0,
+          L1Needed: 0,
+          L2Needed: 0,
+          LrestNeeded: 0,
+          isAchieved: false
+        },
+        error: error.message
+      };
     }
   },
 

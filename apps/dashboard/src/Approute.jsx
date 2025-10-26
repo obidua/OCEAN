@@ -34,6 +34,7 @@ import Presentation from './pages/Presentation';
 import OceanDefiGuide from './pages/OceanDefiGuide';
 import SpotIncome from './pages/SpotIncome';
 import ReferralLanding from './pages/ReferralLanding';
+import SlabManagerDebugger from './components/SlabManagerDebugger';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { useStore } from '../store/useUserInfoStore';
 
@@ -165,6 +166,7 @@ const Approute = () => {
           <Route path="ocean-defi-guide" element={<OceanDefiGuide />} />
           <Route path="accrued-rewards" element={<AccruedRewards />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="debug" element={<SlabManagerDebugger />} />
         </Route>
       </Routes>
     </BrowserRouter>
