@@ -1,7 +1,7 @@
 {
-  "name": "ocean-test",
+  "name": "ocean-defi",
   "version": "1.0.0",
-  "description": "",
+  "description": "OCEAN DeFi - Decentralized Finance Platform",
   "main": "scripts/ocean_sim.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

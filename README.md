@@ -1,9 +1,9 @@
 ## Project Layout
 
 ```
-ocean-test/
+OCEAN-DeFI/
 ├─ apps/
-│  └─ dashboard/        # drop the OCEAN-DeFi UI here
+│  └─ dashboard/        # OCEAN DeFi UI Dashboard
 ├─ scripts/             # automation + data pipelines
 ├─ config/              # manifests, address maps, private keys
 ├─ data/
