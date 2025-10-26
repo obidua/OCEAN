@@ -136,6 +136,62 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      }
+    ],
+    "name": "RoyaltyPendingCleared",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "tierIdx",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountUSD",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountRama",
+        "type": "uint256"
+      }
+    ],
+    "name": "RoyaltyPendingSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "uint64",
         "name": "monthId",
         "type": "uint64"
@@ -185,12 +241,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountRama",
+        "name": "amountRamaWei",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amountInUSD",
+        "name": "amountUSD6",
         "type": "uint256"
       },
       {
@@ -236,6 +292,673 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      }
+    ],
+    "name": "clearPendingRoyalty",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "T",
+        "type": "uint256"
+      }
+    ],
+    "name": "currentTierIndexForT",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "distributeRoyaltyAllStages",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "stageIdx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "distributeRoyaltyForStage",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "stageIdx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address[]",
+        "name": "users_",
+        "type": "address[]"
+      }
+    ],
+    "name": "distributeRoyaltyManual",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getGlobalRoyaltyAchieversWithStages",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "users_",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint8[][]",
+        "name": "stages_",
+        "type": "uint8[][]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "monthIds",
+        "type": "uint64[]"
+      }
+    ],
+    "name": "getMonthStatuses",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "monthId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "rootPresent",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasClaimed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasPending",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "pendingTierIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingRamaWei",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct RoyaltyManager.MonthStatus[]",
+        "name": "out",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPendingMonths",
+    "outputs": [
+      {
+        "internalType": "uint64[]",
+        "name": "months",
+        "type": "uint64[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRoyaltyHistorySlice",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "monthId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tierIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "timestamp",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "claimedOnChain",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "rootPresent",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct RoyaltyManager.RoyaltyMonthRow[]",
+        "name": "rows",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalMonths",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "usdGrandTotal6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ramaGrandTotalWei",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRoyaltyLedgerSlice",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "isCredit",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "usdAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ramaAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint32",
+            "name": "dayId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "timestamp",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "related",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "memo",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ISafeWallet.LedgerEntry[]",
+        "name": "slice",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalMatched",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "monthIds",
+        "type": "uint64[]"
+      }
+    ],
+    "name": "getRoyaltyMonthlyView",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "monthId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "rootPresent",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasClaimed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasPending",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "pendingTierIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "claimedTierIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "claimedAt",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct RoyaltyManager.RoyaltyMonthlyView[]",
+        "name": "out",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRoyaltyMonths",
+    "outputs": [
+      {
+        "internalType": "uint64[]",
+        "name": "months",
+        "type": "uint64[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getRoyaltyProgress",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "targetUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalNeeded",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L1_needed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L2_needed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "Lrest_needed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAchieved",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct ISlabManagerRoyaltyView.NextAchievementProgress",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      }
+    ],
+    "name": "getRoyaltyReceipt",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "monthId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tierIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "timestamp",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct RoyaltyManager.RoyaltyReceipt",
+        "name": "rec",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bool",
+        "name": "exists",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "stage",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRoyaltyStageAchievers",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "out",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getRoyaltyTotals",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "usdTotal6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ramaTotalWei",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "entries",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "idx",
         "type": "uint256"
@@ -272,6 +995,97 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getUserRoyaltyOverview",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "qualifiedTUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "currentTierIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "lastPaidTier",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "lastPaidMonth",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextThresholdUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "neededUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8[]",
+            "name": "achievedStages",
+            "type": "uint8[]"
+          },
+          {
+            "internalType": "uint64[]",
+            "name": "achievedAt",
+            "type": "uint64[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L1_atLast",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L2_atLast",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "Lrest_atLast",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tNowCacheUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "t60dAgoCacheUSD6",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct RoyaltyManager.RoyaltyOverview",
+        "name": "ov",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -382,6 +1196,25 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "ramaWei",
+        "type": "uint256"
+      }
+    ],
+    "name": "ramaToUsd",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -483,18 +1316,51 @@
         "type": "uint64"
       },
       {
+        "internalType": "uint8",
+        "name": "tierIdx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountRamaWei",
+        "type": "uint256"
+      }
+    ],
+    "name": "setPendingRoyalty",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      },
+      {
         "internalType": "bool",
         "name": "paused_",
         "type": "bool"
       },
       {
         "internalType": "uint256",
-        "name": "tNowUsd",
+        "name": "tNowUsd6",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "t60dAgoUsd",
+        "name": "t60dAgoUsd6",
         "type": "uint256"
       }
     ],
@@ -626,6 +1492,25 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "usd6",
+        "type": "uint256"
+      }
+    ],
+    "name": "usdToRama",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

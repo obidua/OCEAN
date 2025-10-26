@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -48,6 +48,11 @@ export default function MissedIncome() {
   const [overview, setOverview] = useState(null);
   const [timeline, setTimeline] = useState([]);
 
+  // Auto-scroll refs
+  const timelineContainerRef = useRef(null);
+  const autoScrollFrame = useRef(null);
+  const autoScrollPaused = useRef(false);
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -75,6 +80,56 @@ export default function MissedIncome() {
       cancelled = true;
     };
   }, [userAddress, getMissedIncomeOverview, getMissedIncomeSlice]);
+
+  // Auto-scroll effect for timeline
+  useEffect(() => {
+    const container = timelineContainerRef.current;
+    if (!container || !timeline?.length) return;
+
+    const scroll = () => {
+      if (autoScrollPaused.current) {
+        autoScrollFrame.current = requestAnimationFrame(scroll);
+        return;
+      }
+
+      const maxScroll = container.scrollHeight - container.clientHeight;
+      if (maxScroll <= 0) return;
+
+      const currentScroll = container.scrollTop;
+      const scrollSpeed = 0.5; // Adjust speed as needed
+
+      if (currentScroll >= maxScroll) {
+        // Reset to top when reaching bottom
+        container.scrollTop = 0;
+      } else {
+        container.scrollTop = currentScroll + scrollSpeed;
+      }
+
+      autoScrollFrame.current = requestAnimationFrame(scroll);
+    };
+
+    // Pause on hover
+    const handleMouseEnter = () => {
+      autoScrollPaused.current = true;
+    };
+
+    const handleMouseLeave = () => {
+      autoScrollPaused.current = false;
+    };
+
+    container.addEventListener('mouseenter', handleMouseEnter);
+    container.addEventListener('mouseleave', handleMouseLeave);
+
+    autoScrollFrame.current = requestAnimationFrame(scroll);
+
+    return () => {
+      if (autoScrollFrame.current) {
+        cancelAnimationFrame(autoScrollFrame.current);
+      }
+      container.removeEventListener('mouseenter', handleMouseEnter);
+      container.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [timeline]);
 
   const capDate = useMemo(() => {
     if (!overview?.capReachedAt) return null;
@@ -282,12 +337,16 @@ export default function MissedIncome() {
                 Missed Income Timeline
               </h2>
               <p className="text-xs text-cyan-200/70">
-                Review key checkpoints after the cap was reached.
+                Review key checkpoints after the cap was reached. (Hover to pause scrolling)
               </p>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div
+            ref={timelineContainerRef}
+            className="space-y-4 max-h-[500px] overflow-y-auto pr-2 hide-scrollbar"
+            style={{ scrollBehavior: 'auto' }}
+          >
             {(timelineUi || []).map((entry, idx) => (
               <div key={idx} className="relative pl-6">
                 {idx !== (timelineUi?.length || 0) - 1 && (

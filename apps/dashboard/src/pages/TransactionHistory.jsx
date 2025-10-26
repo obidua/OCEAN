@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { History, Filter, Download, Search, TrendingUp, Award, Trophy, Gift, Layers, Wallet, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { History, Filter, Download, Search, TrendingUp, Award, Trophy, Gift, Layers, Wallet, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { formatUSD, formatRAMA } from '../utils/contractData';
 import AddressWithCopy from '../components/AddressWithCopy';
 import CopyButton from '../components/CopyButton';
@@ -135,10 +135,17 @@ export default function TransactionHistory() {
   const [pageSize] = useState(20); // you can change to 20 
   const [totalPages, setTotalPages] = useState(1);
 
+  // Volume analytics state
+  const [volumeData, setVolumeData] = useState(null);
+  const [volumeLoading, setVolumeLoading] = useState(false);
+  const [volumeError, setVolumeError] = useState('');
+
 
 
 
   const getIncomeTransaction = useStore((s) => s.getIncomeTransaction);
+  const getLegsDetailedVolume = useStore((s) => s.getLegsDetailedVolume);
+  const getVolumeAnalytics = useStore((s) => s.getVolumeAnalytics);
   const userAddress = localStorage.getItem('userAddress') || null;
 
   const fetchTransactions = useCallback(
@@ -197,6 +204,28 @@ export default function TransactionHistory() {
     if (!userAddress) return;
     fetchTransactions(currentPage);
   }, [userAddress, currentPage, selectedType]);
+
+  // Load volume data
+  useEffect(() => {
+    async function loadVolumeData() {
+      if (!userAddress || !getVolumeAnalytics) {
+        setVolumeData(null);
+        return;
+      }
+      try {
+        setVolumeLoading(true);
+        setVolumeError('');
+        const analytics = await getVolumeAnalytics(userAddress);
+        setVolumeData(analytics);
+      } catch (err) {
+        console.error('Volume analytics error:', err);
+        setVolumeError(err?.message || 'Failed to load volume analytics');
+      } finally {
+        setVolumeLoading(false);
+      }
+    }
+    loadVolumeData();
+  }, [userAddress, getVolumeAnalytics]);
 
 
 
@@ -434,6 +463,111 @@ export default function TransactionHistory() {
           </div>
         </div>
       </div>
+
+      {/* Volume Analytics Section */}
+      {volumeData && (
+        <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+          <h2 className="text-base sm:text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Business Volume Analytics</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Volume Distribution */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Leg Volume Distribution</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+                  <p className="text-cyan-400 text-xs font-medium uppercase">L1</p>
+                  <p className="text-lg font-bold text-cyan-300">{formatUSD(volumeData.cappedVolumes.L1)}</p>
+                  <p className="text-xs text-cyan-400/70">Capped</p>
+                </div>
+                <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                  <p className="text-blue-400 text-xs font-medium uppercase">L2</p>
+                  <p className="text-lg font-bold text-blue-300">{formatUSD(volumeData.cappedVolumes.L2)}</p>
+                  <p className="text-xs text-blue-400/70">Capped</p>
+                </div>
+                <div className="text-center p-3 bg-neon-green/10 rounded-lg border border-neon-green/30">
+                  <p className="text-neon-green text-xs font-medium uppercase">L-Rest</p>
+                  <p className="text-lg font-bold text-neon-green">{formatUSD(volumeData.cappedVolumes.Lrest)}</p>
+                  <p className="text-xs text-neon-green/70">Capped</p>
+                </div>
+              </div>
+              
+              {/* Performance Metrics */}
+              <div className="space-y-2 p-3 cyber-glass border border-cyan-500/20 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-cyan-300/90">Total Qualified:</span>
+                  <span className="text-xs font-semibold text-cyan-300">{formatUSD(volumeData.totalQualified)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-cyan-300/90">Current Slab:</span>
+                  <span className="text-xs font-semibold text-neon-green">Level {volumeData.currentSlabIndex}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-cyan-300/90">Volume Balance:</span>
+                  <span className={`text-xs font-medium ${volumeData.volumePerformance.balance.isBalanced ? 'text-neon-green' : 'text-neon-orange'}`}>
+                    {volumeData.volumePerformance.balance.isBalanced ? 'Optimized' : 'Needs Balance'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-cyan-300/90">Volume Loss:</span>
+                  <span className="text-xs text-neon-orange">
+                    {formatUSD(volumeData.volumePerformance.cappingEfficiency.totalLoss)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Performing Legs */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Top Business Contributors</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                {volumeData.legs.slice(0, 8).map((leg, index) => (
+                  <div key={leg.address} className="flex items-center justify-between p-3 cyber-glass border border-cyan-500/20 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        index === 0 ? 'bg-neon-green/20 text-neon-green border border-neon-green/40' :
+                        index === 1 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' :
+                        index === 2 ? 'bg-neon-orange/20 text-neon-orange border border-neon-orange/40' :
+                        'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-cyan-300">
+                          {leg.address.slice(0, 6)}...{leg.address.slice(-4)}
+                        </p>
+                        <p className="text-xs text-cyan-400/70">{leg.percentage.toFixed(1)}% of total</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-cyan-300">{formatUSD(leg.volume)}</p>
+                      <p className="text-xs text-cyan-400/70">{formatRAMA(leg.volumeRAMA)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {volumeLoading && (
+        <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="animate-spin text-cyan-400" size={20} />
+            <span className="text-cyan-300">Loading volume analytics...</span>
+          </div>
+        </div>
+      )}
+
+      {volumeError && (
+        <div className="cyber-glass rounded-2xl p-4 border border-red-500/30">
+          <div className="flex items-center gap-2 text-red-300">
+            <AlertCircle size={16} />
+            <span className="text-sm">{volumeError}</span>
+          </div>
+        </div>
+      )}
 
       <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />

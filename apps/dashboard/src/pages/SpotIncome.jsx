@@ -77,12 +77,16 @@ export default function SpotIncome() {
   const [hasMore, setHasMore] = useState(false);
   const [teamVolumeUsd, setTeamVolumeUsd] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [downline, setDownline] = useState({ items: [], totals: { portfolioUsd: 0, roiUsd: 0, roiRama: 0 }, count: 0 });
+  const [downlineError, setDownlineError] = useState(null);
+  const [showAllDownline, setShowAllDownline] = useState(false);
 
   const getSpotIncomeSummary = useStore((s) => s.getSpotIncomeSummary);
   const getSpotIncomeTransactions = useStore(
     (s) => s.getSpotIncomeTransactions
   );
   const getTeamNetworkData = useStore((s) => s.getTeamNetworkData);
+  const getDownlineRoiView = useStore((s) => s.getDownlineRoiView);
   const userAddressFromStore = useStore((s) => s.userAddress);
   const userAddress =
     userAddressFromStore || localStorage.getItem("userAddress") || null;
@@ -122,6 +126,19 @@ export default function SpotIncome() {
         }
       } else {
         setTeamVolumeUsd(null);
+      }
+
+  // Fetch downline daily accrued reward snapshot (ComprehensiveView)
+      if (getDownlineRoiView) {
+        try {
+          const snap = await getDownlineRoiView(userAddress);
+          setDownline(snap || { items: [], totals: { portfolioUsd: 0, roiUsd: 0, roiRama: 0 }, count: 0 });
+          setDownlineError(null);
+        } catch (dlErr) {
+          console.warn('Spot income downline Daily Accrued Reward fetch failed:', dlErr);
+          setDownline({ items: [], totals: { portfolioUsd: 0, roiUsd: 0, roiRama: 0 }, count: 0 });
+          setDownlineError(dlErr?.message || 'Unable to load downline daily accrued reward data.');
+        }
       }
     } catch (err) {
       console.error(err);
@@ -532,6 +549,81 @@ export default function SpotIncome() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+  {/* Downline Daily Accrued Reward Table (added without changing existing sections) */}
+      {userAddress && (
+        <div className="cyber-glass rounded-2xl p-5 border border-cyan-500/30 overflow-x-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <Award size={18} className="text-cyan-400" />
+            <h3 className="text-base font-semibold text-cyan-300 uppercase tracking-wide">Downline Daily Accrued Reward</h3>
+            <span className="ml-auto text-[11px] text-cyan-300/70">{downline?.count ?? 0} members</span>
+          </div>
+
+          {downlineError ? (
+            <div className="text-sm text-yellow-200 bg-yellow-900/20 border border-yellow-500/40 rounded-lg px-3 py-2 mb-3">
+              {downlineError}
+            </div>
+          ) : null}
+
+          {!downline?.items?.length ? (
+            <div className="text-sm text-cyan-300/70 flex items-center gap-2">
+              <AlertCircle size={16} />
+              No downline daily accrued reward data available yet.
+            </div>
+          ) : (
+            <>
+              <table className="w-full text-sm min-w-[640px]">
+                <thead>
+                  <tr className="text-left text-cyan-300/70 border-b border-cyan-500/20">
+                    <th className="py-2 pr-4">#</th>
+                    <th className="py-2 pr-4">Member</th>
+                    <th className="py-2 pr-4 text-right">Portfolio (USD)</th>
+                    <th className="py-2 pr-4 text-right">Daily Accrued Reward (USD)</th>
+                    <th className="py-2 pr-4 text-right">Daily Accrued Reward (RAMA)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(showAllDownline ? downline.items : downline.items.slice(0, 10)).map((m, i) => (
+                    <tr key={`${m.member}-${i}`} className="border-b border-cyan-500/10">
+                      <td className="py-2 pr-4 align-middle text-cyan-300/80">{i + 1}</td>
+                      <td className="py-2 pr-4 align-middle">
+                        <AddressWithCopy
+                          address={m.member}
+                          copyLabel=""
+                          className="text-[11px]"
+                          textClassName="font-mono text-cyan-200 truncate max-w-[240px]"
+                        />
+                      </td>
+                      <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(m.portfolioUsd)}</td>
+                      <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(m.roiUsd)}</td>
+                      <td className="py-2 pr-4 text-right text-cyan-200">{formatRAMA(m.roiRama)} RAMA</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-cyan-500/20">
+                    <td colSpan={2} className="py-2 pr-4 text-right text-cyan-300/80">Totals</td>
+                    <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(downline?.totals?.portfolioUsd ?? 0)}</td>
+                    <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(downline?.totals?.roiUsd ?? 0)}</td>
+                    <td className="py-2 pr-4 text-right text-cyan-200">{formatRAMA(downline?.totals?.roiRama ?? 0)} RAMA</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              {downline.items.length > 10 && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => setShowAllDownline((v) => !v)}
+                    className="px-3 py-2 text-xs font-semibold uppercase tracking-wide border border-cyan-500/30 rounded-lg text-cyan-200 hover:border-cyan-500/60 transition-all"
+                  >
+                    {showAllDownline ? 'Show Less' : `View More (${downline.items.length - 10} more)`}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

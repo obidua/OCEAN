@@ -197,6 +197,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "qualifiedUsd",
         "type": "uint256"
       }
@@ -606,6 +611,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "ramaAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "qualifiedUsdAt",
         "type": "uint256"
       },
@@ -661,13 +671,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "releasePending",
     "outputs": [],
     "stateMutability": "nonpayable",

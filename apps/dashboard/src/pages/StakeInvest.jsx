@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Wallet, Zap, TrendingUp, AlertCircle, CheckCircle, HelpCircle, ChevronDown, ChevronUp, DollarSign, User, Users, Info, Clipboard, Loader2 } from 'lucide-react';
+import { Wallet, Zap, TrendingUp, AlertCircle, CheckCircle, HelpCircle, ChevronDown, ChevronUp, DollarSign, User, Users, Info, Clipboard, Loader2, Copy } from 'lucide-react';
 import { formatUSD } from '../utils/contractData';
 import Tooltip from '../components/Tooltip';
+import CopyButton from '../components/CopyButton';
 import { useStore } from '../../store/useUserInfoStore';
-import Swal from 'sweetalert2';
+import toast from '../utils/toast';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { useBalance, useWaitForTransactionReceipt } from 'wagmi';
 import { useTransaction } from "../../config/register";
@@ -25,6 +26,12 @@ export default function StakeInvest() {
   const sponsorValidatedRef = useRef(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [isStaking, setIsStaking] = useState(false);
+  const [loadingLastSelf, setLoadingLastSelf] = useState(false);
+  const [loadingLastOther, setLoadingLastOther] = useState(false);
+  const [lastSelfInfo, setLastSelfInfo] = useState({ pid: null, amountUsd: 0, hasPortfolio: false });
+  const [lastOtherInfo, setLastOtherInfo] = useState({ pid: null, amountUsd: 0, hasPortfolio: false });
+  const [lastOtherPreview, setLastOtherPreview] = useState({ pid: null, amountUsd: 0, hasPortfolio: false });
+  const [loadingLastOtherPreview, setLoadingLastOtherPreview] = useState(false);
 
   // Registration flow for unregistered beneficiary
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -73,7 +80,24 @@ export default function StakeInvest() {
   const selectedWalletBalanceRama = useWallet === 'external' ? walletBalanceNum : safeWalletBalance; // in RAMA
   const selectedWalletBalanceUSD = selectedWalletBalanceRama * ramaPrice;
   const isSufficientBalance = stakeAmountNum > 0 && selectedWalletBalanceUSD >= stakeAmountNum;
-  const isMinimumMet = stakeAmountNum >= MIN_USD;
+
+  // Determine target user's last portfolio minimum (self or beneficiary)
+  const targetLastMinUsd = useMemo(() => {
+    if (stakeType === 'other') {
+      if (sponsorValidated && lastOtherInfo?.amountUsd > 0) return lastOtherInfo.amountUsd;
+      if (lastOtherPreview?.amountUsd > 0) return lastOtherPreview.amountUsd; // optimistic preview while typing
+      return 0;
+    }
+    return lastSelfInfo?.amountUsd > 0 ? lastSelfInfo.amountUsd : 0;
+  }, [stakeType, sponsorValidated, lastSelfInfo, lastOtherInfo, lastOtherPreview]);
+
+  const minStakeRequired = useMemo(() => {
+    const baseline = MIN_USD;
+    const lastMin = Number(targetLastMinUsd) || 0;
+    return Math.max(baseline, lastMin);
+  }, [targetLastMinUsd]);
+
+  const isMinimumMet = stakeAmountNum >= minStakeRequired;
 
   const canStake = isMinimumMet && isSufficientBalance && (stakeType === 'self' || (sponsorValidated && !showRegisterModal));
 
@@ -119,6 +143,9 @@ export default function StakeInvest() {
   const userIdByAdd = useStore((s) => s.userIdByAdd);
   const checkUserById = useStore((s) => s.checkUserById);
   const CreateportFolio = useStore((s) => s.CreateportFolio);
+  const getLastPortfolioAmountUsd = useStore((s) => s.getLastPortfolioAmountUsd);
+  const getDashboardDetails = useStore((s) => s.getDashboardDetails);
+  const getIncomeTransaction = useStore((s) => s.getIncomeTransaction);
 
   useEffect(() => {
     latestRegSponsorRef.current = registrationSponsor;
@@ -184,6 +211,93 @@ export default function StakeInvest() {
       SetramaStake('');
     }
   }, [stakeAmount])
+
+  // Load last portfolio for self
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        setLoadingLastSelf(true);
+        const addr = userAddress;
+        if (!addr || !getLastPortfolioAmountUsd) return;
+
+        const passedAddr = stakeType === 'other' ?  beneficiaryAddress: addr;
+        const info = await getLastPortfolioAmountUsd(passedAddr);
+        if (!cancelled) setLastSelfInfo(info || { pid: null, amountUsd: 0, hasPortfolio: false });
+      } catch (e) {
+        if (!cancelled) setLastSelfInfo({ pid: null, amountUsd: 0, hasPortfolio: false });
+      } finally {
+        if (!cancelled) setLoadingLastSelf(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [userAddress, getLastPortfolioAmountUsd,beneficiaryAddress, stakeType]);
+
+  // Load last portfolio for beneficiary (when valid)
+  useEffect(() => {
+    if (stakeType !== 'other' || !sponsorValidated || !sponsorInfo?.address) {
+      setLastOtherInfo({ pid: null, amountUsd: 0, hasPortfolio: false });
+      return;
+    }
+    let cancelled = false;
+    const run = async () => {
+      try {
+        setLoadingLastOther(true);
+        const passedAddr = stakeType === 'other' ?  beneficiaryAddress: addr;
+
+        console.log("passedAddr",passedAddr);
+        const got = await getLastPortfolioAmountUsd(passedAddr);
+        console.log("got",got);
+        if (!cancelled) setLastOtherInfo(got || { pid: null, amountUsd: 0, hasPortfolio: false });
+      } catch (e) {
+        if (!cancelled) setLastOtherInfo({ pid: null, amountUsd: 0, hasPortfolio: false });
+      } finally {
+        if (!cancelled) setLoadingLastOther(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [stakeType, sponsorValidated, sponsorInfo, getLastPortfolioAmountUsd,beneficiaryAddress]);
+
+  // Optimistic preview for beneficiary while typing (address or numeric ID)
+  useEffect(() => {
+    if (stakeType !== 'other') {
+      setLastOtherPreview({ pid: null, amountUsd: 0, hasPortfolio: false });
+      return;
+    }
+    const raw = (beneficiaryAddress || '').trim();
+    if (!raw) {
+      setLastOtherPreview({ pid: null, amountUsd: 0, hasPortfolio: false });
+      return;
+    }
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      try {
+        setLoadingLastOtherPreview(true);
+        let addr = '';
+        if (raw.startsWith('0x') && raw.length === 42) {
+          addr = raw;
+        } else if (/^\d+$/.test(raw)) {
+          // numeric user ID, resolve to address
+          const resolved = await checkUserById(Number(raw)).catch(() => null);
+          if (typeof resolved === 'string' && resolved.startsWith('0x') && resolved.length === 42) {
+            addr = resolved;
+          }
+        }
+        if (addr || beneficiaryAddress) {
+          const passedAddr = stakeType === 'other' ?  beneficiaryAddress: addr;
+          const info = await getLastPortfolioAmountUsd(passedAddr).catch(() => ({ pid: null, amountUsd: 0, hasPortfolio: false }));
+          if (!cancelled) setLastOtherPreview(info || { pid: null, amountUsd: 0, hasPortfolio: false });
+        } else {
+          if (!cancelled) setLastOtherPreview({ pid: null, amountUsd: 0, hasPortfolio: false });
+        }
+      } finally {
+        if (!cancelled) setLoadingLastOtherPreview(false);
+      }
+    }, 600);
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [stakeType, beneficiaryAddress, checkUserById, getLastPortfolioAmountUsd]);
 
 
   const { address, isConnected } = useAppKitAccount();
@@ -660,20 +774,20 @@ export default function StakeInvest() {
 
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-6">
-      <div>
-        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+    <div className="space-y-4 sm:space-y-6 pb-20 lg:pb-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
           Stake & Invest
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
-        <p className="text-cyan-300/90 mt-1">Activate or top-up your portfolio</p>
+        <p className="text-cyan-300/90 mt-1 text-sm sm:text-base">Activate or top-up your portfolio</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <div className="cyber-glass rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-            <h2 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">New Stake</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">New Stake</h2>
 
             <div className="space-y-5">
               <div>
@@ -714,6 +828,44 @@ export default function StakeInvest() {
                   />
                 </div>
 
+                {/* Last portfolio rule hint */}
+                <div className="mt-2 text-xs text-cyan-300/80">
+                  {stakeType === 'self' ? (
+                    loadingLastSelf ? (
+                      <p>Checking your last portfolio…</p>
+                    ) : lastSelfInfo?.hasPortfolio ? (
+                      <p>Rule: New stake must be ≥ your last portfolio (${lastSelfInfo.amountUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).</p>
+                    ) : (
+                      <p>Rule: Minimum stake ${MIN_USD} (no previous portfolio found).</p>
+                    )
+                  ) : (
+                    // Other flow
+                    <>
+                      {sponsorValidated ? (
+                        loadingLastOther ? (
+                          <p>Checking beneficiary's last portfolio…</p>
+                        ) : lastOtherInfo?.hasPortfolio ? (
+                          <p>Rule: New stake for beneficiary must be ≥ their last portfolio (${lastOtherInfo.amountUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).</p>
+                        ) : (
+                          <p>Rule: Minimum stake ${MIN_USD} (beneficiary has no previous portfolio).</p>
+                        )
+                      ) : (
+                        // Show preview while typing
+                        loadingLastOtherPreview ? (
+                          <p>Checking beneficiary's last portfolio…</p>
+                        ) : lastOtherPreview?.hasPortfolio ? (
+                          <p>Rule: New stake for beneficiary must be ≥ their last portfolio (${lastOtherPreview.amountUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).</p>
+                        ) : (
+                          <p>Enter address or ID to preview beneficiary's last portfolio minimum.</p>
+                        )
+                      )}
+                    </>
+                  )}
+                  {minStakeRequired > MIN_USD && (
+                    <p className="mt-1 text-neon-orange">Required minimum now: ${minStakeRequired.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  )}
+                </div>
+
                 <div className="flex flex-wrap gap-2 mt-3">
                   {quickAmounts.map((amount) => (
                     <button
@@ -746,14 +898,17 @@ export default function StakeInvest() {
                   </div>
                 )}
 
-                {stakeAmountNum > 0 && !isMinimumMet && (
-                  <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="text-red-400 flex-shrink-0 mt-0.5" size={16} />
-                    <p className="text-sm text-red-300">
-                      Minimum stake is ${MIN_USD}. You need ${(MIN_USD - stakeAmountNum).toFixed(2)} more.
-                    </p>
-                  </div>
-                )}
+                {(() => {
+                  const delta = minStakeRequired - stakeAmountNum;
+                  return stakeAmountNum > 0 && !isMinimumMet && delta > 0.0001 ? (
+                    <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-2">
+                      <AlertCircle className="text-red-400 flex-shrink-0 mt-0.5" size={16} />
+                      <p className="text-sm text-red-300">
+                        Minimum stake is ${minStakeRequired.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. You need ${delta.toFixed(2)} more.
+                      </p>
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               <div>
@@ -952,7 +1107,7 @@ export default function StakeInvest() {
 
               {!canStake && (
                 <div className="text-xs text-cyan-300/70 text-center space-y-1">
-                  {!isMinimumMet && <p>• Minimum stake: ${MIN_USD}</p>}
+                  {/* Minimum stake line removed per request; dynamic rule is hinted above */}
                   {!isSufficientBalance && <p>• Insufficient balance in selected wallet</p>}
                   {stakeType === 'other' && !sponsorValidated && <p>• Valid registered beneficiary required</p>}
                 </div>
@@ -1137,6 +1292,13 @@ export default function StakeInvest() {
         </div>
       </div>
 
+      {/* Recent Portfolio Creations */}
+      <RecentCreationHistory
+        userAddress={address}
+        getDashboardDetails={getDashboardDetails}
+        getIncomeTransaction={getIncomeTransaction}
+      />
+
       {/* Mobile Sticky Bottom Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 cyber-glass border-t border-cyan-500/30 backdrop-blur-xl z-50">
         <button
@@ -1278,17 +1440,17 @@ export default function StakeInvest() {
       )}
 
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark-950/80 backdrop-blur p-4">
-          <div className="w-full max-w-2xl cyber-glass border border-cyan-500/30 rounded-2xl p-4 sm:p-6 lg:p-8 relative overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-dark-950/80 backdrop-blur p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl cyber-glass border border-cyan-500/30 rounded-2xl p-4 sm:p-6 lg:p-8 relative overflow-hidden my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
             <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/70 to-transparent" />
             
             <div className="space-y-4 sm:space-y-5">
               <div className="text-center">
-                <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-neon-orange/50 bg-neon-orange/10 flex items-center justify-center mb-3 sm:mb-4">
-                  <AlertCircle size={28} className="text-neon-orange sm:w-8 sm:h-8" />
+                <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full border border-neon-orange/50 bg-neon-orange/10 flex items-center justify-center mb-3 sm:mb-4">
+                  <AlertCircle size={24} className="sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-neon-orange" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-semibold text-cyan-100">Beneficiary Not Registered</h3>
-                <p className="text-xs sm:text-sm text-cyan-300/80 mt-2">
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-cyan-100">Beneficiary Not Registered</h3>
+                <p className="text-xs sm:text-sm text-cyan-300/80 mt-2 px-2">
                   This wallet address is not registered in the Ocean ecosystem yet.
                 </p>
               </div>
@@ -1300,7 +1462,7 @@ export default function StakeInvest() {
 
               <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-3 sm:p-4">
                 <p className="text-xs sm:text-sm font-semibold text-cyan-100 mb-2">Do you want to register this user?</p>
-                <p className="text-[10px] sm:text-xs text-cyan-300/80">
+                <p className="text-[10px] sm:text-xs text-cyan-300/80 leading-relaxed">
                   You can register this beneficiary by providing a valid sponsor address from the Ocean ecosystem. 
                   After registration, your stake will be created for them.
                 </p>
@@ -1312,6 +1474,44 @@ export default function StakeInvest() {
                     <label className="block text-xs sm:text-sm font-medium text-cyan-400 uppercase tracking-wide">
                       Sponsor Address or ID
                     </label>
+                    
+                    {/* Connected Address Suggestion */}
+                    {address && (
+                      <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] sm:text-xs text-cyan-300/80 uppercase tracking-wider mb-1">
+                              Your Connected Address
+                            </p>
+                            <p className="font-mono text-xs sm:text-sm text-cyan-200 truncate">
+                              {address}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-3">
+                            <CopyButton 
+                              text={address}
+                              label=""
+                              className="!p-1.5 bg-cyan-500/10 hover:bg-cyan-500/20"
+                              iconClassName="text-cyan-400"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRegistrationSponsor(address);
+                                registrationSponsorValidatedRef.current = false;
+                                setRegistrationSponsorValidated(false);
+                                setRegistrationSponsorInfo(null);
+                                setRegistrationSponsorError('');
+                              }}
+                              className="px-2 py-1 text-[10px] sm:text-xs bg-cyan-500/20 text-cyan-100 rounded-md hover:bg-cyan-500/30 transition-colors"
+                            >
+                              Use This
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="relative">
                       <input
                         type="text"
@@ -1377,11 +1577,11 @@ export default function StakeInvest() {
                     )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-20 sm:pb-0">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-3 pt-2 pb-4 sm:pb-0">
                     <button
                       type="button"
                       onClick={handleCancelRegistration}
-                      className="w-full sm:flex-1 py-2.5 sm:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all font-semibold text-sm"
+                      className="w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all font-semibold text-sm"
                     >
                       No, Cancel
                     </button>
@@ -1389,7 +1589,7 @@ export default function StakeInvest() {
                       type="button"
                       onClick={handleConfirmRegistration}
                       disabled={!registrationSponsorValidated}
-                      className={`w-full sm:flex-1 py-2.5 sm:py-3 rounded-xl font-semibold transition-all text-sm ${
+                      className={`w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 rounded-xl font-semibold transition-all text-sm ${
                         registrationSponsorValidated
                           ? 'bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 hover:shadow-neon-cyan cursor-pointer'
                           : 'bg-dark-700/50 text-cyan-400/40 cursor-not-allowed'
@@ -1512,18 +1712,18 @@ export default function StakeInvest() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-20 sm:pb-0">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-3 pt-2 pb-4 sm:pb-0">
                     <button
                       type="button"
                       onClick={handleCancelRegistration}
-                      className="w-full sm:flex-1 py-2.5 sm:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all font-semibold text-sm"
+                      className="w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all font-semibold text-sm"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleConfirmRegistration}
-                      className="w-full sm:flex-1 py-2.5 sm:py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-semibold hover:shadow-neon-cyan transition-all text-sm"
+                      className="w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-semibold hover:shadow-neon-cyan transition-all text-sm"
                     >
                       Register & Stake Now
                     </button>
@@ -1534,6 +1734,116 @@ export default function StakeInvest() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Lightweight component to show recent creations by self (from dashboards) and from Safe Wallet ledger
+function RecentCreationHistory({ userAddress, getDashboardDetails, getIncomeTransaction }) {
+  const [selfRows, setSelfRows] = useState([]);
+  const [safeRows, setSafeRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        setLoading(true);
+        const tasks = [];
+        // Self portfolios (from dashboard portfolios)
+        if (userAddress && typeof getDashboardDetails === 'function') {
+          tasks.push(
+            getDashboardDetails(userAddress)
+              .then((d) => {
+                const ports = Array.isArray(d?.portfolios) ? d.portfolios : [];
+                const rows = ports
+                  .map((p) => ({
+                    pid: p?.pid,
+                    amountUsd: Number(p?.principalUsd ?? 0),
+                    createdAt: Number(p?.createdAt ?? 0),
+                  }))
+                  .filter((r) => Number.isFinite(r.amountUsd) && r.amountUsd > 0)
+                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                  .slice(0, 5);
+                if (!cancelled) setSelfRows(rows);
+              })
+              .catch(() => { if (!cancelled) setSelfRows([]); })
+          );
+        }
+
+        // Safe Wallet creations via income ledger kind=8
+        if (userAddress && typeof getIncomeTransaction === 'function') {
+          tasks.push(
+            getIncomeTransaction(userAddress, 8, 10, 0)
+              .then((res) => {
+                const slices = (res && (res[0] || res.slice)) || [];
+                const rows = slices.map((item) => {
+                  const usdRaw = item?.usdAmount ?? item?.[2] ?? '0';
+                  const ts = Number(item?.timestamp ?? item?.[5] ?? 0);
+                  const pid = Number(item?.pid ?? item?.[7] ?? 0);
+                  // usdAmount is micro USD in most views
+                  const amt = Number(usdRaw) / 1e6;
+                  return { pid, amountUsd: amt, createdAt: ts };
+                });
+                const normalized = rows
+                  .filter((r) => Number.isFinite(r.amountUsd) && r.amountUsd > 0)
+                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                if (!cancelled) setSafeRows(normalized);
+              })
+              .catch(() => { if (!cancelled) setSafeRows([]); })
+          );
+        }
+
+        await Promise.all(tasks);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [userAddress, getDashboardDetails, getIncomeTransaction]);
+
+  if (!userAddress) return null;
+
+  return (
+    <div className="mt-6 grid lg:grid-cols-2 gap-6">
+      <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+        <h3 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Your Recent Portfolios</h3>
+        {loading && selfRows.length === 0 ? (
+          <p className="text-sm text-cyan-300/80">Loading…</p>
+        ) : selfRows.length === 0 ? (
+          <p className="text-sm text-cyan-300/60">No portfolios found.</p>
+        ) : (
+          <div className="space-y-2">
+            {selfRows.map((r) => (
+              <div key={`self-${r.pid}-${r.createdAt}`} className="flex items-center justify-between p-2 border border-cyan-500/20 rounded-lg">
+                <div className="text-cyan-200 text-sm">PID #{r.pid ?? '—'}</div>
+                <div className="text-neon-green font-semibold">{(r.amountUsd || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-neon-green/30 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/50 to-transparent" />
+        <h3 className="text-lg font-semibold text-neon-green mb-4 uppercase tracking-wide">Safe Wallet Creations</h3>
+        {loading && safeRows.length === 0 ? (
+          <p className="text-sm text-cyan-300/80">Loading…</p>
+        ) : safeRows.length === 0 ? (
+          <p className="text-sm text-cyan-300/60">No recent safe wallet creations.</p>
+        ) : (
+          <div className="space-y-2">
+            {safeRows.slice(0, 5).map((r, idx) => (
+              <div key={`safe-${r.pid}-${r.createdAt}-${idx}`} className="flex items-center justify-between p-2 border border-neon-green/20 rounded-lg">
+                <div className="text-cyan-200 text-sm">PID #{r.pid || '—'}</div>
+                <div className="text-neon-green font-semibold">{(r.amountUsd || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

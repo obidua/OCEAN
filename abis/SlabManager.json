@@ -458,28 +458,14 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
-      }
-    ],
-    "name": "getAchievedRewards",
-    "outputs": [
+      },
       {
-        "internalType": "uint8[]",
-        "name": "",
-        "type": "uint8[]"
+        "internalType": "enum SlabManager.AchKind",
+        "name": "kind",
+        "type": "uint8"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getAchievedRewardsWithTimes",
+    "name": "getAchievedWithTimes",
     "outputs": [
       {
         "internalType": "uint8[]",
@@ -513,17 +499,56 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "stage",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
       }
     ],
-    "name": "getAchievedRoyalties",
+    "name": "getAchievers",
     "outputs": [
       {
-        "internalType": "uint8[]",
+        "internalType": "address[]",
+        "name": "out",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "stage",
+        "type": "uint8"
+      }
+    ],
+    "name": "getAchieversCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint8[]"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -535,53 +560,19 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "targetUSD",
+        "type": "uint256"
       }
     ],
-    "name": "getAchievedRoyaltiesWithTimes",
+    "name": "getCappedSumForTarget",
     "outputs": [
       {
-        "internalType": "uint8[]",
-        "name": "idxs",
-        "type": "uint8[]"
-      },
-      {
-        "internalType": "uint64[]",
-        "name": "times",
-        "type": "uint64[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "L1s",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "L2s",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "Lrests",
-        "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getAchievedSlabs",
-    "outputs": [
-      {
-        "internalType": "uint8[]",
+        "internalType": "uint256",
         "name": "",
-        "type": "uint8[]"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -590,37 +581,66 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
       }
     ],
-    "name": "getAchievedSlabsWithTimes",
+    "name": "getGlobalAchievers",
     "outputs": [
       {
-        "internalType": "uint8[]",
-        "name": "idxs",
-        "type": "uint8[]"
+        "internalType": "uint256",
+        "name": "total",
+        "type": "uint256"
       },
       {
-        "internalType": "uint64[]",
-        "name": "times",
-        "type": "uint64[]"
+        "internalType": "address[]",
+        "name": "out",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
       },
       {
-        "internalType": "uint256[]",
-        "name": "L1s",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
       },
       {
-        "internalType": "uint256[]",
-        "name": "L2s",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getGlobalAchieversWithStages",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "users",
+        "type": "address[]"
       },
       {
-        "internalType": "uint256[]",
-        "name": "Lrests",
-        "type": "uint256[]"
+        "internalType": "uint8[][]",
+        "name": "stages",
+        "type": "uint8[][]"
       }
     ],
     "stateMutability": "view",
@@ -690,6 +710,45 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "downline",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxHops",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOverrideParticipants",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "addrs",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint8[]",
+        "name": "slabIdxs",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "uint8[]",
+        "name": "slabPercs",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "uint8[]",
+        "name": "deltaPercs",
+        "type": "uint8[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "user",
         "type": "address"
       }
@@ -711,9 +770,14 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "enum SlabManager.AchKind",
+        "name": "kind",
+        "type": "uint8"
       }
     ],
-    "name": "getRemainingForNextReward",
+    "name": "getRemainingForNext",
     "outputs": [
       {
         "components": [
@@ -749,109 +813,7 @@
           }
         ],
         "internalType": "struct SlabManager.NextAchievementProgress",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getRemainingForNextRoyalty",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "targetUSD",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalNeeded",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "L1_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "L2_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "Lrest_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isAchieved",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct SlabManager.NextAchievementProgress",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getRemainingForNextSlab",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "targetUSD",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalNeeded",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "L1_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "L2_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "Lrest_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isAchieved",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct SlabManager.NextAchievementProgress",
-        "name": "",
+        "name": "progress",
         "type": "tuple"
       }
     ],
@@ -910,6 +872,58 @@
         "internalType": "uint8",
         "name": "",
         "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSlabPercents",
+    "outputs": [
+      {
+        "internalType": "uint8[11]",
+        "name": "",
+        "type": "uint8[11]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getTop3AndSum",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "L1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "L2",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "L3",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "Lrest",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sumAll",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1138,6 +1152,11 @@
         "type": "address"
       },
       {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      },
+      {
         "internalType": "int256",
         "name": "usdDelta",
         "type": "int256"
@@ -1227,6 +1246,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "rewardVault",
+    "outputs": [
+      {
+        "internalType": "contract IRewardVault",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -1248,19 +1280,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "a",
-        "type": "address"
-      }
-    ],
-    "name": "setCapRouter",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1292,6 +1311,25 @@
     "name": "setMerkleRoot",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "slabPercentOf",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

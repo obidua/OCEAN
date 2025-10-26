@@ -22,8 +22,7 @@ import { useNavigate } from 'react-router-dom';
 
 const normalizeUsdDisplay = (value) => {
   const amount = Number(value ?? 0);
-  if (!Number.isFinite(amount) || amount === 0) return 0;
-  if (Math.abs(amount) >= 1e6) return amount / 1e6;
+  if (!Number.isFinite(amount)) return 0;
   return amount;
 };
 
@@ -43,6 +42,8 @@ export default function TeamNetwork() {
   const getTeamNetworkData = useStore((state) => state.getTeamNetworkData);
   const getDirectsPortfolioAndTeamVolumes = useStore((state) => state.getDirectsPortfolioAndTeamVolumes);
   const getLegCapPercentages = useStore((state) => state.getLegCapPercentages);
+  const getLegsDetailedVolume = useStore((state) => state.getLegsDetailedVolume);
+  const getVolumeAnalytics = useStore((state) => state.getVolumeAnalytics);
   const navigate = useNavigate();
 
   const [copied, setCopied] = useState(false);
@@ -56,6 +57,8 @@ export default function TeamNetwork() {
   const [network, setNetwork] = useState(null);
   const [directVolumesMap, setDirectVolumesMap] = useState(null);
   const [legCapData, setLegCapData] = useState({ leg1: 40, leg2: 30, leg3: 30 });
+  const [detailedVolumeData, setDetailedVolumeData] = useState(null);
+  const [volumeLoading, setVolumeLoading] = useState(false);
   const directListRef = useRef(null);
   const autoScrollFrame = useRef(null);
   const autoScrollPaused = useRef(false);
@@ -93,6 +96,20 @@ export default function TeamNetwork() {
       }
       setDirectVolumesMap(volMap);
       setNetwork(data);
+
+      // Load detailed volume analytics from SlabManager
+      if (getVolumeAnalytics) {
+        try {
+          setVolumeLoading(true);
+          const volumeAnalytics = await getVolumeAnalytics(userAddress);
+          setDetailedVolumeData(volumeAnalytics);
+        } catch (volErr) {
+          console.warn('Failed to fetch volume analytics:', volErr);
+          setDetailedVolumeData(null);
+        } finally {
+          setVolumeLoading(false);
+        }
+      }
     } catch (err) {
       console.error('TeamNetwork load error:', err);
       setError(err?.message || 'Failed to load team network data');
@@ -559,61 +576,201 @@ export default function TeamNetwork() {
 
             <div className="space-y-6">
               <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
-                <h3 className="font-semibold text-cyan-300 mb-4">Volume Calculation</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-cyan-400 mb-2">
-                      {legCapData.leg1}:{legCapData.leg2}:{legCapData.leg3} Rule
-                    </p>
-                    <p className="text-xs text-cyan-300/90 mb-3">
-                      For 3 legs, volume is calculated with caps
-                    </p>
-                    <div className="space-y-2">
-                      <div className="p-2.5 cyber-glass border border-cyan-500/20 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-cyan-300">Leg 1</span>
-                          <span className="text-xs font-bold text-cyan-300">{legCapData.leg1}% Cap</span>
-                        </div>
-                        {legCapData.volumes && (
-                          <div className="text-xs text-cyan-300/70 mt-1">
-                            Volume: ${normalizeUsdDisplay(legCapData.volumes.leg1).toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-2.5 cyber-glass border border-neon-green/20 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-neon-green">Leg 2</span>
-                          <span className="text-xs font-bold text-neon-green">{legCapData.leg2}% Cap</span>
-                        </div>
-                        {legCapData.volumes && (
-                          <div className="text-xs text-neon-green/70 mt-1">
-                            Volume: ${normalizeUsdDisplay(legCapData.volumes.leg2).toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-2.5 cyber-glass border border-neon-orange/20 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-neon-orange">Leg 3</span>
-                          <span className="text-xs font-bold text-neon-orange">{legCapData.leg3}% Cap</span>
-                        </div>
-                        {legCapData.volumes && (
-                          <div className="text-xs text-neon-orange/70 mt-1">
-                            Volume: ${normalizeUsdDisplay(legCapData.volumes.leg3).toFixed(2)}
-                          </div>
-                        )}
-                      </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-cyan-300">Enhanced Volume Analysis</h3>
+                  {volumeLoading && (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="animate-spin text-cyan-400" size={16} />
+                      <span className="text-xs text-cyan-400">Loading...</span>
                     </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-cyan-500/30">
-                    <div className="p-3 cyber-glass border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-neon-green/5 rounded-lg">
-                      <p className="text-xs font-medium text-cyan-300 mb-1">4+ Legs Bonus</p>
-                      <p className="text-xs text-cyan-300/90">
-                        100% of total volume qualifies (no caps)
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
+                
+                {detailedVolumeData ? (
+                  <div className="space-y-4">
+                    {/* Real Volume Data from SlabManager */}
+                    <div>
+                      <p className="text-sm font-medium text-cyan-400 mb-2">
+                        Live SlabManager Data
+                      </p>
+                      <p className="text-xs text-cyan-300/90 mb-3">
+                        Real-time volume distribution from blockchain contracts
+                      </p>
+                      <div className="space-y-2">
+                        <div className="p-3 cyber-glass border border-cyan-500/30 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-cyan-300">L1 (Top Leg)</span>
+                            <span className="text-xs font-bold text-cyan-300">
+                              {formatUSD(detailedVolumeData.cappedVolumes.L1)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-cyan-300/70">Uncapped:</span>
+                            <span className="text-xs text-cyan-300/70">
+                              {formatUSD(detailedVolumeData.uncappedVolumes.L1)}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-xs text-cyan-300/70">
+                            Capping Efficiency: {detailedVolumeData.volumePerformance.cappingEfficiency.L1.toFixed(1)}%
+                          </div>
+                        </div>
+                        
+                        <div className="p-3 cyber-glass border border-neon-green/30 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-neon-green">L2 (Second Leg)</span>
+                            <span className="text-xs font-bold text-neon-green">
+                              {formatUSD(detailedVolumeData.cappedVolumes.L2)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-neon-green/70">Uncapped:</span>
+                            <span className="text-xs text-neon-green/70">
+                              {formatUSD(detailedVolumeData.uncappedVolumes.L2)}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-xs text-neon-green/70">
+                            Capping Efficiency: {detailedVolumeData.volumePerformance.cappingEfficiency.L2.toFixed(1)}%
+                          </div>
+                        </div>
+                        
+                        <div className="p-3 cyber-glass border border-neon-orange/30 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-neon-orange">L-Rest (Other Legs)</span>
+                            <span className="text-xs font-bold text-neon-orange">
+                              {formatUSD(detailedVolumeData.cappedVolumes.Lrest)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-neon-orange/70">Total Uncapped:</span>
+                            <span className="text-xs text-neon-orange/70">
+                              {formatUSD(detailedVolumeData.uncappedVolumes.Lrest)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Volume Performance Analysis */}
+                    <div className="pt-3 border-t border-cyan-500/30">
+                      <div className="p-3 cyber-glass border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-neon-green/5 rounded-lg">
+                        <p className="text-xs font-medium text-cyan-300 mb-2">Performance Analysis</p>
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-xs text-cyan-300/90">Balance Status:</span>
+                            <span className={`text-xs font-medium ${
+                              detailedVolumeData.volumePerformance.balance.isBalanced 
+                                ? 'text-neon-green' 
+                                : 'text-neon-orange'
+                            }`}>
+                              {detailedVolumeData.volumePerformance.balance.isBalanced ? 'Balanced' : 'Needs Balance'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs text-cyan-300/90">L1:L2 Ratio:</span>
+                            <span className="text-xs text-cyan-300">
+                              {detailedVolumeData.volumePerformance.balance.ratio.toFixed(2)}:1
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs text-cyan-300/90">Total Volume Loss:</span>
+                            <span className="text-xs text-neon-orange">
+                              {formatUSD(detailedVolumeData.volumePerformance.cappingEfficiency.totalLoss)}
+                            </span>
+                          </div>
+                        </div>
+                        {!detailedVolumeData.volumePerformance.balance.isBalanced && (
+                          <div className="mt-2 p-2 bg-neon-orange/10 border border-neon-orange/20 rounded text-xs text-neon-orange">
+                            💡 {detailedVolumeData.volumePerformance.balance.recommendation}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Individual Leg Performance */}
+                    <div className="pt-3 border-t border-cyan-500/30">
+                      <p className="text-xs font-medium text-cyan-300 mb-2">Top Performing Legs</p>
+                      <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                        {detailedVolumeData.legs.slice(0, 6).map((leg, index) => (
+                          <div key={leg.address} className="flex items-center justify-between p-2 cyber-glass border border-cyan-500/20 rounded">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                                index === 0 ? 'bg-neon-green/20 text-neon-green' :
+                                index === 1 ? 'bg-cyan-500/20 text-cyan-400' :
+                                index === 2 ? 'bg-neon-orange/20 text-neon-orange' :
+                                'bg-cyan-500/10 text-cyan-300'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <span className="text-xs text-cyan-300">
+                                {leg.address.slice(0, 6)}...{leg.address.slice(-4)}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs font-bold text-cyan-300">{formatUSD(leg.volume)}</div>
+                              <div className="text-xs text-cyan-400/70">{leg.percentage.toFixed(1)}%</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Fallback to existing static display
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium text-cyan-400 mb-2">
+                        {legCapData.leg1}:{legCapData.leg2}:{legCapData.leg3} Rule
+                      </p>
+                      <p className="text-xs text-cyan-300/90 mb-3">
+                        For 3 legs, volume is calculated with caps
+                      </p>
+                      <div className="space-y-2">
+                        <div className="p-2.5 cyber-glass border border-cyan-500/20 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-cyan-300">Leg 1</span>
+                            <span className="text-xs font-bold text-cyan-300">{legCapData.leg1}% Cap</span>
+                          </div>
+                          {legCapData.volumes && (
+                            <div className="text-xs text-cyan-300/70 mt-1">
+                              Volume: ${normalizeUsdDisplay(legCapData.volumes.leg1).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-2.5 cyber-glass border border-neon-green/20 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-neon-green">Leg 2</span>
+                            <span className="text-xs font-bold text-neon-green">{legCapData.leg2}% Cap</span>
+                          </div>
+                          {legCapData.volumes && (
+                            <div className="text-xs text-neon-green/70 mt-1">
+                              Volume: ${normalizeUsdDisplay(legCapData.volumes.leg2).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-2.5 cyber-glass border border-neon-orange/20 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-neon-orange">Leg 3</span>
+                            <span className="text-xs font-bold text-neon-orange">{legCapData.leg3}% Cap</span>
+                          </div>
+                          {legCapData.volumes && (
+                            <div className="text-xs text-neon-orange/70 mt-1">
+                              Volume: ${normalizeUsdDisplay(legCapData.volumes.leg3).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-cyan-500/30">
+                      <div className="p-3 cyber-glass border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-neon-green/5 rounded-lg">
+                        <p className="text-xs font-medium text-cyan-300 mb-1">4+ Legs Bonus</p>
+                        <p className="text-xs text-cyan-300/90">
+                          100% of total volume qualifies (no caps)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
@@ -732,82 +889,116 @@ export default function TeamNetwork() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-4 sm:-mx-6">
-                <div className="inline-block min-w-full align-middle">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="border-b border-cyan-500/20">
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-                          User ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-                          Address
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-                          Portfolio
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-                          Total Earned
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-                          Join Date
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-cyan-500/10">
-                      {filteredData.map((member, idx) => (
-                        <tr key={`${member.userId}-${idx}`}>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-cyan-100">
-                            {member.userId}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-cyan-100">
-                            <AddressWithCopy
-                              address={
-                                member.addressFull && member.addressFull.length === 42
-                                  ? member.addressFull
-                                  : member.address
-                              }
-                              copyLabel=""
-                              textClassName="font-mono text-cyan-100 truncate max-w-[200px] text-sm"
-                            />
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            <NumberPopup
-                              value={formatUSD(member.stakedUSDDisplay ?? member.stakedUSD ?? 0)}
-                              label="Portfolio Amount"
-                              className="text-cyan-300 font-medium"
-                            />
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            <NumberPopup
-                              value={formatUSD(normalizeUsdDisplay(member.totalEarned ?? 0))}
-                              label="Total Earned"
-                              className="text-neon-green font-medium"
-                            />
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                member.status === 'Active'
-                                  ? 'bg-neon-green/20 text-neon-green'
-                                  : 'bg-cyan-500/10 text-cyan-300'
-                              }`}
-                            >
-                              {member.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-cyan-100">
-                            {member.joinDate || '—'}
-                          </td>
+              <>
+                <div className="overflow-x-auto -mx-4 sm:-mx-6">
+                  <div className="inline-block min-w-full align-middle">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-cyan-500/20">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+                            User ID
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+                            Address
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+                            Portfolio
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+                            Total Earned
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+                            Join Date
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-cyan-500/10">
+                        {filteredData.map((member, idx) => (
+                          <tr key={`${member.userId}-${idx}`}>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-cyan-100">
+                              {member.userId}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-cyan-100">
+                              <AddressWithCopy
+                                address={
+                                  member.addressFull && member.addressFull.length === 42
+                                    ? member.addressFull
+                                    : member.address
+                                }
+                                copyLabel=""
+                                textClassName="font-mono text-cyan-100 truncate max-w-[200px] text-sm"
+                              />
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm">
+                              <NumberPopup
+                                value={formatUSD(member.stakedUSDDisplay ?? member.stakedUSD ?? 0)}
+                                label="Portfolio Amount"
+                                className="text-cyan-300 font-medium"
+                              />
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm">
+                              <NumberPopup
+                                value={formatUSD(normalizeUsdDisplay(member.totalEarned ?? 0))}
+                                label="Total Earned"
+                                className="text-neon-green font-medium"
+                              />
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  member.status === 'Active'
+                                    ? 'bg-neon-green/20 text-neon-green'
+                                    : 'bg-cyan-500/10 text-cyan-300'
+                                }`}
+                              >
+                                {member.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-cyan-100">
+                              {member.joinDate || '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+                
+                {/* Total Portfolio Sum */}
+                <div className="mt-6 pt-4 border-t border-cyan-500/30">
+                  <div className="cyber-glass rounded-xl p-4 border border-neon-green/30 bg-gradient-to-r from-neon-green/5 to-cyan-500/5">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-neon-green/20 rounded-lg border border-neon-green/40">
+                          <TrendingUp size={20} className="text-neon-green" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-cyan-300/80 uppercase tracking-wide">
+                            Total Portfolio Amount ({activeLevel})
+                          </p>
+                          <p className="text-sm text-cyan-300/60 mt-0.5">
+                            Sum of {filteredData.length} member{filteredData.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-cyan-400">
+                          {formatUSD(
+                            filteredData.reduce((sum, member) => {
+                              const portfolioAmount = member.stakedUSDDisplay ?? member.stakedUSD ?? 0;
+                              return sum + Number(portfolioAmount);
+                            }, 0)
+                          )}
+                        </p>
+                        <p className="text-xs text-cyan-300/70 mt-1">USD</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

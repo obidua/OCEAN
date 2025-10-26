@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Loader2, CheckCircle, AlertCircle, Wallet, FileCheck, Rocket, Award } from 'lucide-react';
+import { X, Loader2, CheckCircle, AlertCircle, Wallet, FileCheck, Rocket, Award, ExternalLink, Copy } from 'lucide-react';
 import { useWaitForTransactionReceipt } from 'wagmi';
 
 const STAGES = {
@@ -10,7 +10,7 @@ const STAGES = {
   ERROR: 'error',
 };
 
-const AUTO_CLOSE_DELAY = 10; // seconds
+const AUTO_CLOSE_DELAY = 30; // seconds - Extended to give users more time to see transaction details
 
 const ProgressiveTransactionModal = ({
   isOpen,
@@ -28,6 +28,7 @@ const ProgressiveTransactionModal = ({
   const [countdown, setCountdown] = useState(AUTO_CLOSE_DELAY);
   const countdownTimerRef = useRef(null);
   const progressIntervalRef = useRef(null);
+  const [copied, setCopied] = useState(false);
 
   const { isLoading, isSuccess, isError, error } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -148,6 +149,8 @@ const ProgressiveTransactionModal = ({
   }, []);
 
   if (!isOpen) return null;
+
+  const explorerTxBase = (import.meta?.env?.VITE_EXPLORER_TX || import.meta?.env?.VITE_BLOCK_EXPLORER_TX || 'https://ramascan.com/tx/').replace(/\/$/, '/')
 
   const stageConfig = {
     [STAGES.PREPARE]: {
@@ -318,24 +321,84 @@ const ProgressiveTransactionModal = ({
 
           {/* Transaction hash */}
           {txHash && stage !== STAGES.ERROR && (
-            <div className="pt-4 border-t border-cyan-500/10">
-              <p className="text-[10px] text-cyan-400/60 uppercase tracking-wider mb-1">
-                Transaction Hash
+            <div className="pt-4 border-t border-cyan-500/10 space-y-3">
+              <p className="text-xs text-cyan-400/80 uppercase tracking-wider font-semibold">
+                Transaction Details
               </p>
-              <a
-                href={`https://ramascan.com/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-cyan-400 hover:text-neon-green transition-colors break-all"
-              >
-                {txHash.slice(0, 10)}...{txHash.slice(-8)}
-              </a>
+              
+              {/* Transaction hash display */}
+              <div className="cyber-glass rounded-lg p-3 border border-cyan-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-cyan-400 font-medium">Transaction Hash</span>
+                  <span className={`text-xs px-2 py-1 rounded-full border ${
+                    stage === STAGES.SUCCESS 
+                      ? 'border-neon-green/40 text-neon-green bg-neon-green/10'
+                      : stage === STAGES.PROCESSING
+                      ? 'border-yellow-400/40 text-yellow-400 bg-yellow-400/10'
+                      : 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10'
+                  }`}>
+                    {stage === STAGES.SUCCESS ? 'Confirmed' : stage === STAGES.PROCESSING ? 'Pending' : 'Submitted'}
+                  </span>
+                </div>
+                <div className="text-xs text-cyan-300/90 break-all font-mono bg-dark-950/50 rounded px-2 py-1.5 border border-cyan-500/10">
+                  {txHash}
+                </div>
+              </div>
+              
+              {/* Action buttons */}
+              {stage === STAGES.SUCCESS && (
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={`${explorerTxBase}${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10 transition-colors text-sm"
+                  >
+                    <ExternalLink size={14} />
+                    View on Explorer
+                  </a>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(txHash);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch {}
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10 transition-colors text-sm"
+                  >
+                    <Copy size={14} />
+                    {copied ? 'Copied!' : 'Copy Hash'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Action button */}
+          {/* Action buttons for success */}
           {stage === STAGES.SUCCESS && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Primary action buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href={`${explorerTxBase}${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
+                >
+                  <ExternalLink size={16} />
+                  View on Ramascan
+                </a>
+                <a
+                  href="/"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950 rounded-xl font-semibold hover:shadow-lg hover:shadow-neon-green/50 transition-all"
+                >
+                  <Award size={16} />
+                  Ocean DeFi Dashboard
+                </a>
+              </div>
+              
+              {/* Secondary action */}
               <button
                 onClick={() => {
                   if (countdownTimerRef.current) {
@@ -344,13 +407,29 @@ const ProgressiveTransactionModal = ({
                   onClose();
                   window.location.reload();
                 }}
-                className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
+                className="w-full px-6 py-2.5 cyber-glass border border-cyan-500/30 text-cyan-200 rounded-lg font-medium hover:border-cyan-500/50 hover:bg-cyan-500/10 transition-all text-sm"
               >
-                Close & Refresh
+                Close & Refresh Data
               </button>
-              <p className="text-xs text-cyan-300/70">
-                Auto-closing in {countdown} second{countdown !== 1 ? 's' : ''}...
-              </p>
+              
+              {/* Auto-close info */}
+              <div className="text-center space-y-1">
+                <p className="text-xs text-cyan-300/70">
+                  Auto-closing in <span className="font-semibold text-neon-green">{countdown}</span> second{countdown !== 1 ? 's' : ''}...
+                </p>
+                <button
+                  onClick={() => {
+                    if (countdownTimerRef.current) {
+                      clearInterval(countdownTimerRef.current);
+                      countdownTimerRef.current = null;
+                    }
+                    setCountdown(0); // Stop countdown
+                  }}
+                  className="text-xs text-cyan-400 hover:text-cyan-200 underline"
+                >
+                  Cancel auto-close
+                </button>
+              </div>
             </div>
           )}
 

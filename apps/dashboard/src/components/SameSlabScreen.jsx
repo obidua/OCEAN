@@ -36,13 +36,20 @@ const SameSlabScreen = ({ SameSlabData }) => {
     overrideL1,
     overrideL2,
     overrideL3,
+    // Enhanced data
+    legsDetailed,
+    legBreakdown,
   } = SameSlabData;
 
   const waveEntries = useMemo(() => {
     const build = (addresses = [], totalRama) => {
       const count = addresses.length || 1;
       const perPartner = totalRama / count;
-      return addresses.map((address) => ({ address, earned: perPartner }));
+      return addresses.map((partner) => ({ 
+        address: partner.address || partner, 
+        earned: perPartner,
+        volume: partner.volume || 0 // Enhanced with volume data
+      }));
     };
     return {
       L1: build(sameSlabPartners?.firstWave, overrideL1),
@@ -79,7 +86,7 @@ const SameSlabScreen = ({ SameSlabData }) => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-6 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 relative z-10">
           <div className="cyber-glass border-2 border-neon-purple rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -183,24 +190,28 @@ const SameSlabScreen = ({ SameSlabData }) => {
                     {label}
                   </span>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 sm:space-y-3">
                   {entries.map((member, idx) => (
                     <div
                       key={`${key}-${member.address}-${idx}`}
-                      className="flex items-center justify-between p-3 cyber-glass border border-cyan-500/10 rounded-lg"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4 cyber-glass border border-cyan-500/10 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
-                        <code className="text-xs font-mono text-cyan-300">
-                          {member.address.slice(0, 10)}…
-                          {member.address.slice(-6)}
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <code className="text-xs sm:text-sm font-mono text-cyan-300 break-all">
+                          {member.address.slice(0, 8)}…{member.address.slice(-4)}
                         </code>
+                        {member.volume > 0 && (
+                          <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded">
+                            ${member.volume.toLocaleString()}
+                          </span>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-bold ${textClasses}`}>
+                      <div className="text-left sm:text-right">
+                        <p className={`text-sm sm:text-base font-bold ${textClasses}`}>
                           +{formatRAMA(member.earned)} RAMA
                         </p>
                         <p className="text-xs text-cyan-300/90">
-                          Share of override
+                          {member.volume > 0 ? `From $${member.volume.toLocaleString()}` : "Share of override"}
                         </p>
                       </div>
                     </div>
@@ -228,7 +239,7 @@ const SameSlabScreen = ({ SameSlabData }) => {
           When your team members reach the same slab level as you, you earn
           special override bonuses:
         </p>
-        <div className="grid md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <div className="bg-dark-950/50 rounded-lg p-3">
             <p className="text-neon-purple font-semibold text-sm">
               1st Occurrence

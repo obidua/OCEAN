@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { useTransaction } from '../../config/register';
 import { useWaitForTransactionReceipt } from 'wagmi';
-import Swal from 'sweetalert2';
+import toast from '../utils/toast';
 
 const formatAddressPreview = (address, lead = 10, tail = 8) => {
   if (!address) return '—';
@@ -200,24 +200,12 @@ export default function Settings() {
 
       getAllPortFolio()
 
-      Swal.fire({
-        icon: "success",
-        title: "Transaction Successful",
-        html: `
-        <div style="text-align:left">
-          <p className="text-center">Your Transaction has been confirmed</p>
-        </div>
-      `,
-      });
+      toast.success('Your transaction has been confirmed', 'Transaction Successful');
 
      
     }
     else if (isError || receipt?.status === "reverted") {
-      Swal.fire({
-        icon: "error",
-        title: "Transaction Failed",
-        text: "Your transaction failed or was reverted."
-      });
+      toast.error('Your transaction failed or was reverted.', 'Transaction Failed');
     }
   }, [isSuccess, isError, receipt, address]);
 
@@ -233,12 +221,7 @@ export default function Settings() {
       if (response) {
         setTrxData(response); // ✅ this triggers the useEffect
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Transaction Error",
-          text: "Unable to build registration transaction." + trxHash,
-          confirmButtonText: "OK",
-        });
+        toast.error('Unable to build registration transaction: ' + trxHash, 'Transaction Error');
       }
 
     } catch (error) {
@@ -261,12 +244,7 @@ export default function Settings() {
       if (response) {
         setTrxData(response); // ✅ this triggers the useEffect
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Transaction Error",
-          text: "Unable to build registration transaction." + trxHash,
-          confirmButtonText: "OK",
-        });
+        toast.error('Unable to build registration transaction: ' + trxHash, 'Transaction Error');
       }
 
     } catch (error) {

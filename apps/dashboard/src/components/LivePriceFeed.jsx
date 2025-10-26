@@ -92,8 +92,28 @@ export default function LivePriceFeed() {
   };
 
   return (
-    <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden hover-glow-cyan h-[28rem] flex flex-col">
-      <div className="flex-1 min-h-0">
+    <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden hover-glow-cyan h-[28rem] flex flex-col group transition-all">
+      {/* Decorative elements matching Ocean DeFi theme */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-neon-green/5 opacity-50 group-hover:opacity-70 transition-opacity pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/70 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/50 to-transparent" />
+      
+      {/* Header */}
+      <div className="relative z-10 mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+          <h3 className="text-sm font-semibold text-cyan-300 uppercase tracking-wide">
+            Live Price Chart
+          </h3>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+          <TrendingUp size={14} className="text-neon-green" />
+          <span className="text-xs font-medium text-cyan-200">RAMA/USD</span>
+        </div>
+      </div>
+
+      {/* Chart Container */}
+      <div className="relative z-10 flex-1 min-h-0 bg-dark-950/80 rounded-xl border border-cyan-500/20 overflow-hidden shadow-lg">
         <TradingViewWidget />
       </div>
     </div>

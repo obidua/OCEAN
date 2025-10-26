@@ -31,23 +31,15 @@ const SlabIncome = () => {
       setError(null);
       
       try {
-        // Load basic overview first
-        const overview = await getSlabIncomeOverview(userAddress);
-        if (!cancelled) setSlabDetails(overview);
-        
-        // Then load additional data in parallel
-        const [managerDetails, achievements] = await Promise.all([
-          getSlabManagerDetails(userAddress).catch(err => {
-            console.warn("Failed to load SlabManager details:", err);
-            return null;
-          }),
-          getNextAchievementProgress(userAddress).catch(err => {
-            console.warn("Failed to load achievement progress:", err);
-            return null;
-          })
+        // Load all data in parallel for better performance
+        const [overview, managerDetails, achievements] = await Promise.all([
+          getSlabIncomeOverview(userAddress),
+          getSlabManagerDetails(userAddress),
+          getNextAchievementProgress(userAddress)
         ]);
         
         if (!cancelled) {
+          setSlabDetails(overview);
           setSlabManagerDetails(managerDetails);
           setNextAchievements(achievements);
           console.log("Comprehensive slab data loaded:", { overview, managerDetails, achievements });

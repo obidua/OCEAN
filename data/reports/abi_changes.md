@@ -1,89 +1,89 @@
 # ABI Sync Report
 
-- Run at: 2025-10-24T08:38:25.354Z
+- Run at: 2025-10-26T17:48:03.132Z
 - RPC URL: https://blockchain.ramestta.com
-- CoreConfig: 0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d
+- CoreConfig: 0xFA4cF9f0A773Ee333D3b7BE7dEA9e0F861407a16
 - Explorer API: https://latest-backendapi.ramascan.com/api/v2/
 - .env updated: no
 
 ## ADMINCONTROL (adminControl)
-- Proxy address: 0x538eB028b51f10f1Bf9A7414c3eb3e85b067120C
+- Proxy address: 0xD7517a201916B7fF2Cd79062E2E7cD0414132558
 - Proxy type: eip1967
 - Implementation: 0xb717Ad94f00F310Ec23f030FDF56DE56BD4647c1
 - CoreConfig label: adminControl (adminControl() with ())
-- .env address unchanged (0x538eB028b51f10f1Bf9A7414c3eb3e85b067120C → 0x538eB028b51f10f1Bf9A7414c3eb3e85b067120C)
+- .env address unchanged (0xD7517a201916B7fF2Cd79062E2E7cD0414132558 → 0xD7517a201916B7fF2Cd79062E2E7cD0414132558)
 - ABI updated: no
 
 ## FREEZEPOLICY (freezePolicy)
-- Proxy address: 0x6541987258B73bd8128d23e8678a00258226ad3C
+- Proxy address: 0x03735B0ed53f877c9240A2030E3d327C13b4225C
 - Proxy type: eip1967
 - Implementation: 0x044D9b79555B6071D1d1659837f671970BeFa85a
 - CoreConfig label: freezePolicy (freezePolicy() with ())
-- .env address unchanged (0x6541987258B73bd8128d23e8678a00258226ad3C → 0x6541987258B73bd8128d23e8678a00258226ad3C)
+- .env address unchanged (0x03735B0ed53f877c9240A2030E3d327C13b4225C → 0x03735B0ed53f877c9240A2030E3d327C13b4225C)
 - ABI updated: no
 
 ## PORTFOLIOMANAGER (portfolioManager)
-- Proxy address: 0xC73f964eA7bC04a2c7455CAf6107238147c88365
+- Proxy address: 0x2DDCaF00616AeC21E82E1B97929193f91C4c692B
 - Proxy type: eip1967
-- Implementation: 0xca668Fd7133132e0b088Bd508f7941829f2e3f48
+- Implementation: 0x4154c1a0d5f3D4DD2600FcBB044a1B1193F56CAf
 - CoreConfig label: portfolioManager (portfolioManager() with ())
-- .env address unchanged (0xC73f964eA7bC04a2c7455CAf6107238147c88365 → 0xC73f964eA7bC04a2c7455CAf6107238147c88365)
+- .env address unchanged (0x2DDCaF00616AeC21E82E1B97929193f91C4c692B → 0x2DDCaF00616AeC21E82E1B97929193f91C4c692B)
 - ABI updated: no
 
 ## PRICEORACLE (priceOracle)
-- Proxy address: 0xA51fDA6Cf548000b9C02A2248337583Dd7111592
+- Proxy address: 0x814614E5D30fc1Bf8a10C3717A24815830deCb22
 - Proxy type: eip1967
 - Implementation: 0x6660285a3700F04203E1f33206472725fDff392a
 - CoreConfig label: priceOracle (priceOracle() with ())
-- .env address unchanged (0xA51fDA6Cf548000b9C02A2248337583Dd7111592 → 0xA51fDA6Cf548000b9C02A2248337583Dd7111592)
+- .env address unchanged (0x814614E5D30fc1Bf8a10C3717A24815830deCb22 → 0x814614E5D30fc1Bf8a10C3717A24815830deCb22)
 - ABI updated: no
 
 ## REWARDVAULT (rewardVault)
-- Proxy address: 0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d
+- Proxy address: 0xe0eADdF17DF034DBEE8bD03a0Bbb6CdFB5DD59Eb
 - Proxy type: eip1967
-- Implementation: 0x0a2307bc241A61B16Ce34F7a6e0D9742b97f4d7F
+- Implementation: 0x78E30D9dCc71e1833dBE6974518e343Cf1B8537c
 - CoreConfig label: rewardVault (rewardVault() with ())
-- .env address unchanged (0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d → 0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d)
-- ABI updated: no
+- .env address unchanged (0xe0eADdF17DF034DBEE8bD03a0Bbb6CdFB5DD59Eb → 0xe0eADdF17DF034DBEE8bD03a0Bbb6CdFB5DD59Eb)
+- ABI updated: yes (9c736b525f3520a4223a8cccdac978765216b260c95c3ea9c902b26af85efd4d → 0ee0a7f93061a3ac5e2360fb5bfd19f680dae7ba1072443dd658d116dd797cc2)
 
 ## ROYALTYMANAGER (royaltyManager)
-- Proxy address: 0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5
+- Proxy address: 0x39c4d569A44b7a632914cD6E022392115B1cA3e3
 - Proxy type: eip1967
-- Implementation: 0x492aCB55febF4fD2bb483A79e006bFAfC97Ffc40
+- Implementation: 0xBCf229c4CF4903119c8A821aD980d5A8CFacae44
 - CoreConfig label: royaltyManager (royaltyManager() with ())
-- .env address unchanged (0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5 → 0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5)
-- ABI updated: no
+- .env address unchanged (0x39c4d569A44b7a632914cD6E022392115B1cA3e3 → 0x39c4d569A44b7a632914cD6E022392115B1cA3e3)
+- ABI updated: yes (4ceb0eb8997ba883f2f0c312725ea5eb57205948e1057f4fd135d60a34dfd259 → b67564a4b6a2dff06b37fc1af53746b80911e49f2d2b6f49875fa611f92eca31)
 
 ## SLABMANAGER (slabManager)
-- Proxy address: 0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9
+- Proxy address: 0x522d2e3DB143012901410D2d0785e9C1cceFBA42
 - Proxy type: eip1967
-- Implementation: 0x5afD029A3137F6Da45C8BaC10135C7E5F0b9EB7E
+- Implementation: 0x3181d52f6ECa4c55022E60dCFCCcCA6e408DD93d
 - CoreConfig label: slabManager (slabManager() with ())
-- .env address unchanged (0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9 → 0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9)
-- ABI updated: no
+- .env address unchanged (0x522d2e3DB143012901410D2d0785e9C1cceFBA42 → 0x522d2e3DB143012901410D2d0785e9C1cceFBA42)
+- ABI updated: yes (b04a91d27518b9c8e33d144354c05581518c181eb4b0bdc6d4f375ad1993ae27 → f7e9bc03dc7ee7540329d55e266808b7d10e842a95ae7d2ad7afaeb1528066e8)
 
 ## USERREGISTRY (userRegistry)
-- Proxy address: 0x246c7317F4093065B96c2b0DC65A63De395444ed
+- Proxy address: 0x9B04aED13945a5338749549a9C049CBe198bdb06
 - Proxy type: eip1967
 - Implementation: 0xEbf2957A985a6f0c3656561d7d1a8493f81eD27e
 - CoreConfig label: userRegistry (userRegistry() with ())
-- .env address unchanged (0x246c7317F4093065B96c2b0DC65A63De395444ed → 0x246c7317F4093065B96c2b0DC65A63De395444ed)
+- .env address unchanged (0x9B04aED13945a5338749549a9C049CBe198bdb06 → 0x9B04aED13945a5338749549a9C049CBe198bdb06)
 - ABI updated: no
 
 ## INCOMEDISTRIBUTOR (incomeDistributor)
-- Proxy address: 0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626
+- Proxy address: 0x911c001306436df5528E989BA92df083797A88FE
 - Proxy type: eip1967
-- Implementation: 0xaD1Bf59c96a9b7A82E4Be8a14Cf30563Fff10B22
+- Implementation: 0xb269bb1Fb6d940536cfa5eB41cE5529Ea7d93138
 - CoreConfig label: incomeDistributor (incomeDistributor() with ())
-- .env address unchanged (0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626 → 0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626)
+- .env address unchanged (0x911c001306436df5528E989BA92df083797A88FE → 0x911c001306436df5528E989BA92df083797A88FE)
 - ABI updated: no
 
 ## SAFEWALLET (safeWallet)
-- Proxy address: 0x36ebfd33a8053Cd6CC72436aDb356364Ee43ad54
+- Proxy address: 0xE401E78520608b978B4108361224fec2f78ff384
 - Proxy type: eip1967
 - Implementation: 0xd68e371F21090632df41a2ec0d021fDF7Eed2E30
 - CoreConfig label: safeWallet (safeWallet() with ())
-- .env address unchanged (0x36ebfd33a8053Cd6CC72436aDb356364Ee43ad54 → 0x36ebfd33a8053Cd6CC72436aDb356364Ee43ad54)
+- .env address unchanged (0xE401E78520608b978B4108361224fec2f78ff384 → 0xE401E78520608b978B4108361224fec2f78ff384)
 - ABI updated: no
 
 ## MAINWALLET (mainWallet)
@@ -93,12 +93,12 @@
 - Status: ❌ No address found in CoreConfig or .env
 
 ## CAPPINGINCOMEMANAGER (cappingIncomeManager)
-- Proxy address: 0x038c37724aAf96fdaF82E2C70cf55eB2dC557865
+- Proxy address: 0x77705d833e8443Cede680dF6Bb08b542748126D0
 - Proxy type: eip1967
-- Implementation: 0x6961dC7F008272829782930939adeAa88219E86F
+- Implementation: 0x5Ecb482FD2Dc5377541cf491Acb09E93F1cFf119
 - CoreConfig label: cappingIncomeManager (cappingIncomeManager() with ())
-- .env address unchanged (0x038c37724aAf96fdaF82E2C70cf55eB2dC557865 → 0x038c37724aAf96fdaF82E2C70cf55eB2dC557865)
-- ABI updated: no
+- .env address unchanged (0x77705d833e8443Cede680dF6Bb08b542748126D0 → 0x77705d833e8443Cede680dF6Bb08b542748126D0)
+- ABI updated: yes (4afdfaff5c6a2cd0412623b105171dd5aca4737bc1f2dc2b8e595e87a402de0f → ae7a483715c06d6c67525c71a0108417725b0ece5e9278f17ae30896cc580b55)
 
 ## OWNER (owner)
 - Proxy address: 0xc0358Bcd0F329644A9A034f9F2C4a4838ae819A5
@@ -113,57 +113,57 @@
 - ABI fetch: ❌ Explorer responded with 404 Not Found
 
 ## RAMA (rama)
-- Proxy address: 0xA51fDA6Cf548000b9C02A2248337583Dd7111592
+- Proxy address: 0x814614E5D30fc1Bf8a10C3717A24815830deCb22
 - Proxy type: eip1967
 - Implementation: 0x6660285a3700F04203E1f33206472725fDff392a
 - CoreConfig label: rama (rama() with ())
-- .env address unchanged (0xA51fDA6Cf548000b9C02A2248337583Dd7111592 → 0xA51fDA6Cf548000b9C02A2248337583Dd7111592)
+- .env address unchanged (0x814614E5D30fc1Bf8a10C3717A24815830deCb22 → 0x814614E5D30fc1Bf8a10C3717A24815830deCb22)
 - ABI updated: no
 
 ## OCEANQUERYUPGRADEABLE (oceanQueryUpgradeable)
-- Proxy address: 0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db
+- Proxy address: 0xc02315DDD09a0BBE58Ea2906bDBbD85262C720fB
 - Proxy type: eip1967
-- Implementation: 0xb84f8A3708Ef9b5FA6da326aB3b951507b694DCC
+- Implementation: 0x41Fe8F75Df2272e0DF7B550C9e268DA36669Bb6D
 - CoreConfig label: oceanQueryUpgradeable (oceanQueryUpgradeable() with ())
-- .env address unchanged (0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db → 0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db)
-- ABI updated: no
+- .env address unchanged (0xc02315DDD09a0BBE58Ea2906bDBbD85262C720fB → 0xc02315DDD09a0BBE58Ea2906bDBbD85262C720fB)
+- ABI updated: yes (0014c59c1f9e79a9306673c277eaaccac398f4d09e4b220e3b7cdff6302080f3 → 4f7a18a47974809e5e4c0135cf4bc03634a485b075a201dc5044fb8db85a1785)
 
 ## ROIDISTRIBUTOR (roiDistributor)
-- Proxy address: 0x7951bf0faABE00c451F1d92008297a7bd85d4678
+- Proxy address: 0x1bD00C34970b6CC89D852C350d00B074Bd3becbE
 - Proxy type: eip1967
-- Implementation: 0x2279A98CCe35D5aC5233b6098Bdded11E5E082AF
+- Implementation: 0x4d7f3b445FD491FB22CC53272c6fE375B78ceb22
 - CoreConfig label: roiDistributor (roiDistributor() with ())
-- .env address unchanged (0x7951bf0faABE00c451F1d92008297a7bd85d4678 → 0x7951bf0faABE00c451F1d92008297a7bd85d4678)
-- ABI updated: no
+- .env address unchanged (0x1bD00C34970b6CC89D852C350d00B074Bd3becbE → 0x1bD00C34970b6CC89D852C350d00B074Bd3becbE)
+- ABI updated: yes (80962816f86718878cadedea0982f0606ec980958ff81fca4783738603a0f36c → 6643109f25b2a74dba513f8367e45a307a553e80523dd8fe0a0f37beac3c5de1)
 
 ## OCEANVIEW (oceanView)
-- Proxy address: 0x784Bc7f982F976236a51dd5310BfD78d151736dC
+- Proxy address: 0x1CCac6832451D432D2387c5B0cDFdD9F231590fa
 - Proxy type: eip1967
-- Implementation: 0xE9a1BDF2c442Da7887D5754a52b6dC35FcA0A799
+- Implementation: 0x9c6D601B3935AE1e51ecb5A072Fded0834436748
 - CoreConfig label: n/a (method?)
-- .env address unchanged (0x784Bc7f982F976236a51dd5310BfD78d151736dC → 0x784Bc7f982F976236a51dd5310BfD78d151736dC)
-- ABI updated: no
+- .env address unchanged (0x1CCac6832451D432D2387c5B0cDFdD9F231590fa → 0x1CCac6832451D432D2387c5B0cDFdD9F231590fa)
+- ABI updated: yes (1592c3fa4e0ba800107344f84db300d0242017c445c5b513204ca2a6425c5e7c → 69ecb0fd28fe2535bfa7c9a095397bbcd704da8be1538c9f2b19942435b91156)
 
 ## OCEANVIEWV2 (oceanViewV2)
-- Proxy address: 0x08A6575a6158Dd5F61a2565F0f97249dcb497a78
+- Proxy address: 0x5Aa8f22D34815725e234b7b5Ed23C8f0fd9bA36E
 - Proxy type: eip1967
-- Implementation: 0xcfBb8B3Bb85BC982BD9a0a39737A2Bf894a9A7a5
+- Implementation: 0xA35d3d8ab1a03Bc08Baf80106C265267De6eAdcF
 - CoreConfig label: oceanViewV2 (oceanViewV2() with ())
-- .env address unchanged (0x08A6575a6158Dd5F61a2565F0f97249dcb497a78 → 0x08A6575a6158Dd5F61a2565F0f97249dcb497a78)
-- ABI updated: no
+- .env address unchanged (0x5Aa8f22D34815725e234b7b5Ed23C8f0fd9bA36E → 0x5Aa8f22D34815725e234b7b5Ed23C8f0fd9bA36E)
+- ABI updated: yes (825cf4e7fe8bf341ae7f2cce06f7dcb0b5cf09189fa3ac5321f2bfd5648cbf0e → 708faf2fc82d096eb5d4ed9a837aac2b198d836179baf531a826094957abbd19)
 
 ## OCEANICVIEW (oceanicView)
-- Proxy address: 0x938616ab14763506F7111Cdf06EF5A3B4C586dE6
+- Proxy address: 0x1CCac6832451D432D2387c5B0cDFdD9F231590fa
 - Proxy type: eip1967
 - Implementation: 0x9c6D601B3935AE1e51ecb5A072Fded0834436748
 - CoreConfig label: oceanicview (oceanicview() with ())
-- .env address unchanged (0x938616ab14763506F7111Cdf06EF5A3B4C586dE6 → 0x938616ab14763506F7111Cdf06EF5A3B4C586dE6)
+- .env address unchanged (0x1CCac6832451D432D2387c5B0cDFdD9F231590fa → 0x1CCac6832451D432D2387c5B0cDFdD9F231590fa)
 - ABI updated: no
 
 ## COMPREHENSIVEVIEW (comprehensiveView)
-- Proxy address: 0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0
+- Proxy address: 0x11c7F8abbe2F525196AE8A3677A6ADF9722ba6dc
 - Proxy type: eip1967
-- Implementation: 0x1416791Cb5331dbd904a6e76c33B7DAeF6A49b58
+- Implementation: 0x25F9DDe7e4741e7EFbB506ea48A4F6c87a83c149
 - CoreConfig label: n/a (method?)
-- .env address unchanged (0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0 → 0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0)
-- ABI updated: no
+- .env address unchanged (0x11c7F8abbe2F525196AE8A3677A6ADF9722ba6dc → 0x11c7F8abbe2F525196AE8A3677A6ADF9722ba6dc)
+- ABI updated: yes (6b8750de7b3fc22933fe7309f51f3db8ff11b5b3c4428d5adf18bb2ef8656217 → aba1afb8efb466a6e6edc84850c5609bcc23b6cf57100b842494c973da18274d)

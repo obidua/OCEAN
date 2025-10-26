@@ -97,6 +97,130 @@
         "type": "address"
       }
     ],
+    "name": "getAllPortfolioClaimHistory",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "pids",
+        "type": "uint256[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "fromPeriod",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "toPeriod",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "usdTotal",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ramaTotal",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "claimedAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint32",
+            "name": "epoch",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct OceanViewV2.ClaimEpochView[]",
+        "name": "epochs",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "epoch",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "usdTotalUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ramaTotalWei",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.PidClaimViewFlat[]",
+        "name": "pidClaims",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getAllPortfolioROISummaries",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "portfolioId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedROI",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unclaimedROI",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalROI",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.PortfolioROISummary[]",
+        "name": "out",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
     "name": "getDashboardData",
     "outputs": [
       {
@@ -394,299 +518,97 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
-      },
-      {
-        "internalType": "uint32",
-        "name": "todayDayId",
-        "type": "uint32"
       }
     ],
-    "name": "getDashboardData",
+    "name": "getIncomeDashboardCompact",
     "outputs": [
       {
         "components": [
           {
             "internalType": "uint256",
-            "name": "totalStakedUsdMicro",
+            "name": "todayRoiUSD6",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "totalEarnedRamaWei",
+            "name": "totalRoiUSD6",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "totalClaimableUsdMicro",
+            "name": "directUSD6",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "accruedGrowthUsdMicro",
+            "name": "royaltyUSD6",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "accruedGrowthRamaWei",
+            "name": "slabUSD6",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "qualifiedVolumeUsdMicro",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint32",
-            "name": "directRefs",
-            "type": "uint32"
-          },
-          {
-            "internalType": "uint256",
-            "name": "teamCount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "upline",
-            "type": "address"
-          },
-          {
-            "internalType": "uint8",
-            "name": "slabLevel",
-            "type": "uint8"
-          },
-          {
-            "internalType": "bool",
-            "name": "slabCanClaim",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint8",
-            "name": "royaltyLevel",
-            "type": "uint8"
-          },
-          {
-            "internalType": "bool",
-            "name": "royaltyPaused",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "royaltyCanClaim",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint64",
-            "name": "royaltyLastMonthEpoch",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "royaltyNextMonthEpoch",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint256",
-            "name": "royaltyPaidMonths",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "royaltyRenewalSnapshotUsd",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "royaltyRecentSnapshotUsd",
+            "name": "rewardUSD6",
             "type": "uint256"
           }
         ],
-        "internalType": "struct OceanViewV2.DashboardSummary",
-        "name": "summary",
+        "internalType": "struct OceanViewV2.IncomeDashboardCompact",
+        "name": "d",
         "type": "tuple"
-      },
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getIncomeRollup",
+    "outputs": [
       {
         "components": [
           {
             "internalType": "uint256",
-            "name": "totalUsdMicro",
+            "name": "todayRoiUsdMicro",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "growthUsdMicro",
+            "name": "totalRoiClaimableUsdMicro",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "slabUsdMicro",
+            "name": "directIncomeUsdMicro",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "slabAvailableUsdMicro",
+            "name": "royaltyIncomeUsdMicro",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "royaltyUsdMicro",
+            "name": "slabIncomeUsdMicro",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "overrideUsdMicro",
+            "name": "rewardsIncomeUsdMicro",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rewardsUsdMicro",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256[3]",
-            "name": "overrideWaveUsdMicro",
-            "type": "uint256[3]"
           }
         ],
-        "internalType": "struct OceanViewV2.IncomeSummary",
-        "name": "income",
+        "internalType": "struct OceanViewV2.IncomeRollup",
+        "name": "r",
         "type": "tuple"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "safeWalletRamaWei",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "safeWalletUsdMicro",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "lifetimeRoiUsdMicro",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "pendingGrowthRamaWei",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "pendingGrowthUsdMicro",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct OceanViewV2.WalletSummary",
-        "name": "wallet",
-        "type": "tuple"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "pid",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "principalRamaWei",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "principalUsdMicro",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "capRamaWei",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "capUsdMicro",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creditedRamaWei",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creditedUsdMicro",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "capProgressBps",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "dailyRateWad",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint8",
-            "name": "capPct",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint8",
-            "name": "tier",
-            "type": "uint8"
-          },
-          {
-            "internalType": "bool",
-            "name": "booster",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint64",
-            "name": "createdAt",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "frozenUntil",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct OceanViewV2.PortfolioCard[]",
-        "name": "portfolios",
-        "type": "tuple[]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint32[7]",
-            "name": "dayIds",
-            "type": "uint32[7]"
-          },
-          {
-            "internalType": "uint256[7]",
-            "name": "usdAmounts",
-            "type": "uint256[7]"
-          }
-        ],
-        "internalType": "struct OceanViewV2.WeeklyEarnings",
-        "name": "weekly",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "lifetimeCapBps",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -857,6 +779,88 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPortfolioIncomeToDate",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unclaimedUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalUSD6",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.PidIncomeToDate",
+        "name": "r",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_pid",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPortfolioROISummary",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "portfolioId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedROI",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unclaimedROI",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalROI",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OceanViewV2.PortfolioROISummary",
+        "name": "summary",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -971,11 +975,6 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
-      },
-      {
-        "internalType": "uint32",
-        "name": "todayDayId",
-        "type": "uint32"
       }
     ],
     "name": "getWeeklyEarnings",
@@ -1009,24 +1008,12 @@
         "type": "address"
       }
     ],
-    "name": "getWeeklyEarnings",
+    "name": "hasActivePortfolio",
     "outputs": [
       {
-        "components": [
-          {
-            "internalType": "uint32[7]",
-            "name": "dayIds",
-            "type": "uint32[7]"
-          },
-          {
-            "internalType": "uint256[7]",
-            "name": "usdAmounts",
-            "type": "uint256[7]"
-          }
-        ],
-        "internalType": "struct OceanViewV2.WeeklyEarnings",
-        "name": "weekly",
-        "type": "tuple"
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",

@@ -18,6 +18,10 @@ import { formatRAMA, formatUSD } from '../utils/contractData';
 import AddressWithCopy from '../components/AddressWithCopy';
 import { useStore } from '../../store/useUserInfoStore';
 import { useNavigate } from 'react-router-dom';
+import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { useTransaction } from '../../config/register';
+import { useWaitForTransactionReceipt } from 'wagmi';
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -58,7 +62,15 @@ export default function SafeWallet() {
   const getPortFoliById = useStore((s) => s.getPortFoliById);
   const getSafeWalletSummary = useStore((s) => s.getSafeWalletSummary);
   const getTransactionHistory = useStore((s) => s.getTransactionHistory);
+  const withdrawFromSafeWallet = useStore((s) => s.withdrawFromSafeWallet);
   const userAddressFromStore = useStore((s) => s.userAddress);
+  
+  // Income source functions
+  const getIncomeTotals = useStore((s) => s.getIncomeTotals);
+  const getSpotIncomeSummary = useStore((s) => s.getSpotIncomeSummary);
+
+  // AppKit hooks
+  const { address, isConnected } = useAppKitAccount();
 
   const [showPortfolioViewer, setShowPortfolioViewer] = useState(false);
   const [lookupAddress, setLookupAddress] = useState('');
@@ -81,9 +93,40 @@ export default function SafeWallet() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
 
+  // Income sources state
+  const [incomeData, setIncomeData] = useState({
+    slab: { usd: 0, rama: 0 },
+    spot: { usd: 0, rama: 0 },
+    royalty: { usd: 0, rama: 0 },
+    rewards: { usd: 0, rama: 0 },
+    growth: { usd: 0, rama: 0 } // Portfolio growth claims
+  });
+  const [incomeLoading, setIncomeLoading] = useState(false);
+  const [incomeError, setIncomeError] = useState('');
+
+  // Progressive withdrawal modal state
+  const [withdrawalData, setWithdrawalData] = useState(null);
+  const [withdrawalHash, setWithdrawalHash] = useState(null);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+  // Transaction hooks
+  const { handleSendTx, hash } = useTransaction(withdrawalData !== null && withdrawalData);
+  
+  const { data: receipt, isLoading: progress, isSuccess, isError } = useWaitForTransactionReceipt({
+    hash,
+    confirmations: 1,
+  });
+
   const userAddress =
     userAddressFromStore ||
     (typeof window !== 'undefined' ? localStorage.getItem('userAddress') : null);
+
+  // Determine if we're in view mode (viewing another address)
+  const isViewMode = useMemo(() => {
+    if (!address || !userAddress) return false;
+    return address.toLowerCase() !== userAddress.toLowerCase();
+  }, [address, userAddress]);
 
   useEffect(() => {
     let cancelled = false;
@@ -167,6 +210,79 @@ export default function SafeWallet() {
       cancelled = true;
     };
   }, [userAddress, getTransactionHistory]);
+
+  // Load income sources data
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadIncomeData = async () => {
+      if (!userAddress) {
+        setIncomeData({
+          slab: { usd: 0, rama: 0 },
+          spot: { usd: 0, rama: 0 },
+          royalty: { usd: 0, rama: 0 },
+          rewards: { usd: 0, rama: 0 },
+          growth: { usd: 0, rama: 0 }
+        });
+        return;
+      }
+
+      setIncomeLoading(true);
+      setIncomeError('');
+
+      try {
+        // Use ComprehensiveView getIncomeTotals for comprehensive data
+        const incomeTotals = await getIncomeTotals(userAddress).catch(() => null);
+        
+        // Get additional data for growth (portfolio ROI claims)
+        const spotData = await getSpotIncomeSummary(userAddress).catch(() => null);
+
+        if (cancelled) return;
+
+        // Extract and format the data from ComprehensiveView
+        const newIncomeData = {
+          slab: {
+            usd: incomeTotals?.slab?.usd || 0,
+            rama: incomeTotals?.slab?.rama || 0
+          },
+          spot: {
+            // Use spot data for growth income, fallback to roi from ComprehensiveView
+            usd: spotData?.lifetimeUsd || incomeTotals?.roi?.usd || 0,
+            rama: spotData?.lifetimeRama || incomeTotals?.roi?.rama || 0
+          },
+          royalty: {
+            usd: incomeTotals?.royalty?.usd || 0,
+            rama: incomeTotals?.royalty?.rama || 0
+          },
+          rewards: {
+            usd: incomeTotals?.reward?.usd || 0,
+            rama: incomeTotals?.reward?.rama || 0
+          },
+          growth: {
+            // Portfolio growth (ROI) from ComprehensiveView
+            usd: incomeTotals?.roi?.usd || 0,
+            rama: incomeTotals?.roi?.rama || 0
+          }
+        };
+
+        setIncomeData(newIncomeData);
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Income data load failed:', error);
+        setIncomeError(error?.message || 'Unable to load income data.');
+      } finally {
+        if (!cancelled) {
+          setIncomeLoading(false);
+        }
+      }
+    };
+
+    loadIncomeData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getIncomeTotals, getSpotIncomeSummary]);
 
   const fallbackRamaBalance = 0;
   const summaryRama = safeSummary?.balance?.rama;
@@ -496,12 +612,87 @@ export default function SafeWallet() {
     setWithdrawInput(amount);
   };
 
-  const handleWithdrawSubmit = () => {
-    if (amountUsd <= 0 || exceedsBalance) return;
-    alert(
-      `Static withdraw preview:\nGross: ${formatRAMA(amountRama)} RAMA (${formatUSD(amountUsd)})\nFee (5%): ${formatRAMA(feeRama)} RAMA (${formatUSD(feeUsd)})\nNet: ${formatRAMA(netRama)} RAMA (${formatUSD(netUsd)})`
-    );
-    handleCloseWithdraw();
+  // Transaction handling useEffects
+  useEffect(() => {
+    if (withdrawalData) {
+      try {
+        setIsWithdrawing(true);
+        setShowWithdrawModal(true);
+        handleSendTx(withdrawalData);
+      } catch (error) {
+        console.error('Withdrawal transaction failed:', error);
+        setIsWithdrawing(false);
+        setShowWithdrawModal(false);
+        setIsWithdrawOpen(true); // Reopen input modal on error
+      }
+    }
+  }, [withdrawalData, handleSendTx]);
+
+  useEffect(() => {
+    if (hash) {
+      setWithdrawalHash(hash);
+    }
+  }, [hash]);
+
+  useEffect(() => {
+    if (!hash) return;
+    if (isSuccess && receipt?.status === 'success') {
+      setIsWithdrawing(false);
+      // Don't auto-close - let the modal handle its own timing
+      // The ProgressiveTransactionModal will show success details and handle auto-close
+      
+      // Refresh data after successful withdrawal
+      const refreshData = async () => {
+        if (userAddress) {
+          try {
+            await Promise.all([
+              getSafeWalletSummary(userAddress),
+              getTransactionHistory(userAddress, { offset: 0, limit: 200 })
+            ]);
+          } catch (error) {
+            console.error('Failed to refresh data after withdrawal:', error);
+          }
+        }
+      };
+      refreshData();
+    } else if (isError || receipt?.status === 'reverted') {
+      setIsWithdrawing(false);
+      // Don't auto-close on error - let user see the error and close manually
+      // The ProgressiveTransactionModal will handle error display
+    }
+  }, [isSuccess, isError, receipt, hash, userAddress, getSafeWalletSummary, getTransactionHistory]);
+
+  const handleWithdrawSubmit = async () => {
+    if (amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected) return;
+    
+    try {
+      setIsWithdrawOpen(false); // Close input modal
+      setShowWithdrawModal(true); // Open progressive modal
+      
+      // Build withdrawal transaction
+      const tx = await withdrawFromSafeWallet(address, amountRama);
+      if (tx) {
+        setWithdrawalData(tx);
+      }
+    } catch (error) {
+      console.error('Withdrawal initiation failed:', error);
+      setIsWithdrawOpen(true); // Reopen input modal on error
+      setShowWithdrawModal(false); // Close progressive modal on error
+    }
+  };
+
+  // Progressive modal handlers
+  const handleWithdrawModalClose = () => {
+    setShowWithdrawModal(false);
+    setIsWithdrawing(false);
+    setWithdrawalData(null);
+    setWithdrawalHash(null);
+  };
+
+  const handleWithdrawSuccess = () => {
+    // Reset withdrawal form
+    setWithdrawInput('');
+    setWithdrawCurrency('USD');
   };
 
   const handleLookupPortfolio = async () => {
@@ -677,55 +868,60 @@ export default function SafeWallet() {
 
               <button
                 onClick={handleWithdrawSubmit}
-                disabled={amountUsd <= 0 || exceedsBalance}
+                disabled={amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected}
                 className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${
-                  amountUsd <= 0 || exceedsBalance
+                  amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected
                     ? 'bg-cyan-500/20 text-cyan-300/40 cursor-not-allowed'
                     : 'bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950 hover:shadow-neon-green'
                 }`}
               >
-                Withdraw Now
+                {isViewMode ? 'Withdraw (View Only)' : !isConnected ? 'Connect Wallet to Withdraw' : 'Withdraw Now'}
               </button>
 
-              <p className="text-[11px] text-cyan-300/60 text-center">
-                Preview only — contract integration coming soon. Connected wallet required for actual settlement.
-              </p>
+              {(isViewMode || !isConnected) && (
+                <p className="text-[11px] text-cyan-300/60 text-center">
+                  {isViewMode 
+                    ? 'Withdrawals only available for connected wallet' 
+                    : 'Connect your wallet to withdraw funds'
+                  }
+                </p>
+              )}
             </div>
           </div>
         </>
       )}
-      <div>
-        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
           Safe Wallet
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
-        <p className="text-cyan-300/90 mt-1">Your fee-free internal balance</p>
+        <p className="text-cyan-300/90 mt-1 text-sm sm:text-base">Your fee-free internal balance</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 cyber-glass border border-neon-green/50 rounded-2xl p-8 text-white relative overflow-hidden group">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 cyber-glass border border-neon-green/50 rounded-2xl p-4 sm:p-6 lg:p-8 text-white relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-cyan-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/70 to-transparent" />
-          <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="p-3 cyber-glass border border-neon-green/30 rounded-xl backdrop-blur-sm">
-              <Vault size={32} />
+          <div className="flex items-center gap-3 mb-4 sm:mb-6 relative z-10">
+            <div className="p-2 sm:p-3 cyber-glass border border-neon-green/30 rounded-xl backdrop-blur-sm">
+              <Vault size={24} className="sm:w-8 sm:h-8" />
             </div>
             <div>
               <p className="text-sm opacity-90">Safe Wallet Balance</p>
-              <p className="text-xs opacity-75">Fee-free internal funds</p>
+              <p className="text-xs opacity-75 hidden sm:block">Fee-free internal funds</p>
             </div>
           </div>
 
-          <div className="mb-6 relative z-10">
-            <p className="text-5xl font-bold mb-2">
+          <div className="mb-4 sm:mb-6 relative z-10">
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2">
               {safeSummaryLoading ? (
-                <span className="text-2xl text-cyan-300 animate-pulse">Loading...</span>
+                <span className="text-xl sm:text-2xl text-cyan-300 animate-pulse">Loading...</span>
               ) : (
                 `${formattedRamaBalance} RAMA`
               )}
             </p>
-            <p className="text-2xl opacity-90">≈ {formattedUsdValue}</p>
-            <p className="text-sm text-cyan-300/80 mt-2">
+            <p className="text-xl sm:text-2xl opacity-90">≈ {formattedUsdValue}</p>
+            <p className="text-xs sm:text-sm text-cyan-300/80 mt-2">
               Available after 5% fee: {formattedAvailableAfterFeeUsd} • {formattedAvailableAfterFeeRama} RAMA
             </p>
             {safeSummaryError && !safeSummaryLoading && (
@@ -733,32 +929,38 @@ export default function SafeWallet() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 relative z-10">
             <button
               onClick={() => navigate('/dashboard/stake')}
-              className="py-3 cyber-glass hover:bg-white/10 backdrop-blur-sm rounded-lg font-medium transition-colors border border-cyan-500/30 hover:border-cyan-500/50"
+              className="py-3 px-4 cyber-glass hover:bg-white/10 backdrop-blur-sm rounded-lg font-medium transition-colors border border-cyan-500/30 hover:border-cyan-500/50 text-sm sm:text-base"
             >
               Stake from Wallet
             </button>
             <button
-              onClick={handleOpenWithdraw}
-              className="py-3 cyber-glass rounded-lg font-medium border border-cyan-500/30 hover:border-neon-orange/60 text-neon-orange transition-all relative group"
+              onClick={isViewMode ? undefined : handleOpenWithdraw}
+              disabled={isViewMode || !isConnected}
+              className={`py-3 px-4 cyber-glass rounded-lg font-medium border transition-all relative group text-sm sm:text-base ${
+                isViewMode || !isConnected
+                  ? 'border-gray-500/30 text-gray-400 cursor-not-allowed'
+                  : 'border-cyan-500/30 hover:border-neon-orange/60 text-neon-orange'
+              }`}
+              title={isViewMode ? 'Withdrawals only available for connected wallet' : !isConnected ? 'Connect wallet to withdraw' : 'Withdraw to external wallet'}
             >
-              Withdraw
+              {isViewMode ? 'Withdraw (View Only)' : !isConnected ? 'Connect Wallet' : 'Withdraw'}
             </button>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 relative overflow-hidden">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="cyber-glass rounded-xl p-4 sm:p-5 border border-cyan-500/30 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 cyber-glass border border-neon-green/30 rounded-lg">
-                <TrendingUp className="text-neon-green" size={20} />
+                <TrendingUp className="text-neon-green" size={18} />
               </div>
-            <p className="text-sm font-medium text-cyan-300">Total Inflows</p>
-          </div>
-            <div className="text-2xl font-bold text-neon-green">
+              <p className="text-sm font-medium text-cyan-300">Total Inflows</p>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-neon-green">
               {historyLoading ? (
                 <span className="flex items-center gap-2 text-sm text-cyan-200">
                   <Loader2 className="animate-spin" size={16} />
@@ -775,29 +977,29 @@ export default function SafeWallet() {
             </p>
           </div>
 
-          <div className="cyber-glass border border-neon-green/30 rounded-xl p-4">
-            <p className="text-sm font-medium text-neon-green mb-2 uppercase tracking-wide">Key Features</p>
+          <div className="cyber-glass border border-neon-green/30 rounded-xl p-3 sm:p-4">
+            <p className="text-xs sm:text-sm font-medium text-neon-green mb-2 uppercase tracking-wide">Key Features</p>
             <ul className="space-y-1 text-xs text-cyan-300/90">
               <li>• 0% fees for staking</li>
               <li>• No commission on stakes</li>
-              <li>• 5% fee on withdrawals to external wallets</li>
-              <li>• Supports self & team portfolio creation</li>
+              <li className="hidden sm:list-item">• 5% fee on withdrawals to external wallets</li>
+              <li className="hidden sm:list-item">• Supports self & team portfolio creation</li>
             </ul>
           </div>
         </div>
       </div>
 
       {/* Portfolio Viewer Section */}
-      <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 relative overflow-hidden">
+      <div className="cyber-glass rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <Eye size={20} className="text-cyan-400" />
-            <h2 className="text-lg font-semibold text-cyan-300 uppercase tracking-wide">Portfolio Viewer</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-cyan-300 uppercase tracking-wide">Portfolio Viewer</h2>
           </div>
           <button
             onClick={() => setShowPortfolioViewer(!showPortfolioViewer)}
-            className="px-4 py-2 cyber-glass border border-cyan-500/30 hover:border-cyan-500/50 rounded-lg text-sm font-medium text-cyan-300 transition-colors"
+            className="px-3 sm:px-4 py-2 cyber-glass border border-cyan-500/30 hover:border-cyan-500/50 rounded-lg text-sm font-medium text-cyan-300 transition-colors self-start sm:self-center"
           >
             {showPortfolioViewer ? 'Hide' : 'Show'} Viewer
           </button>
@@ -805,8 +1007,8 @@ export default function SafeWallet() {
 
         {showPortfolioViewer && (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 {[
                   { key: 'address', label: 'Wallet Address' },
                   { key: 'portfolio', label: 'Portfolio ID' },
@@ -831,13 +1033,13 @@ export default function SafeWallet() {
               )}
             </div>
 
-            <div className="p-4 cyber-glass border border-cyan-500/20 rounded-lg">
-              <p className="text-sm text-cyan-300 mb-3">
+            <div className="p-3 sm:p-4 cyber-glass border border-cyan-500/20 rounded-lg">
+              <p className="text-xs sm:text-sm text-cyan-300 mb-3">
                 {viewerSearchType === 'address'
                   ? 'Enter wallet address to load all associated portfolios'
                   : 'Enter a portfolio ID to view its latest status'}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -851,7 +1053,7 @@ export default function SafeWallet() {
                         ? '0x1234...5678'
                         : '1024'
                     }
-                    className="w-full px-4 py-2 cyber-glass border border-cyan-500/30 rounded-lg text-cyan-300 placeholder-cyan-400/50 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-3 sm:px-4 py-2 cyber-glass border border-cyan-500/30 rounded-lg text-cyan-300 placeholder-cyan-400/50 focus:outline-none focus:border-cyan-500/50 text-sm"
                   />
                   {lookupError && (
                     <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
@@ -862,10 +1064,11 @@ export default function SafeWallet() {
                 </div>
                 <button
                   onClick={handleLookupPortfolio}
-                  className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-neon-green text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center gap-2"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-cyan-500 to-neon-green text-white rounded-lg font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 min-h-[40px] text-sm sm:text-base whitespace-nowrap"
                 >
-                  <Search size={18} />
-                  View
+                  <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="hidden sm:inline">View</span>
+                  <span className="sm:hidden">Search</span>
                 </button>
               </div>
             </div>
@@ -895,7 +1098,7 @@ export default function SafeWallet() {
                   </span>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   {portfolioCards.map((card) => {
                     const pidNumber = Number(card.pid);
                     const isSelected = selectedViewerPid === pidNumber;
@@ -913,10 +1116,10 @@ export default function SafeWallet() {
                         key={card.pid}
                         type="button"
                         onClick={() => fetchPortfolioDetail(pidNumber)}
-                        className={`text-left p-4 cyber-glass border rounded-xl transition-all space-y-3 ${
+                        className={`text-left p-3 sm:p-4 cyber-glass border rounded-xl transition-all space-y-3 touch-manipulation ${
                           isSelected
                             ? 'border-neon-green/60 shadow-neon-green'
-                            : 'border-cyan-500/20 hover:border-cyan-500/40'
+                            : 'border-cyan-500/20 hover:border-cyan-500/40 active:border-cyan-500/60'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1133,16 +1336,16 @@ export default function SafeWallet() {
         )}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
-          <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 relative overflow-hidden">
+          <div className="cyber-glass rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-            <div className="flex items-center gap-3 mb-6">
-              <History size={20} className="text-cyan-400" />
-              <h2 className="text-lg font-semibold text-cyan-300 uppercase tracking-wide">Transaction History</h2>
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
+              <History size={18} className="text-cyan-400 sm:w-5 sm:h-5" />
+              <h2 className="text-base sm:text-lg font-semibold text-cyan-300 uppercase tracking-wide">Transaction History</h2>
             </div>
 
-            <p className="text-xs text-cyan-300/80 mb-4">
+            <p className="text-xs text-cyan-300/80 mb-4 hidden sm:block">
               On-chain ledger pulled directly from the SafeWallet contract. Credits and debits reflect the latest contract state.
             </p>
 
@@ -1162,18 +1365,107 @@ export default function SafeWallet() {
                 No Safe Wallet transactions found. Create a portfolio or receive earnings to populate this ledger.
               </div>
             ) : (
-            <div className="overflow-x-auto hide-scrollbar">
-              <div className="min-w-[960px]">
-                <div className="grid grid-cols-[minmax(240px,2fr)_minmax(140px,1fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,1fr)] gap-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-cyan-300/60">
-                  <span>Activity</span>
-                  <span>Gross</span>
-                  <span>Fee (5%)</span>
-                  <span>Net</span>
-                  <span>Fund Source</span>
-                  <span className="text-right">Timestamp</span>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto hide-scrollbar">
+                  <div className="max-h-[420px] overflow-y-auto hide-scrollbar">
+                    <table className="w-full text-left text-sm">
+                      <thead className="text-xs uppercase border-b border-cyan-500/20 text-cyan-300/70 sticky top-0 bg-dark-950/90 backdrop-blur-sm">
+                        <tr>
+                          <th className="py-3 px-3 text-left">Activity</th>
+                          <th className="py-3 px-3 text-right">Gross</th>
+                          <th className="py-3 px-3 text-right">Fee</th>
+                          <th className="py-3 px-3 text-right">Net</th>
+                          <th className="py-3 px-3 text-center">Source</th>
+                          <th className="py-3 px-3 text-right">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-cyan-500/10">
+                      {paginatedHistory.map((tx) => {
+                        const typeLabel =
+                          tx.type === 'income'
+                            ? 'Income'
+                            : tx.type === 'withdrawal'
+                            ? 'Withdrawal'
+                            : 'Portfolio';
+                        const iconClass =
+                          tx.direction === 'credit'
+                            ? 'text-neon-green border-neon-green/40 bg-neon-green/10'
+                            : 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
+                        return (
+                          <tr key={tx.id} className="hover:bg-cyan-500/5 transition-colors">
+                            <td className="py-4 px-3">
+                              <div className="flex items-start gap-3 min-w-[180px]">
+                                <span
+                                  className={`mt-0.5 inline-flex items-center justify-center w-8 h-8 rounded-lg border ${iconClass}`}
+                                >
+                                  {tx.direction === 'credit' ? (
+                                    <ArrowUpRight size={16} />
+                                  ) : (
+                                    <ArrowDownRight size={16} />
+                                  )}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                                    <span
+                                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${typeBadgeClass(tx.type)}`}
+                                    >
+                                      {typeLabel}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-semibold text-cyan-200 truncate">
+                                    {tx.activity}
+                                  </p>
+                                  <p className="text-xs text-cyan-300/70 truncate">
+                                    {tx.details}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-3 text-right">
+                              <div className="text-sm font-semibold text-cyan-200">
+                                {formatSignedUsd(tx.grossUsd, tx.direction)}
+                              </div>
+                            </td>
+                            <td className="py-4 px-3 text-right">
+                              <div className="text-sm font-semibold text-cyan-200">
+                                {tx.feeUsd ? formatUSD(tx.feeUsd) : '—'}
+                              </div>
+                            </td>
+                            <td className="py-4 px-3 text-right">
+                              <div
+                                className={`text-sm font-semibold ${
+                                  tx.direction === 'credit' ? 'text-neon-green' : 'text-neon-orange'
+                                }`}
+                              >
+                                {formatSignedUsd(tx.netUsd, tx.direction)}
+                              </div>
+                            </td>
+                            <td className="py-4 px-3 text-center">
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${sourceBadgeClass(tx.fundSource)}`}
+                              >
+                                {tx.fundSource}
+                              </span>
+                            </td>
+                            <td className="py-4 px-3 text-right">
+                              <div className="text-xs text-cyan-300/70 space-y-1">
+                                <p>{tx.date ?? '—'}</p>
+                                <p className="font-mono text-[10px] tracking-tight text-cyan-500/80 truncate">
+                                  {tx.id}
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
-                <div className="max-h-[420px] overflow-y-auto hide-scrollbar divide-y divide-cyan-500/10">
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3 max-h-[420px] overflow-y-auto hide-scrollbar">
                   {paginatedHistory.map((tx) => {
                     const typeLabel =
                       tx.type === 'income'
@@ -1185,104 +1477,116 @@ export default function SafeWallet() {
                       tx.direction === 'credit'
                         ? 'text-neon-green border-neon-green/40 bg-neon-green/10'
                         : 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
+                    
                     return (
-                      <div
-                        key={tx.id}
-                        className="grid grid-cols-[minmax(240px,2fr)_minmax(140px,1fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,1fr)] gap-4 py-4"
-                      >
-                        <div className="flex items-start gap-3">
+                      <div key={tx.id} className="cyber-glass border border-cyan-500/20 rounded-lg p-3 hover:border-cyan-500/40 transition-all">
+                        {/* Header Row */}
+                        <div className="flex items-center gap-3 mb-3">
                           <span
-                            className={`mt-0.5 inline-flex items-center justify-center w-9 h-9 rounded-xl border ${iconClass}`}
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-lg border ${iconClass}`}
                           >
                             {tx.direction === 'credit' ? (
-                              <ArrowUpRight size={16} />
+                              <ArrowUpRight size={14} />
                             ) : (
-                              <ArrowDownRight size={16} />
+                              <ArrowDownRight size={14} />
                             )}
                           </span>
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
                               <span
-                                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${typeBadgeClass(
-                                  tx.type
-                                )}`}
+                                className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${typeBadgeClass(tx.type)}`}
                               >
                                 {typeLabel}
                               </span>
-                              <p className="text-sm font-semibold text-cyan-200">{tx.activity}</p>
+                              <span
+                                className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${sourceBadgeClass(tx.fundSource)}`}
+                              >
+                                {tx.fundSource.slice(0, 8)}…
+                              </span>
                             </div>
-                            <p className="text-xs text-cyan-300/70">{tx.details}</p>
+                            <p className="text-xs font-semibold text-cyan-200 truncate">
+                              {tx.activity}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="text-sm font-semibold text-cyan-200">
-                          {formatSignedUsd(tx.grossUsd, tx.direction)}
+                        {/* Details */}
+                        <p className="text-[10px] text-cyan-300/70 mb-3 line-clamp-2">
+                          {tx.details}
+                        </p>
+
+                        {/* Financial Data Grid */}
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Gross Amount</p>
+                            <p className="text-xs font-semibold text-cyan-200">
+                              {formatSignedUsd(tx.grossUsd, tx.direction)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Fee</p>
+                            <p className="text-xs font-semibold text-cyan-200">
+                              {tx.feeUsd ? formatUSD(tx.feeUsd) : '—'}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="text-sm font-semibold text-cyan-200">
-                          {tx.feeUsd ? formatUSD(tx.feeUsd) : '—'}
-                        </div>
-
-                        <div
-                          className={`text-sm font-semibold ${
-                            tx.direction === 'credit' ? 'text-neon-green' : 'text-neon-orange'
-                          }`}
-                        >
-                          {formatSignedUsd(tx.netUsd, tx.direction)}
-                        </div>
-
-                        <div>
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-lg border text-xs font-semibold ${sourceBadgeClass(
-                              tx.fundSource
-                            )}`}
-                          >
-                            {tx.fundSource}
-                         </span>
-                       </div>
-
-                       <div className="text-xs text-cyan-300/70 text-right space-y-1">
-                          <p>{tx.date ?? '—'}</p>
-                          <p className="font-mono text-[11px] tracking-tight text-cyan-500/80">{tx.id}</p>
+                        {/* Net Amount & Date */}
+                        <div className="flex items-center justify-between pt-3 border-t border-cyan-500/10">
+                          <div>
+                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Net Amount</p>
+                            <p
+                              className={`text-sm font-bold ${
+                                tx.direction === 'credit' ? 'text-neon-green' : 'text-neon-orange'
+                              }`}
+                            >
+                              {formatSignedUsd(tx.netUsd, tx.direction)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Date</p>
+                            <p className="text-[10px] text-cyan-300/70">
+                              {tx.date ?? '—'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            </div>
+              </>
             )}
 
-            <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-cyan-300/80">
-              <span>
+            <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-cyan-300/80">
+              <span className="text-center sm:text-left">
                 Showing {recordRangeStart}-{recordRangeEnd} of {totalRecords} records
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center sm:justify-end gap-2">
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-cyan-500/30 transition-all ${
+                  className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg border border-cyan-500/30 transition-all text-xs ${
                     currentPage === 1
                       ? 'opacity-40 cursor-not-allowed'
                       : 'hover:border-cyan-500/60 hover:text-cyan-200'
                   }`}
                 >
                   <ChevronLeft size={14} />
-                  <span>Prev</span>
+                  <span className="hidden sm:inline">Prev</span>
                 </button>
-                <span className="px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-200 font-semibold">
-                  Page {currentPage} / {totalPages}
+                <span className="px-2 sm:px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-200 font-semibold text-xs">
+                  <span className="hidden sm:inline">Page </span>{currentPage} / {totalPages}
                 </span>
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-cyan-500/30 transition-all ${
+                  className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg border border-cyan-500/30 transition-all text-xs ${
                     currentPage === totalPages
                       ? 'opacity-40 cursor-not-allowed'
                       : 'hover:border-cyan-500/60 hover:text-cyan-200'
                   }`}
                 >
-                  <span>Next</span>
+                  <span className="hidden sm:inline">Next</span>
                   <ChevronRight size={14} />
                 </button>
               </div>
@@ -1290,32 +1594,145 @@ export default function SafeWallet() {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 relative overflow-hidden">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="cyber-glass rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-            <h3 className="font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Income Sources</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 cyber-glass border border-cyan-500/30 rounded-lg">
-                <span className="text-sm font-medium text-cyan-300">Slab Income</span>
-                <span className="text-sm font-bold text-cyan-300">125.5 RAMA</span>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="font-semibold text-cyan-300 uppercase tracking-wide text-sm sm:text-base">Income Sources</h3>
+              {incomeLoading && (
+                <div className="flex items-center gap-1 text-xs text-cyan-400">
+                  <Loader2 className="animate-spin" size={12} />
+                  <span>Loading...</span>
+                </div>
+              )}
+            </div>
+            
+            {incomeError && (
+              <div className="mb-3 p-2 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-300">
+                {incomeError}
               </div>
-              <div className="flex items-center justify-between p-3 cyber-glass border border-neon-green/30 rounded-lg">
-                <span className="text-sm font-medium text-neon-green">Growth Claims</span>
-                <span className="text-sm font-bold text-neon-green">200 RAMA</span>
+            )}
+
+            <div className="space-y-2 sm:space-y-3">
+              {/* Mobile-First Income Sources Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Slab Income */}
+                <div className="cyber-glass border border-cyan-500/30 rounded-lg p-3 sm:p-4 hover:border-cyan-500/50 transition-all">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                    <span className="text-xs sm:text-sm font-medium text-cyan-300">Slab Income</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm sm:text-base font-bold text-cyan-300">
+                      {formatRAMA(incomeData.slab.rama)}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-cyan-400/70">
+                      ≈ {formatUSD(incomeData.slab.usd)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Spot Income */}
+                <div className="cyber-glass border border-blue-500/30 rounded-lg p-3 sm:p-4 hover:border-blue-500/50 transition-all">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <span className="text-xs sm:text-sm font-medium text-blue-300">Spot Income</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm sm:text-base font-bold text-blue-300">
+                      {formatRAMA(incomeData.spot.rama)}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-blue-400/70">
+                      ≈ {formatUSD(incomeData.spot.usd)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Growth Claims */}
+                <div className="cyber-glass border border-neon-green/30 rounded-lg p-3 sm:p-4 hover:border-neon-green/50 transition-all">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                    <span className="text-xs sm:text-sm font-medium text-neon-green">Growth Claims</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm sm:text-base font-bold text-neon-green">
+                      {formatRAMA(incomeData.growth.rama)}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-neon-green/70">
+                      ≈ {formatUSD(incomeData.growth.usd)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Royalties */}
+                <div className="cyber-glass border border-neon-orange/30 rounded-lg p-3 sm:p-4 hover:border-neon-orange/50 transition-all">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-neon-orange rounded-full"></div>
+                    <span className="text-xs sm:text-sm font-medium text-neon-orange">Royalties</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm sm:text-base font-bold text-neon-orange">
+                      {formatRAMA(incomeData.royalty.rama)}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-neon-orange/70">
+                      ≈ {formatUSD(incomeData.royalty.usd)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* One-Time Rewards */}
+                <div className="cyber-glass border border-neon-purple/30 rounded-lg p-3 sm:p-4 hover:border-neon-purple/50 transition-all sm:col-span-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-neon-purple rounded-full"></div>
+                    <span className="text-xs sm:text-sm font-medium text-neon-purple">One-Time Rewards</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="space-y-1">
+                      <div className="text-sm sm:text-base font-bold text-neon-purple">
+                        {formatRAMA(incomeData.rewards.rama)}
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-neon-purple/70">
+                        ≈ {formatUSD(incomeData.rewards.usd)}
+                      </div>
+                    </div>
+                    <div className="mt-2 sm:mt-0 text-[10px] sm:text-xs text-cyan-300/60">
+                      Achievement-based rewards
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center justify-between p-3 cyber-glass border border-neon-orange/30 rounded-lg">
-                <span className="text-sm font-medium text-neon-orange">Royalties</span>
-                <span className="text-sm font-bold text-neon-orange">80 RAMA</span>
-              </div>
-              <div className="flex items-center justify-between p-3 cyber-glass border border-neon-purple/30 rounded-lg">
-                <span className="text-sm font-medium text-neon-purple">Rewards</span>
-                <span className="text-sm font-bold text-neon-purple">500 RAMA</span>
+
+              {/* Total Summary */}
+              <div className="mt-3 pt-3 border-t border-cyan-500/20">
+                <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-cyan-500/10 to-neon-green/10 border border-cyan-500/40 rounded-lg">
+                  <span className="text-xs sm:text-sm font-semibold text-cyan-200">Total Lifetime Income</span>
+                  <div className="text-right">
+                    <div className="text-sm sm:text-base font-bold text-cyan-200">
+                      {formatRAMA(
+                        incomeData.slab.rama + 
+                        incomeData.spot.rama + 
+                        incomeData.growth.rama + 
+                        incomeData.royalty.rama + 
+                        incomeData.rewards.rama
+                      )}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-cyan-400/70">
+                      ≈ {formatUSD(
+                        incomeData.slab.usd + 
+                        incomeData.spot.usd + 
+                        incomeData.growth.usd + 
+                        incomeData.royalty.usd + 
+                        incomeData.rewards.usd
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4">
-            <p className="text-sm font-medium text-cyan-300 mb-2 uppercase tracking-wide">Smart Strategy</p>
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-3 sm:p-4">
+            <p className="text-xs sm:text-sm font-medium text-cyan-300 mb-2 uppercase tracking-wide">Smart Strategy</p>
             <p className="text-xs text-cyan-300/90">
               Use Safe Wallet funds to restake and compound your earnings without paying withdrawal fees or commissions.
             </p>
@@ -1323,25 +1740,25 @@ export default function SafeWallet() {
         </div>
       </div>
 
-      <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 relative overflow-hidden">
+      <div className="cyber-glass rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-        <h2 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">How Safe Wallet Works</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="p-5 cyber-glass border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group relative overflow-hidden">
+        <h2 className="text-base sm:text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">How Safe Wallet Works</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="p-4 sm:p-5 cyber-glass border border-cyan-500/30 rounded-xl hover:border-cyan-500/50 transition-all group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-neon-green rounded-lg flex items-center justify-center mb-3 relative z-10">
-              <span className="text-dark-950 font-bold">1</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-cyan-500 to-neon-green rounded-lg flex items-center justify-center mb-3 relative z-10">
+              <span className="text-dark-950 font-bold text-sm sm:text-base">1</span>
             </div>
-            <h4 className="font-semibold text-cyan-300 mb-2 relative z-10">Passive Income Hub</h4>
-            <p className="text-sm text-cyan-300/90 relative z-10">
+            <h4 className="font-semibold text-cyan-300 mb-2 relative z-10 text-sm sm:text-base">Passive Income Hub</h4>
+            <p className="text-xs sm:text-sm text-cyan-300/90 relative z-10">
               All passive income (slab, royalty, override) automatically flows to your Safe Wallet
             </p>
           </div>
 
-          <div className="p-5 cyber-glass border border-neon-green/30 rounded-xl hover:border-neon-green/50 transition-all group relative overflow-hidden">
+          <div className="p-4 sm:p-5 cyber-glass border border-neon-green/30 rounded-xl hover:border-neon-green/50 transition-all group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-neon-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-10 h-10 bg-gradient-to-br from-neon-green to-cyan-500 rounded-lg flex items-center justify-center mb-3 relative z-10">
-              <span className="text-dark-950 font-bold">2</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-neon-green to-cyan-500 rounded-lg flex items-center justify-center mb-3 relative z-10">
+              <span className="text-dark-950 font-bold text-sm sm:text-base">2</span>
             </div>
             <h4 className="font-semibold text-neon-green mb-2 relative z-10">Fee-Free Claims</h4>
             <p className="text-sm text-cyan-300/90 relative z-10">
@@ -1361,6 +1778,19 @@ export default function SafeWallet() {
           </div>
         </div>
       </div>
+
+      {/* Progressive Transaction Modal */}
+      <ProgressiveTransactionModal 
+        isOpen={showWithdrawModal}
+        onClose={handleWithdrawModalClose}
+        title="Safe Wallet Withdrawal"
+        description="Withdrawing funds to your connected wallet"
+        successMessage="Withdrawal completed successfully! Funds have been sent to your wallet."
+        amount={`${formatRAMA(amountRama)}`}
+        amountLabel="Withdrawing"
+        txHash={hash}
+        onSuccess={handleWithdrawSuccess}
+      />
     </div>
   );
 }

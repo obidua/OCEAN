@@ -336,6 +336,185 @@
         "type": "address"
       }
     ],
+    "name": "getEarnedByKind",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "roiUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "directUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "slabUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "slabOverrideUSD6",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getIncomeOverview",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "earnedUSD6_total",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "earnedUSD6_roi",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "earnedUSD6_direct",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "earnedUSD6_slab",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "earnedUSD6_slabOverride",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "missedUSD6_total",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "missedUSD6_roi",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "missedUSD6_direct",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "missedUSD6_slab",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "missedUSD6_slabOverride",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint16",
+            "name": "pctEarned_roi_bp",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "pctEarned_direct_bp",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "pctEarned_slab_bp",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "pctEarned_slabOverride_bp",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextThresholdUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "cumPrincipalUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "earnedSoFarUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remainingToNextUSD6",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct CappingIncomeManager.IncomeOverview",
+        "name": "v",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getMissedByKind",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "roiUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "directUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "slabUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "slabOverrideUSD6",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
     "name": "getMissedIncomeCount",
     "outputs": [
       {
@@ -409,6 +588,111 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "filterByKind",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "kind",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bool",
+        "name": "filterByReason",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "reason",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getMissedIncomeSliceFiltered",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "at",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "kind",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "reason",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct CappingIncomeManager.MissedIncomeRec[]",
+        "name": "out",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalMatched",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getMissedTotalsByReason",
+    "outputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "reasons",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "totalsUSD6",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       }
     ],
     "name": "getOpenAndNotCappedPids",
@@ -417,6 +701,118 @@
         "internalType": "uint256[]",
         "name": "out",
         "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getPortfolioCapTable",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isClosed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isCapped",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "principalUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "capPct",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "capUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creditedWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creditedUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "int256",
+            "name": "remainingToCapUSD6",
+            "type": "int256"
+          }
+        ],
+        "internalType": "struct CappingIncomeManager.PortfolioCapRow[]",
+        "name": "rows",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getSequential4xView",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "earnedUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "pidsOrderedByCreatedAt",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "prefixPrincipalUSD6",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "thresholds4xUSD6",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "bool[]",
+            "name": "canCloseNow",
+            "type": "bool[]"
+          }
+        ],
+        "internalType": "struct CappingIncomeManager.Seq4xView",
+        "name": "v",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -635,7 +1031,17 @@
       },
       {
         "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "amountUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardUSD6",
         "type": "uint256"
       }
     ],
@@ -733,6 +1139,11 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",

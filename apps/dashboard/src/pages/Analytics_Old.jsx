@@ -34,7 +34,6 @@ export default function Analytics() {
   });
 
   const [refreshing, setRefreshing] = useState(false);
-
   // Comprehensive data fetching function
   const fetchAnalyticsData = useCallback(async () => {
     if (!userAddress) {
@@ -167,15 +166,7 @@ export default function Analytics() {
 
   const getTeamGrowthData = () => {
     const { teamData } = analyticsData;
-    if (!teamData?.recentMembers) {
-      // Fallback to mock data for demonstration
-      return [
-        { month: 'Jul', members: 2 },
-        { month: 'Aug', members: 5 },
-        { month: 'Sep', members: 12 },
-        { month: 'Oct', members: getTeamSize() },
-      ];
-    }
+    if (!teamData?.recentMembers) return [];
     
     // Process recent members into monthly growth data
     const monthlyData = {};
@@ -226,7 +217,7 @@ export default function Analytics() {
 
   const getPortfolioProgress = () => {
     const { portfolioData } = analyticsData;
-    if (!portfolioData?.summary) return 30; // Default fallback
+    if (!portfolioData?.summary) return 0;
     
     // Calculate progress based on portfolio value vs target
     const current = portfolioData.summary.totalValue || 0;
@@ -236,7 +227,7 @@ export default function Analytics() {
 
   const getDaysActive = () => {
     const { spotIncomeData } = analyticsData;
-    if (!spotIncomeData?.transactions?.length) return 79; // Default fallback
+    if (!spotIncomeData?.transactions?.length) return 0;
     
     const oldestTransaction = spotIncomeData.transactions.reduce((oldest, tx) => 
       (tx.timestamp < oldest.timestamp) ? tx : oldest
@@ -248,12 +239,12 @@ export default function Analytics() {
 
   const getClaimsMade = () => {
     const { slabData, royaltyData } = analyticsData;
-    return (slabData?.totalClaims || 0) + (royaltyData?.totalClaims || 0) || 12; // Fallback
+    return (slabData?.totalClaims || 0) + (royaltyData?.totalClaims || 0);
   };
 
   const getAvgTeamDepth = () => {
     const { teamData } = analyticsData;
-    return teamData?.averageDepth || 3.2; // Fallback
+    return teamData?.averageDepth || 0;
   };
 
   // Loading state
@@ -312,7 +303,6 @@ export default function Analytics() {
           </button>
         </div>
       </div>
-    );
   }
 
   // Main render
@@ -325,11 +315,6 @@ export default function Analytics() {
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
           </h1>
           <p className="text-cyan-300/90 mt-1">Real-time portfolio performance and team insights</p>
-          {analyticsData.lastUpdated && (
-            <p className="text-xs text-cyan-300/60 mt-1">
-              Last updated: {analyticsData.lastUpdated.toLocaleTimeString()}
-            </p>
-          )}
         </div>
         
         <button
@@ -343,7 +328,6 @@ export default function Analytics() {
       </div>
 
       {/* Performance Summary Cards */}
-      <div className="grid md:grid-cols-4 gap-4">
         <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
           <div className="flex items-center gap-3 mb-3">
@@ -352,8 +336,8 @@ export default function Analytics() {
             </div>
             <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Total Earned</p>
           </div>
-          <p className="text-2xl font-bold text-cyan-300">${getTotalEarned().toFixed(2)}</p>
-          <p className="text-xs text-neon-green mt-1">Live blockchain data</p>
+          <p className="text-2xl font-bold text-cyan-300">$2,250</p>
+          <p className="text-xs text-neon-green mt-1">↑ 12% this month</p>
         </div>
 
         <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
@@ -364,8 +348,8 @@ export default function Analytics() {
             </div>
             <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Avg Daily</p>
           </div>
-          <p className="text-2xl font-bold text-cyan-300">${getAvgDailyEarnings().toFixed(2)}</p>
-          <p className="text-xs text-cyan-300/90 mt-1">7-day average</p>
+          <p className="text-2xl font-bold text-cyan-300">$28.50</p>
+          <p className="text-xs text-cyan-300/90 mt-1">0.38% rate</p>
         </div>
 
         <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
@@ -376,8 +360,8 @@ export default function Analytics() {
             </div>
             <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Team Size</p>
           </div>
-          <p className="text-2xl font-bold text-cyan-300">{getTeamSize()}</p>
-          <p className="text-xs text-neon-green mt-1">Active network</p>
+          <p className="text-2xl font-bold text-cyan-300">18</p>
+          <p className="text-xs text-neon-green mt-1">↑ 6 this month</p>
         </div>
 
         <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
@@ -388,21 +372,17 @@ export default function Analytics() {
             </div>
             <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Total Rewards</p>
           </div>
-          <p className="text-2xl font-bold text-cyan-300">${getTotalRewards().toFixed(2)}</p>
-          <p className="text-xs text-cyan-300/90 mt-1">Bonus earnings</p>
+          <p className="text-2xl font-bold text-cyan-300">$850</p>
+          <p className="text-xs text-cyan-300/90 mt-1">Passive income</p>
         </div>
       </div>
 
-      {/* Charts Section */}
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-          <h2 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            7-Day Earnings Trend
-          </h2>
+          <h2 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Earnings Trend</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={getEarningsChartData()}>
+            <LineChart data={earningsData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,240,255,0.1)" />
               <XAxis dataKey="date" stroke="#22d3ee" fontSize={12} />
               <YAxis stroke="#22d3ee" fontSize={12} />
@@ -415,31 +395,28 @@ export default function Analytics() {
                   backdropFilter: 'blur(10px)',
                 }}
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="amount"
-                stroke="#00f0ff"
+                stroke="url(#colorGradient)"
                 strokeWidth={3}
-                fill="url(#areaGradient)"
+                dot={{ fill: '#00f0ff', r: 4, strokeWidth: 2, stroke: '#39ff14' }}
               />
               <defs>
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00f0ff" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#39ff14" stopOpacity={0.1} />
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#00f0ff" />
+                  <stop offset="100%" stopColor="#39ff14" />
                 </linearGradient>
               </defs>
-            </AreaChart>
+            </LineChart>
           </ResponsiveContainer>
         </div>
 
         <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-          <h2 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Team Growth
-          </h2>
+          <h2 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Team Growth</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={getTeamGrowthData()}>
+            <BarChart data={teamGrowthData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,240,255,0.1)" />
               <XAxis dataKey="month" stroke="#22d3ee" fontSize={12} />
               <YAxis stroke="#22d3ee" fontSize={12} />
@@ -464,61 +441,69 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Bottom Section - Income Breakdown, Performance Stats, and Projections */}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="cyber-glass rounded-xl p-6 border border-cyan-500/30 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-          <h3 className="font-semibold text-cyan-300 mb-4 uppercase tracking-wide flex items-center gap-2">
-            <Wallet className="w-4 h-4" />
-            Income Breakdown
-          </h3>
+          <h3 className="font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Income Breakdown</h3>
           <div className="space-y-3">
-            {getIncomeBreakdownData().map((item, index) => {
-              const percentage = getTotalEarned() > 0 ? (item.value / getTotalEarned()) * 100 : 0;
-              return (
-                <div key={index}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-cyan-300/90">{item.name}</span>
-                    <span className="text-sm font-bold text-cyan-300">${item.value.toFixed(2)}</span>
-                  </div>
-                  <div className="h-2 bg-dark-900 rounded-full overflow-hidden border border-cyan-500/30">
-                    <div 
-                      className="h-full rounded-full" 
-                      style={{ 
-                        width: `${percentage}%`,
-                        backgroundColor: item.color,
-                        boxShadow: `0 0 8px ${item.color}40`
-                      }} 
-                    />
-                  </div>
-                </div>
-              );
-            })}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-cyan-300/90">Portfolio Growth</span>
+                <span className="text-sm font-bold text-cyan-300">$1,400</span>
+              </div>
+              <div className="h-2 bg-dark-900 rounded-full overflow-hidden border border-cyan-500/30">
+                <div className="h-full bg-gradient-to-r from-cyan-500 to-neon-green rounded-full" style={{ width: '62%' }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-cyan-300/90">Slab Income</span>
+                <span className="text-sm font-bold text-neon-green">$450</span>
+              </div>
+              <div className="h-2 bg-dark-900 rounded-full overflow-hidden border border-cyan-500/30">
+                <div className="h-full bg-neon-green rounded-full" style={{ width: '20%' }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-cyan-300/90">Royalties</span>
+                <span className="text-sm font-bold text-neon-orange">$240</span>
+              </div>
+              <div className="h-2 bg-dark-900 rounded-full overflow-hidden border border-cyan-500/30">
+                <div className="h-full bg-neon-orange rounded-full shadow-neon-orange" style={{ width: '11%' }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-cyan-300/90">Rewards</span>
+                <span className="text-sm font-bold text-neon-purple">$160</span>
+              </div>
+              <div className="h-2 bg-dark-900 rounded-full overflow-hidden border border-cyan-500/30">
+                <div className="h-full bg-neon-purple rounded-full shadow-neon-purple" style={{ width: '7%' }} />
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="cyber-glass rounded-xl p-6 border border-cyan-500/30 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-          <h3 className="font-semibold text-cyan-300 mb-4 uppercase tracking-wide flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Performance Stats
-          </h3>
+          <h3 className="font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Performance Stats</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-cyan-300/90">Portfolio Progress</span>
-              <span className="text-lg font-bold text-neon-green">{getPortfolioProgress().toFixed(0)}%</span>
+              <span className="text-lg font-bold text-neon-green">30%</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-cyan-300/90">Days Active</span>
-              <span className="text-lg font-bold text-cyan-300">{getDaysActive()}</span>
+              <span className="text-lg font-bold text-cyan-300">79</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-cyan-300/90">Avg Team Depth</span>
-              <span className="text-lg font-bold text-neon-orange">{getAvgTeamDepth().toFixed(1)}</span>
+              <span className="text-lg font-bold text-neon-orange">3.2</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-cyan-300/90">Claims Made</span>
-              <span className="text-lg font-bold text-neon-purple">{getClaimsMade()}</span>
+              <span className="text-lg font-bold text-neon-purple">12</span>
             </div>
           </div>
         </div>
@@ -526,22 +511,19 @@ export default function Analytics() {
         <div className="cyber-glass border border-neon-green/50 rounded-xl p-6 text-white relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-cyan-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/70 to-transparent" />
-          <h3 className="font-semibold mb-4 relative z-10 uppercase tracking-wide flex items-center gap-2">
-            <Target className="w-4 h-4" />
-            Projected Earnings
-          </h3>
+          <h3 className="font-semibold mb-4 relative z-10 uppercase tracking-wide">Projected Earnings</h3>
           <div className="space-y-3 relative z-10">
             <div>
               <p className="text-sm opacity-90 mb-1">Next 30 Days</p>
-              <p className="text-2xl font-bold">${(getAvgDailyEarnings() * 30).toFixed(0)}</p>
+              <p className="text-2xl font-bold">$855</p>
             </div>
             <div>
               <p className="text-sm opacity-90 mb-1">Next 90 Days</p>
-              <p className="text-2xl font-bold">${(getAvgDailyEarnings() * 90).toFixed(0)}</p>
+              <p className="text-2xl font-bold">$2,565</p>
             </div>
             <div className="pt-3 border-t border-white/20">
               <p className="text-xs opacity-75 mb-1">Based on current rate</p>
-              <p className="text-sm">${getAvgDailyEarnings().toFixed(2)} daily average</p>
+              <p className="text-sm">0.38% daily average</p>
             </div>
           </div>
         </div>

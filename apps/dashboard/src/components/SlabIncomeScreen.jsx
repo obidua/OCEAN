@@ -8,6 +8,7 @@ import {
   ArrowDown,
   Table,
   LayoutGrid,
+  BarChart3,
 } from "lucide-react";
 import { useStore } from "../../store/useUserInfoStore";
 import {
@@ -16,6 +17,9 @@ import {
   formatPercentage,
   formatRAMA,
 } from "../utils/contractData";
+import NumberPopup from "./NumberPopup";
+import VolumeAnalytics from "./VolumeAnalytics";
+import VolumeSummary from "./VolumeSummary";
 
 const SLAB_TIER_NAMES = [
   "Coral Reef",
@@ -35,7 +39,58 @@ const SLAB_TIER_NAMES = [
 
 export default function SlabIncomeScreen({SlabIncomeData}) {
   
-    const {error,loading,slabLevel ,qualifiedVolumeUsd,directs,slabStatusLabel,slabIncomeUsd,slabIncomeRama ,slabIncomeAvailableUsd ,slabIncomeAvailableRama,overrideIncomeUsd,overrideIncomeRama}= SlabIncomeData
+  // Get user address from store
+  const userAddressFromStore = useStore((state) => state.userAddress);
+  const userAddress = userAddressFromStore || localStorage.getItem('userAddress');
+  
+  const {
+    error,
+    loading,
+    slabLevel,
+    qualifiedVolumeUsd,
+    directs,
+    slabStatusLabel,
+    slabIncomeUsd,
+    slabIncomeRama,
+    slabIncomeAvailableUsd,
+    slabIncomeAvailableRama,
+    overrideIncomeUsd,
+    overrideIncomeRama,
+    royaltyIncomeUsd,
+    royaltyIncomeRama,
+    newDirects,
+    // Enhanced data
+    progressData,
+    achievementsData,
+    legBreakdown,
+    slabPercents,
+    rewardMilestones,
+    royaltyTiers,
+    nextAchievements
+  } = SlabIncomeData;
+
+  // Helper function to render progress bars
+  const ProgressBar = ({ label, current, target, percentage, color = "cyan" }) => {
+    const clampedPercentage = Math.min(percentage || 0, 100);
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-cyan-300">{label}</span>
+          <span className="text-cyan-400">{clampedPercentage.toFixed(1)}%</span>
+        </div>
+        <div className="w-full bg-dark-900/50 rounded-full h-2">
+          <div 
+            className={`h-2 rounded-full bg-gradient-to-r from-${color}-500 to-${color}-400 transition-all duration-300`}
+            style={{ width: `${clampedPercentage}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-cyan-400/70">
+          <span>${current?.toLocaleString() || 0}</span>
+          <span>${target?.toLocaleString() || 0}</span>
+        </div>
+      </div>
+    );
+  };
   return (
     <div className="space-y-6">
 
@@ -302,6 +357,180 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
           </table>
         </div>
 
+        {/* Enhanced Progress Section */}
+        {progressData && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-cyan-400 mb-4">Achievement Progress</h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              <ProgressBar
+                label="Next Slab"
+                current={qualifiedVolumeUsd}
+                target={progressData.nextSlabThreshold}
+                percentage={progressData.progressToNextSlab}
+                color="neon-green"
+              />
+              <ProgressBar
+                label="Next Reward"
+                current={qualifiedVolumeUsd}
+                target={progressData.nextRewardThreshold}
+                percentage={progressData.progressToNextReward}
+                color="yellow"
+              />
+              <ProgressBar
+                label="Next Royalty"
+                current={qualifiedVolumeUsd}
+                target={progressData.nextRoyaltyThreshold}
+                percentage={progressData.progressToNextRoyalty}
+                color="purple"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Income Breakdown */}
+        {(royaltyIncomeUsd > 0 || newDirects > 0) && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-cyan-400 mb-4">Enhanced Income Data</h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {royaltyIncomeUsd > 0 && (
+                <div className="text-center p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                  <p className="text-purple-400 text-sm font-medium">Royalty Income</p>
+                  <p className="text-2xl font-bold text-purple-300">${royaltyIncomeUsd.toLocaleString()}</p>
+                  <p className="text-sm text-purple-400/70">{formatRAMA(royaltyIncomeRama)} RAMA</p>
+                </div>
+              )}
+              {newDirects > 0 && (
+                <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <p className="text-green-400 text-sm font-medium">New Directs Since Claim</p>
+                  <p className="text-2xl font-bold text-green-300">{newDirects}</p>
+                  <p className="text-sm text-green-400/70">Fresh registrations</p>
+                </div>
+              )}
+              {legBreakdown && (
+                <>
+                  <div className="text-center p-4 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+                    <p className="text-cyan-400 text-sm font-medium">L1 Volume</p>
+                    <p className="text-xl font-bold text-cyan-300">${legBreakdown.L1?.toLocaleString() || 0}</p>
+                  </div>
+                  <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                    <p className="text-blue-400 text-sm font-medium">L2 Volume</p>
+                    <p className="text-xl font-bold text-blue-300">${legBreakdown.L2?.toLocaleString() || 0}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Volume Analytics */}
+        {userAddress && (
+          <div className="space-y-6">
+            <div className="cyber-glass border border-cyan-500/40 rounded-2xl p-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-neon-green/10 opacity-40" />
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
+                  <BarChart3 size={22} className="text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-cyan-300 font-medium uppercase tracking-wide">
+                    Enhanced Volume Analytics
+                  </p>
+                  <p className="text-xs text-cyan-300/80">
+                    Real-time business volume tracking from SlabManager
+                  </p>
+                </div>
+              </div>
+              <div className="relative z-10">
+                <VolumeAnalytics userAddress={userAddress} showDetailed={true} maxLegs={8} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Achievement Timeline */}
+        {achievementsData && (achievementsData.slabs?.length > 0 || achievementsData.rewards?.length > 0) && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-cyan-400 mb-4">Recent Achievements</h3>
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {achievementsData.slabs?.slice(-5).reverse().map((achievement, idx) => (
+                <div key={`slab-${achievement.id}`} className="flex items-center gap-3 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    {achievement.id}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-green-400 font-medium">Slab {achievement.id} Achieved</p>
+                    <p className="text-sm text-green-300/70">
+                      {achievement.achievedDate?.toLocaleDateString()} - ${achievement.totalQualified?.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {achievementsData.rewards?.slice(-3).reverse().map((achievement, idx) => (
+                <div key={`reward-${achievement.id}`} className="flex items-center gap-3 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                  <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    R{achievement.id}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-yellow-400 font-medium">Reward Milestone {achievement.id}</p>
+                    <p className="text-sm text-yellow-300/70">
+                      {achievement.achievedDate?.toLocaleDateString()} - ${achievement.totalQualified?.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* System Information */}
+        {(slabPercents || rewardMilestones || royaltyTiers) && (
+          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-cyan-400 mb-4">System Configuration</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              {slabPercents && (
+                <div>
+                  <h4 className="text-lg font-semibold text-cyan-300 mb-2">Slab Percentages</h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {slabPercents.map((percent, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-cyan-400">Slab {idx + 1}</span>
+                        <span className="text-cyan-300">{percent}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {rewardMilestones && (
+                <div>
+                  <h4 className="text-lg font-semibold text-yellow-300 mb-2">Reward Milestones</h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {rewardMilestones.slice(0, 5).map((milestone, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-yellow-400">Level {idx + 1}</span>
+                        <span className="text-yellow-300">${milestone?.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {royaltyTiers && (
+                <div>
+                  <h4 className="text-lg font-semibold text-purple-300 mb-2">Royalty Tiers</h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {royaltyTiers.slice(0, 5).map((tier, idx) => (
+                      <div key={idx} className="text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-purple-400">${tier.threshold?.toLocaleString()}</span>
+                          <span className="text-purple-300">${tier.reward?.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
       </div>
     </div>
