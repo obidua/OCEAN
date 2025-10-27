@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { ethers } from 'ethers';
+import { getRPCUrls, getNetworkConfig } from './rpcConfig-node.js';
 
 // -----------------------------------------------------------------------------//
 // Resolve project root and load .env from root (../.env relative to /scripts)
@@ -34,7 +35,18 @@ const REGISTER_JSON = path.join(DATA_DIR, 'ocean_registrations.json');
 const PORTFOLIO_JSON = path.join(DATA_DIR, 'ocean_portfolios.json');
 const PORTFOLIO_CSV = path.join(DATA_DIR, 'ocean_portfolios.csv');
 
-const RPC_URL = process.env.RPC_URL || 'https://blockchain.ramestta.com';
+// ---------- ENV CONFIG - Now using centralized RPC configuration ----------
+const RPC_URLS = getRPCUrls();
+const networkConfig = getNetworkConfig();
+
+console.log('📡 Portfolio Script Network Configuration:');
+console.log(`   Network: ${networkConfig.networkName}`);
+console.log(`   Chain ID: ${networkConfig.chainId}`);
+console.log(`   Available RPC URLs: ${RPC_URLS.length}`);
+RPC_URLS.forEach((url, index) => {
+  console.log(`     ${index + 1}. ${url}`);
+});
+
 const ADDR = {
   PortfolioManager: process.env.PORTFOLIOMANAGER,
   PriceOracle: process.env.PRICEORACLE,
@@ -234,8 +246,24 @@ async function main() {
     throw new Error('privateKeys.json item missing "privateKey" or not a string');
   });
 
+  // Create ethers provider using centralized RPC configuration
+  let provider = null;
+  for (let i = 0; i < RPC_URLS.length; i++) {
+    try {
+      console.log(`🔗 Portfolio Script: Trying RPC ${i + 1}: ${RPC_URLS[i]}`);
+      provider = new ethers.JsonRpcProvider(RPC_URLS[i]);
+      await provider.getNetwork(); // Test connection
+      console.log(`✅ Portfolio Script: Connected to RPC ${i + 1}`);
+      break;
+    } catch (error) {
+      console.warn(`❌ Portfolio Script: RPC ${i + 1} failed:`, error.message);
+      if (i === RPC_URLS.length - 1) {
+        throw new Error('All RPC URLs failed to connect');
+      }
+    }
+  }
+
   // Contracts
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
   const oracle = new ethers.Contract(ADDR.PriceOracle, ABI_PriceOracle, provider);
   const pm = new ethers.Contract(ADDR.PortfolioManager, ABI_PortfolioManager, provider);
 

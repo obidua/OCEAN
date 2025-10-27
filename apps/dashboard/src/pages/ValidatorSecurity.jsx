@@ -72,6 +72,15 @@ export default function ValidatorSecurity() {
 
                 <div className="bg-dark-950/50 rounded-lg p-4">
                   <div className="text-cyan-300/70 text-xs uppercase tracking-wide mb-1">Parameter</div>
+                  <div className="text-cyan-300 font-semibold">RPC Endpoint (Fallback)</div>
+                </div>
+                <div className="bg-dark-950/50 rounded-lg p-4">
+                  <div className="text-cyan-300/70 text-xs uppercase tracking-wide mb-1">Value</div>
+                  <a href="https://testrpc.bidua.in" target="_blank" rel="noopener noreferrer" className="text-neon-green font-mono text-sm hover:text-cyan-400 transition-colors">testrpc.bidua.in</a>
+                </div>
+
+                <div className="bg-dark-950/50 rounded-lg p-4">
+                  <div className="text-cyan-300/70 text-xs uppercase tracking-wide mb-1">Parameter</div>
                   <div className="text-cyan-300 font-semibold">Explorer</div>
                 </div>
                 <div className="bg-dark-950/50 rounded-lg p-4">

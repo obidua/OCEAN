@@ -26,7 +26,14 @@ const REGISTER_STATE_FILE = path.join(DATA_DIR, 'ocean_register_state.json');
 const REGISTER_JSON = path.join(DATA_DIR, 'ocean_registrations.json');
 const REGISTER_CSV = path.join(DATA_DIR, 'ocean_registrations.csv');
 
-const RPC_URL = process.env.RPC_URL || 'https://blockchain.ramestta.com';
+const RPC_URLS = [
+  process.env.RPC_URL || 'https://blockchain.ramestta.com',
+  process.env.RPC_URL_2 || 'https://blockchain2.ramestta.com',
+  process.env.RPC_URL_3 || 'https://testrpc.bidua.in',
+].filter(url => url && url.startsWith('http'));
+
+console.log('Available RPC URLs:', RPC_URLS);
+
 const ROOT_ADDR = (process.env.ROOT_ADDRESS || '').trim();
 if (!ethers.isAddress(ROOT_ADDR)) {
   console.error('ERROR: Set ROOT_ADDRESS in .env to the UserRegistry root address');
@@ -178,7 +185,26 @@ async function main() {
     throw new Error('privateKeys.json item missing "privateKey" or not a string');
   });
 
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
+  // Create provider with fallback RPC URLs
+  async function createProviderWithFallback() {
+    for (let i = 0; i < RPC_URLS.length; i++) {
+      try {
+        console.log(`Trying RPC ${i + 1}: ${RPC_URLS[i]}`);
+        const provider = new ethers.JsonRpcProvider(RPC_URLS[i]);
+        // Test the connection
+        await provider.getNetwork();
+        console.log(`✅ Connected to RPC ${i + 1}: ${RPC_URLS[i]}`);
+        return provider;
+      } catch (error) {
+        console.warn(`❌ RPC ${i + 1} failed: ${error.message}`);
+        if (i === RPC_URLS.length - 1) {
+          throw new Error('All RPC URLs failed to connect');
+        }
+      }
+    }
+  }
+
+  const provider = await createProviderWithFallback();
   const oracle = new ethers.Contract(ADDR.PriceOracle, ABI_PriceOracle, provider);
   const pm = new ethers.Contract(ADDR.PortfolioManager, ABI_PortfolioManager, provider);
   const cfg = new ethers.Contract(ADDR.CoreConfig, ABI_CoreConfig, provider);
@@ -200,7 +226,7 @@ async function main() {
   } else {
     state = {
       version: 1,
-      rpc: RPC_URL,
+      rpc: provider.connection.url, // Use the successfully connected RPC URL
       root: ROOT_ADDR,
       queue: [],
       users: {},

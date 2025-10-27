@@ -1,10 +1,15 @@
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+import { getRPCUrls, getNetworkConfig } from '../src/utils/rpcConfig.js'
 
 export const projectId = "5f2fd12d0417edef168ae25f9ec697ad"
 
+// Get network configuration from environment
+const networkConfig = getNetworkConfig()
+const rpcUrls = getRPCUrls()
+
 const ramesttaNetwork = {
-    id: 1370,
-    name: 'Ramestta',
+    id: parseInt(networkConfig.chainId),
+    name: networkConfig.networkName,
     nativeCurrency: {
         name: 'Rama',
         symbol: 'RAMA',
@@ -12,16 +17,10 @@ const ramesttaNetwork = {
     },
     rpcUrls: {
         default: {
-            http: [
-                'https://blockchain.ramestta.com',
-                'https://blockchain2.ramestta.com'
-            ],
+            http: rpcUrls,
         },
         public: {
-            http: [
-                'https://blockchain.ramestta.com',
-                'https://blockchain2.ramestta.com',
-            ],
+            http: rpcUrls,
         },
     },
     blockExplorers: {

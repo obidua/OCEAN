@@ -15,6 +15,7 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { ethers } from 'ethers';
+import { getRPCUrls, callWithRPCFailover, getNetworkConfig } from './rpcConfig-node.js';
 
 dotenv.config();
 
@@ -26,8 +27,18 @@ const REPORT_JSON_OUT = path.join(DATA_DIR, 'ocean_team_report.json');
 const REPORT_CSV_OUT  = path.join(DATA_DIR, 'ocean_team_report.csv');
 const DIRECTS_CSV_OUT = path.join(DATA_DIR, 'ocean_team_directs.csv');
 
-// ---------- ENV ----------
-const RPC_URL = process.env.RPC_URL || 'https://blockchain.ramestta.com';
+// ---------- ENV - Now using centralized RPC configuration ----------
+const RPC_URLS = getRPCUrls();
+const networkConfig = getNetworkConfig();
+
+console.log('📡 Network Configuration:');
+console.log(`   Network: ${networkConfig.networkName}`);
+console.log(`   Chain ID: ${networkConfig.chainId}`);
+console.log(`   Available RPC URLs: ${RPC_URLS.length}`);
+RPC_URLS.forEach((url, index) => {
+  console.log(`     ${index + 1}. ${url}`);
+});
+
 const USERREGISTRY = process.env.USERREGISTRY;
 if (!ethers.isAddress(USERREGISTRY || '')) {
   console.error('ERROR: USERREGISTRY missing/invalid in .env');
@@ -94,7 +105,24 @@ async function main() {
   ensureDir(DATA_DIR);
   // load local user activity (created by ocean_sim.js)
   const usersJson = loadJSON(USERS_JSON_IN);
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
+  
+  // Use centralized RPC failover to create ethers provider
+  let provider = null;
+  for (let i = 0; i < RPC_URLS.length; i++) {
+    try {
+      console.log(`🔗 Team Report: Trying RPC ${i + 1}: ${RPC_URLS[i]}`);
+      provider = new ethers.JsonRpcProvider(RPC_URLS[i]);
+      await provider.getNetwork(); // Test connection
+      console.log(`✅ Team Report: Connected to RPC ${i + 1}`);
+      break;
+    } catch (error) {
+      console.warn(`❌ Team Report: RPC ${i + 1} failed:`, error.message);
+      if (i === RPC_URLS.length - 1) {
+        throw new Error('All RPC URLs failed to connect');
+      }
+    }
+  }
+  
   const registry = new ethers.Contract(USERREGISTRY, ABI_UserRegistry, provider);
 
   // Build quick reverse index: uplineAddr -> [childAddrs...]

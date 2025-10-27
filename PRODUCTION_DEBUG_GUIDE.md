@@ -11,6 +11,8 @@ VITE_SLABMANAGER=0x522d2e3DB143012901410D2d0785e9C1cceFBA42
 VITE_USERREGISTRY=0x...
 VITE_PORTFOLIOMANAGER=0x...
 VITE_RPC_URL=https://blockchain.ramestta.com
+VITE_RPC_URL_2=https://blockchain2.ramestta.com       # optional fallback
+VITE_RPC_URL_3=https://testrpc.bidua.in              # optional fallback (temporary)
 VITE_OCEANICVIEW=0x...
 VITE_COMPREHENSIVEVIEW=0x...
 ```
@@ -27,6 +29,7 @@ Common issues that work locally but fail online:
    - RPC URL accessibility from production server
    - Network latency differences
    - CORS policy restrictions
+   - Temporarily switch to secondary endpoints (`VITE_RPC_URL_2`, `VITE_RPC_URL_3`) if the primary node is offline
 
 3. **Contract Deployment**
    - Verify contracts are deployed on the correct network

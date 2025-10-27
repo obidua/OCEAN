@@ -18,6 +18,7 @@ import SafeWalletABI from './Contract_ABI/SafeWallet.json';
 import RoiDistributionABI from './Contract_ABI/RoiDistributor.json';
 import { dayShortFromUnix } from "../src/utils/helper";
 import { checkEnvironmentConfig, resolveContractAddress, validateRuntimeConfig } from "../src/utils/envCheck.js";
+import { getRPCUrls, callWithDualRPC as rpcCallWithDualRPC, createWeb3Instance } from "../src/utils/rpcConfig.js";
 import {
   ROYALTY_LEVELS as ROYALTY_LEVELS_FALLBACK,
   ONE_TIME_REWARDS as ONE_TIME_REWARDS_FALLBACK,
@@ -55,7 +56,11 @@ const getContractInterface = async () => {
 
 const resolveEnvValue = (key) => {
   const env = import.meta.env ?? {};
-  return env[`VITE_${key}`] ?? env[key];
+  const processEnv = typeof process !== 'undefined' ? process.env ?? {} : {};
+  return env[`VITE_${key}`]
+    ?? env[key]
+    ?? processEnv[`VITE_${key}`]
+    ?? processEnv[key];
 };
 
 const resolveAddress = (key, fallback) => {
@@ -99,40 +104,27 @@ if (!isConfigValid) {
   checkEnvironmentConfig(); // Show detailed info for debugging
 }
 
-// Dual RPC URLs for load balancing and faster responses
-const RPC_URLs = [
+// Multi-RPC URLs for load balancing and graceful failover
+// RPC Configuration - Now centralized through environment variables
+const envRpcUrls = getRPCUrls(); // Use the centralized utility
+
+// Fallback URLs (only used if environment variables are not set)
+const defaultRpcUrls = [
   "https://blockchain.ramestta.com",
-  "https://blockchain2.ramestta.com"
+  "https://blockchain2.ramestta.com", 
+  "https://testrpc.bidua.in",
 ];
+
+const RPC_URLs = envRpcUrls.length > 0 ? envRpcUrls : defaultRpcUrls;
 
 // Create multiple Web3 instances for load balancing
 const web3Instances = RPC_URLs.map(url => new Web3(url));
-const web3 = web3Instances[0]; // Primary instance for backward compatibility
+const web3 = createWeb3Instance('UserInfoStore'); // Use centralized Web3 creation
 
-// Dual RPC utility for faster contract calls
+// Multi RPC utility for faster contract calls (legacy name retained)
 const callWithDualRPC = async (contractMethod, methodName = 'unknown') => {
-  const promises = web3Instances.map(async (web3Instance, index) => {
-    try {
-      const startTime = Date.now();
-      const result = await contractMethod();
-      const duration = Date.now() - startTime;
-      console.log(`[RPC-${index + 1}] ${methodName} completed in ${duration}ms`);
-      return { result, rpcIndex: index + 1, duration };
-    } catch (error) {
-      console.warn(`[RPC-${index + 1}] ${methodName} failed:`, error.message);
-      throw error;
-    }
-  });
-
-  try {
-    // Return the first successful result
-    const { result, rpcIndex, duration } = await Promise.any(promises);
-    console.log(`[DUAL-RPC] ${methodName} fastest response from RPC-${rpcIndex} (${duration}ms)`);
-    return result;
-  } catch (error) {
-    console.error(`[DUAL-RPC] All RPCs failed for ${methodName}:`, error);
-    throw new Error(`All RPC endpoints failed: ${error.message}`);
-  }
+  // Use the centralized RPC failover utility
+  return await rpcCallWithDualRPC(contractMethod, methodName);
 };
 
 const USD_MICRO = 1e6;
@@ -1305,14 +1297,20 @@ export const useStore = create((set, get) => ({
       if (!userAddress) {
         throw new Error("Invalid userId");
       }
-      const contract = new web3.eth.Contract(UserRegistryABI, Contract["UserRegistry"]);
+      
+      // Use centralized RPC approach for better reliability
+      const isUserExist = await callWithDualRPC(
+        () => {
+          const contract = new web3.eth.Contract(UserRegistryABI, Contract["UserRegistry"]);
+          return contract.methods.isRegistered(userAddress).call();
+        },
+        'isUserRegistered'
+      );
 
-      const isUserExist = await contract.methods.isRegistered(userAddress).call();
-
-      console.log(isUserExist)
+      console.log('User registration status:', isUserExist);
       return isUserExist;
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error checking user registration:", error);
       alert(`Error checking user: ${error.message}`);
       throw error;
     }

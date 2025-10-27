@@ -39,16 +39,42 @@ export const checkEnvironmentConfig = () => {
   console.log(`  Build Environment: ${typeof window !== 'undefined' ? 'browser' : 'node'}`);
   
   // Network configuration
-  const rpcUrl = env.VITE_RPC_URL || processEnv.VITE_RPC_URL || processEnv.RPC_URL;
+  const rpcEnvKeys = [
+    'VITE_RPC_URL',
+    'VITE_RPC_URL_2',
+    'VITE_RPC_URL_3',
+    'RPC_URL',
+    'RPC_URL_2',
+    'RPC_URL_3'
+  ];
+
+  const rpcUrlSet = new Set();
+  rpcEnvKeys.forEach((key) => {
+    const value = env[key] || processEnv[key];
+    if (value) {
+      rpcUrlSet.add(value);
+    }
+  });
+
+  const rpcUrls = Array.from(rpcUrlSet);
+  const primaryRpcUrl = rpcUrls[0] || null;
+  const fallbackRpcUrls = rpcUrls.slice(1);
+
   console.log('\n🌐 Network Configuration:');
-  console.log(`  RPC URL: ${rpcUrl}`);
-  console.log(`  Network Status: ${rpcUrl ? 'Configured' : 'Missing'}`);
+  console.log(`  Primary RPC URL: ${primaryRpcUrl || 'NOT CONFIGURED'}`);
+  if (fallbackRpcUrls.length) {
+    console.log('  Fallback RPC URLs:');
+    fallbackRpcUrls.forEach((url) => {
+      console.log(`    • ${url}`);
+    });
+  }
+  console.log(`  Network Status: ${rpcUrls.length ? 'Configured' : 'Missing'}`);
   
   return {
     hasRequiredVars: contractKeys.every(key => 
       env[key] || processEnv[key] || processEnv[key.replace('VITE_', '')]
     ),
-    rpcUrl,
+    rpcUrl: primaryRpcUrl,
     mode: env.MODE,
     isDev: env.DEV,
     isProd: env.PROD
@@ -90,6 +116,8 @@ export const validateRuntimeConfig = () => {
     console.log('   VITE_SLABMANAGER=0x...');
     console.log('   VITE_USERREGISTRY=0x...');
     console.log('   VITE_RPC_URL=https://...');
+    console.log('   (Optional) VITE_RPC_URL_2=https://...');
+    console.log('   (Optional) VITE_RPC_URL_3=https://...');
     return false;
   }
   
