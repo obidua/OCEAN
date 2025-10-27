@@ -7,6 +7,17 @@ class FinancialSoundSystem {
     this.volume = 0.1;
     this.lastPlayTime = {};
     this.minInterval = 1000; // Minimum 1 second between same sound types
+    this.audioContext = null;
+    this.audioInitialized = false;
+    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    this.userHasInteracted = false;
+    
+    // Bind methods for event listeners
+    this.handleUserInteraction = this.handleUserInteraction.bind(this);
+    
+    // Set up mobile interaction listeners
+    this.setupMobileListeners();
   }
 
   // Check if we should play a sound (avoid spam)
@@ -46,6 +57,107 @@ class FinancialSoundSystem {
     if (volume !== null) {
       this.volume = parseFloat(volume);
     }
+  }
+
+  // Set up mobile interaction listeners for audio initialization
+  setupMobileListeners() {
+    if (this.isMobile) {
+      const events = ['touchstart', 'touchend', 'click', 'keydown'];
+      events.forEach(event => {
+        document.addEventListener(event, this.handleUserInteraction, { once: true, passive: true });
+      });
+    }
+  }
+
+  // Handle user interaction for mobile audio initialization
+  async handleUserInteraction() {
+    if (!this.userHasInteracted) {
+      this.userHasInteracted = true;
+      await this.initializeAudioContext();
+      console.log('🔊 Audio context initialized via user interaction');
+    }
+  }
+
+  // Initialize audio context (shared across all sounds)
+  async initializeAudioContext() {
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      if (this.audioContext.state === 'suspended') {
+        try {
+          await this.audioContext.resume();
+          this.audioInitialized = true;
+          return this.audioContext;
+        } catch (error) {
+          console.warn('Failed to resume audio context:', error);
+        }
+      }
+      return this.audioContext;
+    }
+
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) {
+        console.warn('Web Audio API not supported');
+        return null;
+      }
+
+      this.audioContext = new AudioContext();
+      
+      // Resume context if suspended (common on mobile)
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+      
+      this.audioInitialized = true;
+      
+      // For iOS, we need to play a silent sound to fully unlock audio
+      if (this.isIOS) {
+        this.playIolentSound();
+      }
+      
+      return this.audioContext;
+    } catch (error) {
+      console.warn('Failed to initialize audio context:', error);
+      return null;
+    }
+  }
+
+  // Play silent sound to unlock iOS audio
+  playIolentSound() {
+    try {
+      const oscillator = this.audioContext.createOscillator();
+      const gainNode = this.audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
+      
+      gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+      
+      oscillator.start(this.audioContext.currentTime);
+      oscillator.stop(this.audioContext.currentTime + 0.01);
+      
+      console.log('🔕 iOS silent sound played for audio unlock');
+    } catch (error) {
+      console.warn('Failed to play silent sound:', error);
+    }
+  }
+
+  // Get or initialize audio context
+  async getAudioContext() {
+    if (!this.audioContext || this.audioContext.state === 'closed') {
+      return await this.initializeAudioContext();
+    }
+    
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+        this.audioInitialized = true;
+      } catch (error) {
+        console.warn('Failed to resume audio context:', error);
+      }
+    }
+    
+    return this.audioContext;
   }
 
   // Play sound for ROI coming in
@@ -97,57 +209,59 @@ class FinancialSoundSystem {
   }
 
   // Core sound playing method
-  playSound(type) {
+  async playSound(type) {
     if (!this.enabled) return;
 
     try {
-      // Mobile compatibility check
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // Get the shared audio context
+      const audioContext = await this.getAudioContext();
       
-      // Some mobile browsers require user interaction before audio
-      if (isMobile && !this.audioContextInitialized) {
-        console.log('📱 Mobile audio context not initialized, attempting to initialize...');
-        this.initMobileAudio();
+      if (!audioContext) {
+        console.warn('Audio context not available');
+        return;
       }
 
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Check if audio context is suspended (common on mobile)
-      if (audioContext.state === 'suspended') {
-        audioContext.resume().then(() => {
-          this.playAudioPattern(audioContext, type);
-        }).catch(err => {
-          console.warn('Could not resume audio context:', err);
-        });
-      } else {
-        this.playAudioPattern(audioContext, type);
+      // For mobile, ensure user has interacted first
+      if (this.isMobile && !this.userHasInteracted) {
+        console.log('📱 Mobile audio requires user interaction first');
+        return;
       }
+
+      // Play the audio pattern
+      this.playAudioPattern(audioContext, type);
+      
     } catch (error) {
       console.warn('Could not play financial sound:', error);
     }
   }
 
-  // Initialize mobile audio (requires user interaction)
-  initMobileAudio() {
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Create a silent sound to initialize audio
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.01);
-      
-      this.audioContextInitialized = true;
-      console.log('📱 Mobile audio context initialized');
-    } catch (error) {
-      console.warn('Could not initialize mobile audio:', error);
+  // Public method to manually initialize audio (for settings page)
+  async initializeMobile() {
+    if (this.userHasInteracted && this.audioInitialized) {
+      return true;
     }
+    
+    this.userHasInteracted = true;
+    const context = await this.initializeAudioContext();
+    return context !== null && this.audioInitialized;
+  }
+
+  // Check if audio is ready
+  isAudioReady() {
+    return this.audioInitialized && this.audioContext && this.audioContext.state === 'running';
+  }
+
+  // Get audio status for UI
+  getAudioStatus() {
+    return {
+      enabled: this.enabled,
+      initialized: this.audioInitialized,
+      ready: this.isAudioReady(),
+      userInteracted: this.userHasInteracted,
+      isMobile: this.isMobile,
+      isIOS: this.isIOS,
+      contextState: this.audioContext ? this.audioContext.state : 'none'
+    };
   }
 
   // Separate method for playing audio patterns
@@ -256,20 +370,32 @@ class FinancialSoundSystem {
     });
   }
 
-  // Initialize mobile audio support
-  initializeMobileAudio() {
-    if (this.audioContext && this.audioContext.state === 'suspended') {
-      const resumeAudio = () => {
-        this.audioContext.resume();
-        document.removeEventListener('touchstart', resumeAudio);
-        document.removeEventListener('touchend', resumeAudio);
-        document.removeEventListener('click', resumeAudio);
-      };
-      
-      document.addEventListener('touchstart', resumeAudio);
-      document.addEventListener('touchend', resumeAudio);
-      document.addEventListener('click', resumeAudio);
-    }
+  // Convenience methods for common sounds
+  playIncome() {
+    this.playSound('income');
+  }
+
+  playCashRegister() {
+    this.playSound('cashRegister');
+  }
+
+  // Update the ROI and transaction methods to use the new system
+  playROIIncome(amount = 0) {
+    if (!this.shouldPlay('roi')) return;
+    console.log(`🔊 Playing ROI income sound for $${amount}`);
+    this.playSound('roiAlert');
+  }
+
+  playCoinDrop(amount = 0) {
+    if (!this.shouldPlay('coinDrop')) return;
+    console.log(`🔊 Playing coin drop sound for $${amount}`);
+    this.playSound('coinDrop');
+  }
+
+  playTransactionSuccess() {
+    if (!this.shouldPlay('transaction')) return;
+    console.log(`🔊 Playing transaction success sound`);
+    this.playSound('cashRegister');
   }
 }
 
@@ -279,8 +405,12 @@ const financialSounds = new FinancialSoundSystem();
 // Load settings on initialization
 financialSounds.loadSettings();
 
-// Initialize mobile audio support
-financialSounds.initializeMobileAudio();
+// Mobile audio setup is handled automatically in constructor via setupMobileListeners()
+
+// Attach to window for global access (required by SoundControls and other components)
+if (typeof window !== 'undefined') {
+  window.financialSounds = financialSounds;
+}
 
 export default financialSounds;
 
@@ -288,10 +418,15 @@ export default financialSounds;
 export const {
   playROIIncome,
   playCoinDrop,
+  playIncome,
+  playCashRegister,
   playMoneyIn,
   playMoneyOut,
   playPortfolioUpdate,
   playTransactionSuccess,
   setEnabled,
-  setVolume
+  setVolume,
+  initializeMobile,
+  getAudioStatus,
+  isAudioReady
 } = financialSounds;

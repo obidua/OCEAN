@@ -6,6 +6,8 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import { useTransaction } from '../../config/register';
 import { useWaitForTransactionReceipt } from 'wagmi';
 import toast from '../utils/toast';
+import SoundControls from '../components/SoundControls';
+import { enableAudio } from '../utils/toast';
 
 const formatAddressPreview = (address, lead = 10, tail = 8) => {
   if (!address) return '—';
@@ -49,6 +51,35 @@ export default function Settings() {
   const referralLink = userAddress
     ? `https://oceandefi.uk/signup?ref=${userAddress}`
     : null;
+
+  // Sound system state
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [audioInitialized, setAudioInitialized] = useState(false);
+
+  // Load sound settings on component mount
+  useEffect(() => {
+    const savedSoundEnabled = localStorage.getItem('soundEnabled');
+    if (savedSoundEnabled !== null) {
+      setSoundEnabled(savedSoundEnabled === 'true');
+    }
+  }, []);
+
+  // Initialize audio for mobile/PWA
+  const initializeAudio = async () => {
+    try {
+      const success = await enableAudio();
+      setAudioInitialized(success);
+      if (success) {
+        console.log('Audio system initialized for mobile/PWA');
+        // Play a welcome sound if available
+        if (window.financialSounds && soundEnabled) {
+          window.financialSounds.playCoinDrop(1);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to initialize audio:', error);
+    }
+  };
 
   const copyToClipboard = (text, label) => {
     if (!text) return;
@@ -447,6 +478,15 @@ export default function Settings() {
         </div>
 
         <div className="space-y-6">
+          {/* Sound Controls */}
+          <SoundControls
+            soundEnabled={soundEnabled}
+            setSoundEnabled={setSoundEnabled}
+            audioInitialized={audioInitialized}
+            setAudioInitialized={setAudioInitialized}
+            initializeAudio={initializeAudio}
+          />
+
           <div className="cyber-glass rounded-xl p-6 border border-cyan-500/30 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
             <div className="flex items-center gap-3 mb-4">

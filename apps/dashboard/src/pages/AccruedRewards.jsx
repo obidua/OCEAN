@@ -511,16 +511,25 @@ export default function AccruedRewards() {
         const autoWindow = await getAutoWindow(address);
         setAutoWindowInfo(autoWindow);
         
-        if (autoWindow && autoWindow.success && autoWindow.canClaim && autoWindow.claimingPlan?.[0]) {
-          const firstClaim = autoWindow.claimingPlan[0];
+        if (autoWindow && autoWindow.success && autoWindow.canClaim && autoWindow.totalPeriods > 0) {
+          const firstClaim = autoWindow.claimingPlan?.[0];
+          const maxPerTransaction = 90; // claimROI() can claim max 90 days per transaction
+          const claimingThisTime = Math.min(autoWindow.totalPeriods, maxPerTransaction);
+          const remainingAfterThis = Math.max(0, autoWindow.totalPeriods - maxPerTransaction);
+          const needsMultiple = autoWindow.totalPeriods > maxPerTransaction;
+          
           setClaimConfirmData({
             totalDays: autoWindow.totalPeriods,
-            claimingDays: firstClaim.periodsCount,
-            fromDate: firstClaim.estimatedFromDate,
-            toDate: firstClaim.estimatedToDate,
-            totalTransactions: autoWindow.totalTransactions,
+            claimingDays: claimingThisTime, // Claiming up to 90 days in this transaction
+            remainingDays: remainingAfterThis,
+            fromDate: firstClaim?.estimatedFromDate,
+            toDate: firstClaim?.estimatedToDate, // Only covers first 90 days
+            totalTransactions: needsMultiple ? Math.ceil(autoWindow.totalPeriods / maxPerTransaction) : 1,
+            currentTransaction: 1,
             estimatedAmount: dashboard.totals.unclaimed.usd,
-            autoWindow: autoWindow
+            autoWindow: autoWindow,
+            needsMultipleTransactions: needsMultiple,
+            maxPerTransaction: maxPerTransaction
           });
           setShowConfirmModal(true);
         } else {
@@ -1177,21 +1186,28 @@ export default function AccruedRewards() {
                     <span className="text-green-300 font-bold">{formatUSD(claimConfirmData.estimatedAmount)}</span>
                   </div>
                   
-                  {claimConfirmData.totalTransactions > 1 && (
+                  {claimConfirmData.remainingDays > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Total Transactions:</span>
-                      <span className="text-orange-300 font-semibold">{claimConfirmData.totalTransactions}</span>
+                      <span className="text-gray-400 text-sm">Remaining After This:</span>
+                      <span className="text-yellow-300 font-semibold">{claimConfirmData.remainingDays} days</span>
+                    </div>
+                  )}
+                  
+                  {claimConfirmData.needsMultipleTransactions && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Max per Transaction:</span>
+                      <span className="text-orange-300 font-semibold">{claimConfirmData.maxPerTransaction} days</span>
                     </div>
                   )}
                 </div>
                 
-                {claimConfirmData.totalTransactions > 1 && (
+                {claimConfirmData.needsMultipleTransactions && (
                   <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
                     <div className="flex items-start gap-2">
                       <AlertCircle size={16} className="text-orange-400 mt-0.5 flex-shrink-0" />
                       <div className="text-orange-200 text-sm">
-                        <p className="font-semibold mb-1">Multiple Transactions Required</p>
-                        <p>Due to blockchain limits, this will require {claimConfirmData.totalTransactions} separate transactions. You can claim the remaining periods later.</p>
+                        <p className="font-semibold mb-1">90-Day Transaction Limit</p>
+                        <p>This transaction will claim {claimConfirmData.claimingDays} days. The remaining {claimConfirmData.remainingDays} days can be claimed in a separate transaction later.</p>
                       </div>
                     </div>
                   </div>
@@ -1227,9 +1243,9 @@ export default function AccruedRewards() {
         txHash={hash}
         title="Claim Accrued Reward"
         description={
-          autoWindowInfo && autoWindowInfo.success && autoWindowInfo.claimingPlan?.[0] 
-            ? `Claiming rewards from ${autoWindowInfo.claimingPlan[0].estimatedFromDate} to ${autoWindowInfo.claimingPlan[0].estimatedToDate} (${autoWindowInfo.claimingPlan[0].periodsCount} periods)${autoWindowInfo.totalTransactions > 1 ? ` - Transaction 1 of ${autoWindowInfo.totalTransactions}` : ''}`
-            : "Claiming your portfolio growth rewards using smart period management"
+          autoWindowInfo && autoWindowInfo.success && autoWindowInfo.totalPeriods > 0
+            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 90)} days of accrued rewards${autoWindowInfo.totalPeriods > 90 ? ` (${autoWindowInfo.totalPeriods - 90} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
+            : "Claiming up to 90 days of your portfolio growth rewards in this transaction"
         }
         successMessage="Your rewards have been claimed successfully!"
         onSuccess={handleClaimSuccess}

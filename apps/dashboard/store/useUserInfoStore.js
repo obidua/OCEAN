@@ -7577,9 +7577,9 @@ export const useStore = create((set, get) => ({
     try {
       if (!fromAddress) throw new Error("Missing sender address");
 
-      console.log('[Store] Creating smart claimROIUpTo transaction for:', fromAddress);
+      console.log('[Store] Creating claimROI transaction for:', fromAddress);
 
-      // Get auto window to determine periods
+      // Get auto window to determine periods (for display purposes only)
       const autoWindow = await get().getAutoWindow(fromAddress);
       if (!autoWindow.success || !autoWindow.canClaim) {
         throw new Error("No claimable periods available");
@@ -7587,32 +7587,29 @@ export const useStore = create((set, get) => ({
 
       console.log('[Store] Auto window result:', autoWindow);
 
-      // Use the first claiming plan (99 periods max)
-      const firstClaim = autoWindow.claimingPlan[0];
-      if (!firstClaim) {
-        throw new Error("No claiming plan available");
-      }
-
-      const periodsToClaimFirst = firstClaim.periodsCount;
-      console.log('[Store] Claiming', periodsToClaimFirst, 'periods in first transaction');
-
       const roiDistributor = makeContract(RoiDistributionABI, Contract["RoiDistribution"]);
       if (!roiDistributor) {
         throw new Error("RoiDistributor contract not available");
       }
 
-      // Create the transaction object for claimROIUpTo
-      const transaction = roiDistributor.methods.claimROIUpTo(periodsToClaimFirst);
+      // Use claimROI() instead of claimROIUpTo() - claims all available periods at once
+      const transaction = roiDistributor.methods.claimROI();
 
       // Estimate gas
       let gasEstimate;
       try {
         gasEstimate = await transaction.estimateGas({ from: fromAddress });
-        console.log('[Store] claimROIUpTo gas estimate:', gasEstimate);
+        console.log('[Store] claimROI gas estimate:', gasEstimate);
       } catch (err) {
-        console.error('Gas estimation failed for claimROIUpTo:', err);
-        gasEstimate = 350000; // Fallback gas limit
+        console.error('Gas estimation failed for claimROI:', err);
+        gasEstimate = 300000; // Fallback gas limit (reduced since claimROI is more efficient)
       }
+
+      // Calculate how many periods will be claimed (max 90 per transaction)
+      const maxPeriodsPerTransaction = 90;
+      const periodsInThisTransaction = Math.min(autoWindow.totalPeriods, maxPeriodsPerTransaction);
+      const remainingPeriods = Math.max(0, autoWindow.totalPeriods - maxPeriodsPerTransaction);
+      const needsMultipleTransactions = autoWindow.totalPeriods > maxPeriodsPerTransaction;
 
       const txObject = {
         from: fromAddress,
@@ -7620,22 +7617,20 @@ export const useStore = create((set, get) => ({
         data: transaction.encodeABI(),
         gas: Math.floor(Number(gasEstimate) * 1.2), // Add 20% buffer
         gasPrice: await web3.eth.getGasPrice(),
-        // Add metadata for UI display
+        // Add metadata for UI display (keeping autoWindow info for user confirmation)
         _metadata: {
-          claimingStrategy: 'smart',
-          currentTransaction: 1,
-          totalTransactions: autoWindow.totalTransactions,
-          periodsInThisTx: periodsToClaimFirst,
+          claimingStrategy: 'fixed_90_days', // Updated to reflect 90-day limit
           totalPeriods: autoWindow.totalPeriods,
-          fromPeriod: firstClaim.fromPeriod,
-          toPeriod: firstClaim.toPeriod,
-          estimatedFromDate: firstClaim.estimatedFromDate,
-          estimatedToDate: firstClaim.estimatedToDate,
-          hasMoreTransactions: autoWindow.totalTransactions > 1
+          periodsInThisTransaction: periodsInThisTransaction,
+          remainingPeriods: remainingPeriods,
+          estimatedFromDate: autoWindow.claimingPlan?.[0]?.estimatedFromDate,
+          estimatedToDate: autoWindow.claimingPlan?.[0]?.estimatedToDate, // Only first 90 days
+          needsMultipleTransactions: needsMultipleTransactions,
+          maxPeriodsPerTransaction: maxPeriodsPerTransaction
         }
       };
 
-      console.log('[Store] Smart claimROIUpTo transaction object:', txObject);
+      console.log('[Store] claimROI transaction object:', txObject);
       return txObject;
     } catch (error) {
       console.error('claimAccruedROISmart error:', error);

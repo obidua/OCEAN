@@ -20,16 +20,13 @@ import {
   Info,
   XCircle,
   Pause,
-  Volume2,
-  VolumeX,
-  Play,
+  Coins,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatUSD, formatRAMA } from "../utils/contractData";
 import NumberPopup from "../components/NumberPopup";
 import LivePriceFeed from "../components/LivePriceFeed";
 import IncomeNotificationOverlay from "../components/IncomeNotificationOverlay";
-import { enableAudio } from "../utils/toast";
 import {
   LineChart,
   Line,
@@ -72,12 +69,14 @@ export default function Dashboard() {
   const [roiTotals, setRoiTotals] = useState(null);
   const [roiTotalsLoading, setRoiTotalsLoading] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [claimConfirmData, setClaimConfirmData] = useState(null);
+  const [autoWindowInfo, setAutoWindowInfo] = useState(null);
   const [showCappedFunnel, setShowCappedFunnel] = useState(false);
 
-  // Sound system and income tracking state
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [audioInitialized, setAudioInitialized] = useState(false);
+  // Income tracking state
   const previousValuesRef = useRef({});
+  const successHandledRef = useRef(false);
 
   const { address, isConnected } = useAppKitAccount();
   const { handleSendTx, hash, isSuccess, isError, receipt } = useTransaction();
@@ -95,6 +94,8 @@ export default function Dashboard() {
   const getTeamSummary = useStore((s) => s.getTeamSummary);
   const getTeamMemberDetails = useStore((s) => s.getTeamMemberDetails);
   const claimAccruedROI = useStore((s) => s.claimAccruedROI);
+  const claimAccruedROISmart = useStore((s) => s.claimAccruedROISmart);
+  const getAutoWindow = useStore((s) => s.getAutoWindow);
   const getROITotals = useStore((s) => s.getROITotals);
   const getUnclaimedROIWindow = useStore((s) => s.getUnclaimedROIWindow);
   const getPaidUsdByPidMap = useStore((s) => s.getPaidUsdByPidMap);
@@ -617,55 +618,130 @@ export default function Dashboard() {
   // Accrued Growth claim handler
   const handleClaimGrowth = useCallback(async () => {
     try {
-      setIsClaimingGrowth(true);
-      setClaimError(null);
-      setShowClaimModal(true);
-
       if (!isConnected || !address) {
         throw new Error("Please connect your wallet to claim rewards.");
       }
 
       const unclaimedUsd = roiAgg?.unclaimedUsd ?? roiTotals?.unclaimedUsd ?? 0;
       if (!(unclaimedUsd > 0)) {
-        throw new Error("No unclaimed Accrued available to claim.");
+        throw new Error("No unclaimed rewards available to claim.");
       }
 
-      const tx = await claimAccruedROI(address);
+      // Load auto window to determine periods and show confirmation
+      try {
+        const autoWindow = await getAutoWindow(address);
+        setAutoWindowInfo(autoWindow);
+        
+        if (autoWindow && autoWindow.success && autoWindow.canClaim && autoWindow.totalPeriods > 0) {
+          const firstClaim = autoWindow.claimingPlan?.[0];
+          const maxPerTransaction = 90; // claimROI() can claim max 90 days per transaction
+          const claimingThisTime = Math.min(autoWindow.totalPeriods, maxPerTransaction);
+          const remainingAfterThis = Math.max(0, autoWindow.totalPeriods - maxPerTransaction);
+          const needsMultiple = autoWindow.totalPeriods > maxPerTransaction;
+          
+          setClaimConfirmData({
+            totalDays: autoWindow.totalPeriods,
+            claimingDays: claimingThisTime,
+            remainingDays: remainingAfterThis,
+            fromDate: firstClaim?.estimatedFromDate,
+            toDate: firstClaim?.estimatedToDate,
+            totalTransactions: needsMultiple ? Math.ceil(autoWindow.totalPeriods / maxPerTransaction) : 1,
+            currentTransaction: 1,
+            estimatedAmount: unclaimedUsd,
+            autoWindow: autoWindow,
+            needsMultipleTransactions: needsMultiple,
+            maxPerTransaction: maxPerTransaction
+          });
+          setShowConfirmModal(true);
+        } else {
+          throw new Error('No claimable periods available');
+        }
+        
+        console.log('[Dashboard] Auto window info loaded:', autoWindow);
+      } catch (autoErr) {
+        console.error('[Dashboard] Failed to load auto window info:', autoErr);
+        setClaimError(autoErr?.message || 'Failed to load claiming information');
+      }
+    } catch (err) {
+      console.error('Failed to prepare claim:', err);
+      setClaimError(err?.message || 'Failed to prepare claim');
+    } 
+  }, [getAutoWindow, roiAgg, roiTotals, isConnected, address]);
+
+  const handleConfirmClaim = useCallback(async () => {
+    try {
+      setShowConfirmModal(false);
+      setIsClaimingGrowth(true);
+      setShowClaimModal(true);
+      setClaimError(null);
+      
+      // Reset success flag for new transaction
+      successHandledRef.current = false;
+
+      const tx = await claimAccruedROISmart(address);
       if (!tx) {
-        throw new Error("Unable to build claim transaction. Please try again.");
+        throw new Error('Unable to build claim transaction');
       }
 
       handleSendTx(tx);
     } catch (err) {
-      console.error("Claim growth error:", err);
-      setClaimError(err?.message || "Failed to claim accrued Accrued");
+      console.error('Failed to claim rewards:', err);
+      setClaimError(err?.message || 'Failed to claim rewards');
       setIsClaimingGrowth(false);
       setShowClaimModal(false);
     }
-  }, [claimAccruedROI, handleSendTx, address, isConnected, roiTotals, roiAgg]);
+  }, [claimAccruedROISmart, handleSendTx, address]);
 
   const handleClaimModalClose = () => {
     setShowClaimModal(false);
     setIsClaimingGrowth(false);
+    setShowConfirmModal(false);
     setClaimError(null);
+    setAutoWindowInfo(null);
+    setClaimConfirmData(null);
   };
 
-  const handleClaimSuccess = () => {
-    // Reload dashboard data
-    const reload = async () => {
-      if (!userAddress) return;
-      try {
-        const [portfolioInfo, dashboardInfo] = await Promise.all([
-          getTOtalPortFolio(userAddress),
-          getDashboardDetails(userAddress),
-        ]);
-        if (dashboardInfo) {
-          setDashboardDetails(dashboardInfo);
-        }
-        await refreshIncomeTotals();
-        // Refresh ROI totals so the box updates after a claim
-        if (typeof getROITotals === "function") {
-          try {
+  const handleClaimSuccess = async () => {
+    try {
+      // Prevent multiple calls
+      if (successHandledRef.current) {
+        console.log('Success already handled, skipping...');
+        return;
+      }
+      successHandledRef.current = true;
+      
+      // Close modals and reset states first
+      setShowClaimModal(false);
+      setIsClaimingGrowth(false);
+      setClaimError(null);
+      setAutoWindowInfo(null);
+      setClaimConfirmData(null);
+      
+      // Show success notification (only once)
+      toast.success('ROI Accrued Reward claimed successfully', {
+        title: 'Success',
+        duration: 4000,
+        playSound: false // We'll use our custom financial sound instead
+      });
+      
+      // Play transaction success sound
+      financialSounds.playTransactionSuccess();
+      
+      // Reload dashboard data
+      const reload = async () => {
+        if (!userAddress) return;
+        try {
+          const [portfolioInfo, dashboardInfo] = await Promise.all([
+            getTOtalPortFolio(userAddress),
+            getDashboardDetails(userAddress),
+          ]);
+          if (dashboardInfo) {
+            setDashboardDetails(dashboardInfo);
+          }
+          await refreshIncomeTotals();
+          // Refresh ROI totals so the box updates after a claim
+          if (typeof getROITotals === "function") {
+            try {
             const totals = await getROITotals(userAddress);
             setRoiTotals(totals || null);
           } catch (e) {
@@ -727,6 +803,9 @@ export default function Dashboard() {
       }
     };
     reload();
+    } catch (error) {
+      console.error('Error in claim success handler:', error);
+    }
   };
 
   // Monitor claim transaction
@@ -1283,13 +1362,6 @@ export default function Dashboard() {
   ]);
 
   // Load sound settings and track changes
-  useEffect(() => {
-    const enabled = localStorage.getItem("financialSoundsEnabled");
-    if (enabled !== null) {
-      setSoundEnabled(enabled === "true");
-    }
-  }, []);
-
   // Run income tracking when values change
   useEffect(() => {
     if (summaryReady && !isLoading) {
@@ -1312,32 +1384,7 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isConnected, address, isLoading, getTOtalPortFolio, getDashboardDetails]);
 
-  // Sound toggle function
-  const toggleSounds = () => {
-    const newEnabled = !soundEnabled;
-    setSoundEnabled(newEnabled);
-    financialSounds.setEnabled(newEnabled);
 
-    // Play a test sound when enabling
-    if (newEnabled) {
-      financialSounds.playCoinDrop(1);
-    }
-  };
-
-  // Initialize audio for mobile/PWA
-  const initializeAudio = async () => {
-    try {
-      const success = await enableAudio();
-      setAudioInitialized(success);
-      if (success) {
-        console.log('Audio system initialized for mobile/PWA');
-        // Play a welcome sound
-        financialSounds.playCoinDrop(1);
-      }
-    } catch (error) {
-      console.warn('Failed to initialize audio:', error);
-    }
-  };
 
   const [directTeamInfo, setDirecTeamInfo] = useState(null);
 
@@ -1379,34 +1426,6 @@ export default function Dashboard() {
           Syncing latest on-chain data…
         </div>
       )}
-
-      {/* Sound Control */}
-      <div className="flex flex-col sm:flex-row gap-2 items-end sm:items-center justify-end">
-        {/* Mobile Audio Initialization Button */}
-        {/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && !audioInitialized && (
-          <button
-            onClick={initializeAudio}
-            className="cyber-glass border border-neon-green/50 hover:border-neon-green rounded-xl px-3 py-2 text-neon-green hover:bg-neon-green/10 transition-all flex items-center gap-2 text-sm"
-            title="Enable audio for mobile devices"
-          >
-            <Play size={16} />
-            <span className="hidden sm:inline">Enable Audio</span>
-            <span className="sm:hidden">Audio</span>
-          </button>
-        )}
-        
-        {/* Sound Toggle */}
-        <button
-          onClick={toggleSounds}
-          className="cyber-glass border border-cyan-500/30 hover:border-cyan-500/60 rounded-xl px-3 py-2 text-cyan-300 hover:text-white transition-all flex items-center gap-2 text-sm"
-          title={soundEnabled ? "Disable sounds" : "Enable sounds"}
-        >
-          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          <span className="hidden sm:inline">
-            {soundEnabled ? "Sounds On" : "Sounds Off"}
-          </span>
-        </button>
-      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Link
@@ -2842,13 +2861,104 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Claim Confirmation Modal */}
+      {showConfirmModal && claimConfirmData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="cyber-glass rounded-xl border border-cyan-500/30 p-6 w-full max-w-md mx-4 space-y-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 text-cyan-300 mb-4">
+                <Coins size={24} />
+                <h2 className="text-xl font-bold">Confirm ROI Claim</h2>
+              </div>
+              
+              <div className="space-y-4 text-left">
+                <div className="bg-dark-900/60 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Total Pending Days:</span>
+                    <span className="text-cyan-300 font-semibold">{claimConfirmData.totalDays} days</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Claiming Now:</span>
+                    <span className="text-emerald-300 font-semibold">{claimConfirmData.claimingDays} days</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Period:</span>
+                    <span className="text-cyan-200 text-sm">{claimConfirmData.fromDate} to {claimConfirmData.toDate}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Estimated Amount:</span>
+                    <span className="text-green-300 font-bold">{formatUSD(claimConfirmData.estimatedAmount)}</span>
+                  </div>
+                  
+                  {claimConfirmData.remainingDays > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Remaining After This:</span>
+                      <span className="text-yellow-300 font-semibold">{claimConfirmData.remainingDays} days</span>
+                    </div>
+                  )}
+                  
+                  {claimConfirmData.needsMultipleTransactions && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Max per Transaction:</span>
+                      <span className="text-orange-300 font-semibold">{claimConfirmData.maxPerTransaction} days</span>
+                    </div>
+                  )}
+                </div>
+                
+                {claimConfirmData.needsMultipleTransactions && (
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle size={16} className="text-orange-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-orange-200 text-sm">
+                        <p className="font-semibold mb-1">90-Day Transaction Limit</p>
+                        <p>This transaction will claim {claimConfirmData.claimingDays} days. The remaining {claimConfirmData.remainingDays} days can be claimed in a separate transaction later.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-gray-500/30 text-gray-300 hover:bg-gray-500/10 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmClaim}
+                  disabled={isClaimingGrowth}
+                  className="flex-1 px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 text-white transition-all shadow-lg hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                >
+                  {isClaimingGrowth ? (
+                    <span className="flex items-center gap-2 justify-center">
+                      <Loader2 className="animate-spin" size={16} />
+                      <span>Processing...</span>
+                    </span>
+                  ) : (
+                    'Confirm Claim'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Progressive Transaction Modal */}
       <ProgressiveTransactionModal
         isOpen={showClaimModal}
         onClose={handleClaimModalClose}
         txHash={hash}
         title="Claim Daily Accrued Reward"
-        description="Claiming your portfolio growth rewards"
+        description={
+          autoWindowInfo && autoWindowInfo.success && autoWindowInfo.totalPeriods > 0
+            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 90)} days of accrued rewards${autoWindowInfo.totalPeriods > 90 ? ` (${autoWindowInfo.totalPeriods - 90} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
+            : "Claiming up to 90 days of your portfolio growth rewards in this transaction"
+        }
         successMessage="Your Daily Accrued Reward has been claimed successfully!"
         onSuccess={handleClaimSuccess}
         amount={
