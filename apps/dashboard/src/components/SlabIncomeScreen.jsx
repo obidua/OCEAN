@@ -178,7 +178,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
             {formatUSD(qualifiedVolumeUsd)}
           </p>
           <p className="text-xs text-cyan-300/80 relative z-10">
-            {directs} direct referrals • Status: {slabStatusLabel}
+            {parseFloat(directs)/1e6} Team Volume 
           </p>
         </div>
 
@@ -413,7 +413,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
         )}
 
         {/* Enhanced Income Breakdown */}
-        {(royaltyIncomeUsd > 0 || newDirects > 0) && (
+        {/* {(royaltyIncomeUsd > 0 || newDirects > 0) && (
           <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
             <h3 className="text-xl font-bold text-cyan-400 mb-4">Enhanced Income Data</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -445,7 +445,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
               )}
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Enhanced Volume Analytics */}
         {userAddress && (
@@ -507,49 +507,284 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
           </div>
         )}
 
-        {/* System Information */}
+        {/* Enhanced System Configuration Tables */}
         {(slabPercents || rewardMilestones || royaltyTiers) && (
-          <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-cyan-400 mb-4">System Configuration</h3>
-            <div className="grid md:grid-cols-3 gap-6">
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-cyan-400 mb-2">🎯 System Configuration</h3>
+              <p className="text-sm text-cyan-300/80">
+                Dynamic system parameters and reward structures
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Slab Percentages Table */}
               {slabPercents && (
-                <div>
-                  <h4 className="text-lg font-semibold text-cyan-300 mb-2">Slab Percentages</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {slabPercents.map((percent, idx) => (
-                      <div key={idx} className="flex justify-between text-sm">
-                        <span className="text-cyan-400">Slab {idx + 1}</span>
-                        <span className="text-cyan-300">{percent}%</span>
+                <div className="cyber-glass border border-cyan-500/40 rounded-2xl overflow-hidden relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/70 to-transparent" />
+                  
+                  {/* Header */}
+                  <div className="p-6 pb-4 relative z-10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-cyan-500/20 rounded-lg backdrop-blur-sm border border-cyan-500/30">
+                        <Layers size={20} className="text-cyan-400" />
                       </div>
-                    ))}
+                      <div>
+                        <h4 className="text-lg font-bold text-cyan-400">Slab Percentages</h4>
+                        <p className="text-xs text-cyan-300/70">Income share per level</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-cyan-300/60">
+                      Total Levels: {slabPercents.length}
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="relative z-10 max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-cyan-500/30 hover:scrollbar-thumb-cyan-500/50">
+                    <div className="px-6 pb-6">
+                      <div className="bg-dark-950/40 rounded-xl border border-cyan-500/20 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-b border-cyan-500/20">
+                            <tr>
+                              <th className="text-left py-3 px-4 font-semibold text-cyan-300 text-xs uppercase tracking-wider">
+                                Level
+                              </th>
+                              <th className="text-right py-3 px-4 font-semibold text-cyan-300 text-xs uppercase tracking-wider">
+                                Share %
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {slabPercents.map((percent, idx) => {
+                              const isCurrentLevel = (idx + 1) === slabLevel;
+                              return (
+                                <tr 
+                                  key={idx} 
+                                  className={`border-b border-cyan-500/10 transition-all duration-200 ${
+                                    isCurrentLevel 
+                                      ? "bg-gradient-to-r from-neon-green/10 to-cyan-500/10 border-neon-green/20" 
+                                      : "hover:bg-cyan-500/5"
+                                  }`}
+                                >
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                        isCurrentLevel 
+                                          ? "bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950" 
+                                          : (idx + 1) < slabLevel
+                                          ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white"
+                                          : "bg-cyan-500/20 text-cyan-400"
+                                      }`}>
+                                        {idx + 1}
+                                      </div>
+                                      <span className={`font-medium ${
+                                        isCurrentLevel ? "text-neon-green" : "text-cyan-400"
+                                      }`}>
+                                        Slab {idx + 1}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <span className={`font-bold text-lg ${
+                                      isCurrentLevel ? "text-neon-green" : "text-cyan-300"
+                                    }`}>
+                                      {percent}%
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
+
+              {/* Reward Milestones Table */}
               {rewardMilestones && (
-                <div>
-                  <h4 className="text-lg font-semibold text-yellow-300 mb-2">Reward Milestones</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {rewardMilestones.slice(0, 5).map((milestone, idx) => (
-                      <div key={idx} className="flex justify-between text-sm">
-                        <span className="text-yellow-400">Level {idx + 1}</span>
-                        <span className="text-yellow-300">${milestone?.toLocaleString()}</span>
+                <div className="cyber-glass border border-yellow-500/40 rounded-2xl overflow-hidden relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-yellow-500/70 to-transparent" />
+                  
+                  {/* Header */}
+                  <div className="p-6 pb-4 relative z-10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-yellow-500/20 rounded-lg backdrop-blur-sm border border-yellow-500/30">
+                        <Award size={20} className="text-yellow-400" />
                       </div>
-                    ))}
+                      <div>
+                        <h4 className="text-lg font-bold text-yellow-400">Reward Milestones</h4>
+                        <p className="text-xs text-yellow-300/70">Achievement targets</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-yellow-300/60">
+                      Total Milestones: {rewardMilestones.length}
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="relative z-10 max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-yellow-500/30 hover:scrollbar-thumb-yellow-500/50">
+                    <div className="px-6 pb-6">
+                      <div className="bg-dark-950/40 rounded-xl border border-yellow-500/20 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-b border-yellow-500/20">
+                            <tr>
+                              <th className="text-left py-3 px-4 font-semibold text-yellow-300 text-xs uppercase tracking-wider">
+                                Level
+                              </th>
+                              <th className="text-right py-3 px-4 font-semibold text-yellow-300 text-xs uppercase tracking-wider">
+                                Target
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rewardMilestones.map((milestone, idx) => {
+                              const isAchieved = qualifiedVolumeUsd >= milestone;
+                              const isNext = !isAchieved && (idx === 0 || qualifiedVolumeUsd >= rewardMilestones[idx - 1]);
+                              return (
+                                <tr 
+                                  key={idx} 
+                                  className={`border-b border-yellow-500/10 transition-all duration-200 ${
+                                    isNext 
+                                      ? "bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/20" 
+                                      : isAchieved
+                                      ? "bg-gradient-to-r from-green-500/10 to-emerald-500/10"
+                                      : "hover:bg-yellow-500/5"
+                                  }`}
+                                >
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                        isAchieved 
+                                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white" 
+                                          : isNext
+                                          ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-dark-950"
+                                          : "bg-yellow-500/20 text-yellow-400"
+                                      }`}>
+                                        {idx + 1}
+                                      </div>
+                                      <span className={`font-medium ${
+                                        isNext ? "text-yellow-400" : isAchieved ? "text-green-400" : "text-yellow-300/60"
+                                      }`}>
+                                        Level {idx + 1}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <span className={`font-bold ${
+                                      isNext ? "text-yellow-400" : isAchieved ? "text-green-400" : "text-yellow-300/60"
+                                    }`}>
+                                      ${milestone?.toLocaleString()}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
+
+              {/* Royalty Tiers Table */}
               {royaltyTiers && (
-                <div>
-                  <h4 className="text-lg font-semibold text-purple-300 mb-2">Royalty Tiers</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {royaltyTiers.slice(0, 5).map((tier, idx) => (
-                      <div key={idx} className="text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-purple-400">${tier.threshold?.toLocaleString()}</span>
-                          <span className="text-purple-300">${tier.reward?.toLocaleString()}</span>
-                        </div>
+                <div className="cyber-glass border border-purple-500/40 rounded-2xl overflow-hidden relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/70 to-transparent" />
+                  
+                  {/* Header */}
+                  <div className="p-6 pb-4 relative z-10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/30">
+                        <TrendingUp size={20} className="text-purple-400" />
                       </div>
-                    ))}
+                      <div>
+                        <h4 className="text-lg font-bold text-purple-400">Royalty Tiers</h4>
+                        <p className="text-xs text-purple-300/70">Premium reward structure</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-purple-300/60">
+                      Total Tiers: {royaltyTiers.length}
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="relative z-10 max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-purple-500/30 hover:scrollbar-thumb-purple-500/50">
+                    <div className="px-6 pb-6">
+                      <div className="bg-dark-950/40 rounded-xl border border-purple-500/20 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-purple-500/20">
+                            <tr>
+                              <th className="text-left py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider">
+                                Tier
+                              </th>
+                              <th className="text-right py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider">
+                                Threshold
+                              </th>
+                              <th className="text-right py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider">
+                                Reward
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {royaltyTiers.map((tier, idx) => {
+                              const isEligible = qualifiedVolumeUsd >= tier.threshold;
+                              const isNext = !isEligible && (idx === 0 || qualifiedVolumeUsd >= royaltyTiers[idx - 1]?.threshold);
+                              return (
+                                <tr 
+                                  key={idx} 
+                                  className={`border-b border-purple-500/10 transition-all duration-200 ${
+                                    isNext 
+                                      ? "bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20" 
+                                      : isEligible
+                                      ? "bg-gradient-to-r from-green-500/10 to-emerald-500/10"
+                                      : "hover:bg-purple-500/5"
+                                  }`}
+                                >
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                        isEligible 
+                                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white" 
+                                          : isNext
+                                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                                          : "bg-purple-500/20 text-purple-400"
+                                      }`}>
+                                        {idx + 1}
+                                      </div>
+                                      <span className={`font-medium ${
+                                        isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
+                                      }`}>
+                                        Tier {idx + 1}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <span className={`font-bold ${
+                                      isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
+                                    }`}>
+                                      ${tier.threshold?.toLocaleString()}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <span className={`font-bold ${
+                                      isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
+                                    }`}>
+                                      ${tier.reward?.toLocaleString()}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

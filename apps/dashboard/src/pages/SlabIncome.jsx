@@ -33,6 +33,7 @@ const SlabIncome = () => {
       try {
         // Load basic overview first
         const overview = await getSlabIncomeOverview(userAddress);
+        console.log("Loaded slab income overview:", overview);
         if (!cancelled) setSlabDetails(overview);
         
         // Then load additional data in parallel
@@ -48,6 +49,8 @@ const SlabIncome = () => {
         ]);
         
         if (!cancelled) {
+
+          // console.log("this is manager details", managerDetails);
           setSlabManagerDetails(managerDetails);
           setNextAchievements(achievements);
           console.log("Comprehensive slab data loaded:", { overview, managerDetails, achievements });
@@ -158,7 +161,7 @@ const SlabIncome = () => {
           </p>
           
           {/* Quick stats bar */}
-          {slabDetails && !loading && (
+          {/* {slabDetails && !loading && (
             <div className="flex flex-wrap gap-4 mt-3 text-sm">
               <div className="flex items-center gap-1 text-cyan-400">
                 <Award size={16} />
@@ -177,7 +180,7 @@ const SlabIncome = () => {
                 <span>{newDirects} New Since Claim</span>
               </div>
             </div>
-          )}
+          )} */}
         </div>
         
         <div className="flex gap-2">

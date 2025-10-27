@@ -99,6 +99,8 @@ export default function TeamNetwork() {
         }
       }
       setDirectVolumesMap(volMap);
+
+      console.log("this is team network data",data);
       setNetwork(data);
 
       // Load detailed volume analytics from SlabManager
@@ -224,6 +226,9 @@ export default function TeamNetwork() {
       raw: item.raw ?? null,
     };
   });
+
+
+  // console.log("this is direct list",directList);
 
   const dynamicLevelData = useMemo(() => {
     if (!network?.levels) return null;
@@ -396,6 +401,8 @@ export default function TeamNetwork() {
       if(!userAddress)return;
       try{
         const info=await getDirectsPortfolioBreakdown(userAddress);
+
+        console.log("this is team info data",info);
         setTeamInfo(info);
       }catch(err){
         console.error('Failed to fetch team info:',err);
@@ -540,6 +547,7 @@ export default function TeamNetwork() {
                         className="max-h-[420px] overflow-y-auto pr-2 space-y-3 hide-scrollbar"
                       >
                         {directList.map((direct, idx) => (
+                          
                           <div
                             key={idx}
                             className="p-4 cyber-glass border border-cyan-500/20 rounded-lg hover:cyber-glass transition-colors min-w-0"
@@ -571,7 +579,7 @@ export default function TeamNetwork() {
                               <div className="min-w-0">
                                 <p className="text-xs text-cyan-300/90 mb-1">Team Volume</p>
                                 <NumberPopup
-                                  value={formatUSD(direct.teamVolumeDisplay ?? 0)}
+                                  value={(parseFloat(teamInfo?.fullData?.teamUsd[idx])/1e6).toFixed(2) || "0.00"}
                                   label="Team Volume"
                                   className="text-sm font-semibold text-neon-green"
                                 />
