@@ -493,7 +493,7 @@ export default function OneTimeRewards() {
 
                   <div className="text-right space-y-2">
                     <p
-                      className={`text-2xl font-bold ${
+                      className={`text-xs font-medium lg:text-2xl font-bold ${
                         statusKey === 'claimed'
                           ? 'text-neon-green'
                           : statusKey === 'locked'

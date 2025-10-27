@@ -477,17 +477,17 @@ export default function TransactionHistory() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
                   <p className="text-cyan-400 text-xs font-medium uppercase">L1</p>
-                  <p className="text-lg font-bold text-cyan-300">{formatUSD(volumeData.cappedVolumes.L1)}</p>
+                  <p className="text-[10px] lg:text-lg font-bold text-cyan-300">{formatUSD(volumeData.cappedVolumes.L1)}</p>
                   <p className="text-xs text-cyan-400/70">Capped</p>
                 </div>
                 <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
                   <p className="text-blue-400 text-xs font-medium uppercase">L2</p>
-                  <p className="text-lg font-bold text-blue-300">{formatUSD(volumeData.cappedVolumes.L2)}</p>
+                  <p className="text-[10px] lg:text-lg font-bold text-blue-300">{formatUSD(volumeData.cappedVolumes.L2)}</p>
                   <p className="text-xs text-blue-400/70">Capped</p>
                 </div>
                 <div className="text-center p-3 bg-neon-green/10 rounded-lg border border-neon-green/30">
                   <p className="text-neon-green text-xs font-medium uppercase">L-Rest</p>
-                  <p className="text-lg font-bold text-neon-green">{formatUSD(volumeData.cappedVolumes.Lrest)}</p>
+                  <p className="text-[10px] lg:text-lg font-bold text-neon-green">{formatUSD(volumeData.cappedVolumes.Lrest)}</p>
                   <p className="text-xs text-neon-green/70">Capped</p>
                 </div>
               </div>

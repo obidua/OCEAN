@@ -202,7 +202,7 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
             </div>
             <p className="text-xs font-medium text-neon-purple uppercase tracking-wide">Balance Status</p>
           </div>
-          <p className={`text-xl font-bold ${volumePerformance?.balance?.isBalanced ? 'text-neon-green' : 'text-neon-orange'}`}>
+          <p className={`sm:text-[8px] lg:text-lg font-bold ${volumePerformance?.balance?.isBalanced ? 'text-neon-green' : 'text-neon-orange'}`}>
             {volumePerformance?.balance?.isBalanced ? 'Balanced' : 'Needs Balance'}
           </p>
           <p className="text-xs text-neon-purple/70 mt-1">Volume distribution</p>
@@ -223,10 +223,10 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
             
             <div className="space-y-4">
               {/* Top 3 Legs Display */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+              <div className="grid grid-cols-3 gap-3 grid grid-cols-3">
+                <div className="text-center p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30 col-span-3 lg:col-span-1">
                   <p className="text-cyan-400 text-xs font-medium uppercase">L1 (Capped)</p>
-                  <p className="text-lg font-bold text-cyan-300">{formatUSD(cappedVolumes?.L1 || 0)}</p>
+                  <p className="text-[12px] text-lg font-bold text-cyan-300">{formatUSD(cappedVolumes?.L1 || 0)}</p>
                   <p className="text-xs text-cyan-400/70">vs {formatUSD(uncappedVolumes?.L1 || 0)} actual</p>
                   <div className="mt-1 text-xs text-cyan-400/70">
                     {cappedVolumes?.L1 > 0 && uncappedVolumes?.L1 > 0 
@@ -234,9 +234,9 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
                       : 0}% efficiency
                   </div>
                 </div>
-                <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30 col-span-3 lg:col-span-1">
                   <p className="text-blue-400 text-xs font-medium uppercase">L2 (Capped)</p>
-                  <p className="text-lg font-bold text-blue-300">{formatUSD(cappedVolumes?.L2 || 0)}</p>
+                  <p className="text-lg font-bold text-blue-300 text-[12px] text-lg ">{formatUSD(cappedVolumes?.L2 || 0)}</p>
                   <p className="text-xs text-blue-400/70">vs {formatUSD(uncappedVolumes?.L2 || 0)} actual</p>
                   <div className="mt-1 text-xs text-blue-400/70">
                     {cappedVolumes?.L2 > 0 && uncappedVolumes?.L2 > 0 
@@ -244,9 +244,9 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
                       : 0}% efficiency
                   </div>
                 </div>
-                <div className="text-center p-3 bg-neon-green/10 rounded-lg border border-neon-green/30">
+                <div className="text-center p-3 bg-neon-green/10 rounded-lg border border-neon-green/30 col-span-3 lg:col-span-1">
                   <p className="text-neon-green text-xs font-medium uppercase">L-Rest</p>
-                  <p className="text-lg font-bold text-neon-green">{formatUSD(cappedVolumes?.Lrest || 0)}</p>
+                  <p className="text-lg font-bold text-neon-green text-[12px] text-lg ">{formatUSD(cappedVolumes?.Lrest || 0)}</p>
                   <p className="text-xs text-neon-green/70">vs {formatUSD(uncappedVolumes?.Lrest || 0)} actual</p>
                   <div className="mt-1 text-xs text-neon-green/70">
                     All legs combined

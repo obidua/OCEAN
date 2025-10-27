@@ -7103,18 +7103,29 @@ export const useStore = create((set, get) => ({
       console.log('[Store] Raw directs portfolio breakdown:', result);
 
       // Extract and parse the response
-      const [
-        directs,
-        selfUsd,
-        teamUsd,
-        sumUsd,
-        totalSelfUsd,
-        totalTeamUsd,
-        totalSumUsd
-      ] = result;
+
+      const directs = result?.directs;
+      const selfUsd=result?.selfUsd;;
+      const teamUsd=result?.teamUsd;;
+      const sumUsd=result?.sumUsd;;
+      const totalSelfUsd=result?.totalSelfUsd;;
+      const totalTeamUsd=result?.totalTeamUsd;;
+      const totalSumUsd=result?.totalSumUsd;
+
+      // const [
+      //   directs,
+      //   selfUsd,
+      //   teamUsd,
+      //   sumUsd,
+      //   totalSelfUsd,
+      //   totalTeamUsd,
+      //   totalSumUsd
+      // ] = result;
 
       // Convert USD values from wei (18 decimals) to regular USD
       // Process each direct member with their portfolio data
+      
+      
       const directsData = directs.map((address, index) => {
         const selfUsdValue = fromWadToUsd(selfUsd[index] || '0');
         const teamUsdValue = fromWadToUsd(teamUsd[index] || '0');

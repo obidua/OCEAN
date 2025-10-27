@@ -1122,7 +1122,7 @@ export default function AccruedRewards() {
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-right text-cyan-200">{portfolio?._derived?.portfolioType}</td>
+                        <td className="py-3 px-4 text-right text-cyan-200 text-[12px] md:text-[14px] lg:text-[16px] xl:text-[18px]">{portfolio?._derived?.portfolioType}</td>
                         <td className="py-3 px-4 text-center">
                           <button
                             onClick={() => handleViewPortfolioDebug(portfolio.portfolioId, prev.last || 0)}

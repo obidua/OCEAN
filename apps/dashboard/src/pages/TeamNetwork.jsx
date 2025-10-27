@@ -41,7 +41,6 @@ const truncateAddress = (addr) => {
 export default function TeamNetwork() {
   const getTeamNetworkData = useStore((state) => state.getTeamNetworkData);
   const getDirectsPortfolioAndTeamVolumes = useStore((state) => state.getDirectsPortfolioAndTeamVolumes);
-  const getDirectsPortfolioBreakdown = useStore((state) => state.getDirectsPortfolioBreakdown);
   const getLegCapPercentages = useStore((state) => state.getLegCapPercentages);
   const getLegsDetailedVolume = useStore((state) => state.getLegsDetailedVolume);
   const getVolumeAnalytics = useStore((state) => state.getVolumeAnalytics);
@@ -59,8 +58,6 @@ export default function TeamNetwork() {
 
   const [network, setNetwork] = useState(null);
   const [directVolumesMap, setDirectVolumesMap] = useState(null);
-  const [directsBusinessData, setDirectsBusinessData] = useState(null);
-  const [businessDataLoading, setBusinessDataLoading] = useState(false);
   const [legCapData, setLegCapData] = useState({ leg1: 40, leg2: 30, leg3: 30 });
   const [detailedVolumeData, setDetailedVolumeData] = useState(null);
   const [volumeLoading, setVolumeLoading] = useState(false);
@@ -102,20 +99,6 @@ export default function TeamNetwork() {
       setDirectVolumesMap(volMap);
       setNetwork(data);
 
-      // Load team business breakdown from DirectsPortfolioBreakdown
-      if (getDirectsPortfolioBreakdown) {
-        try {
-          setBusinessDataLoading(true);
-          const businessData = await getDirectsPortfolioBreakdown(userAddress);
-          setDirectsBusinessData(businessData);
-        } catch (businessErr) {
-          console.warn('Failed to fetch team business data:', businessErr);
-          setDirectsBusinessData(null);
-        } finally {
-          setBusinessDataLoading(false);
-        }
-      }
-
       // Load detailed volume analytics from SlabManager
       if (getVolumeAnalytics) {
         try {
@@ -137,7 +120,7 @@ export default function TeamNetwork() {
     } finally {
       setIsLoading(false);
     }
-  }, [userAddress, getTeamNetworkData, getDirectsPortfolioAndTeamVolumes, getDirectsPortfolioBreakdown]);
+  }, [userAddress, getTeamNetworkData, getDirectsPortfolioAndTeamVolumes]);
 
   useEffect(() => {
     loadNetwork();
@@ -170,16 +153,6 @@ export default function TeamNetwork() {
       'L1';
     setActiveLevel(firstLevel);
   }, [network, activeLevel]);
-
-  const copyToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy text:', err);
-    }
-  };
 
   const directMembers = network?.directMembers ?? [];
   const directMembersActive = useMemo(
@@ -1030,233 +1003,6 @@ export default function TeamNetwork() {
               </>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Team Business Breakdown Table - Expandable View */}
-      {directsBusinessData?.success && directsBusinessData?.directs && (
-        <div className="cyber-glass border border-neon-orange/30 rounded-xl overflow-hidden mt-8">
-          <div className="bg-gradient-to-r from-neon-orange/10 to-purple-500/5 px-6 py-4 border-b border-neon-orange/30">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-neon-orange">Team Business Breakdown</h3>
-                <p className="text-sm text-neon-orange/70 mt-1">Detailed analysis of direct members and their portfolio volumes</p>
-              </div>
-              <button
-                onClick={() => setShowTeamBusinessTable(!showTeamBusinessTable)}
-                className="flex items-center gap-2 px-4 py-2 bg-neon-orange/20 hover:bg-neon-orange/30 border border-neon-orange/40 rounded-lg text-neon-orange transition-colors"
-              >
-                {showTeamBusinessTable ? (
-                  <>
-                    <Eye size={16} />
-                    Collapse
-                  </>
-                ) : (
-                  <>
-                    <Eye size={16} />
-                    Expand View
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Summary Cards - Always Visible */}
-          <div className="px-6 py-4 bg-dark-800/30">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="cyber-glass border border-neon-green/30 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Users size={16} className="text-neon-green" />
-                  <p className="text-xs text-neon-green/70 uppercase tracking-wider font-semibold">Total Members</p>
-                </div>
-                <p className="text-2xl font-bold text-neon-green">
-                  {directsBusinessData.directs.length}
-                </p>
-                <p className="text-xs text-neon-green/60 mt-1">Direct referrals</p>
-              </div>
-              
-              <div className="cyber-glass border border-blue-400/30 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <TrendingUp size={16} className="text-blue-400" />
-                  <p className="text-xs text-blue-400/70 uppercase tracking-wider font-semibold">Direct Volume</p>
-                </div>
-                <p className="text-xl font-bold text-blue-400">
-                  {formatUSD(directsBusinessData.selfPortfolioUsd ? 
-                    directsBusinessData.selfPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0)}
-                </p>
-                <p className="text-xs text-blue-400/60 mt-1">Self portfolios</p>
-              </div>
-              
-              <div className="cyber-glass border border-purple-400/30 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Users size={16} className="text-purple-400" />
-                  <p className="text-xs text-purple-400/70 uppercase tracking-wider font-semibold">Team Volume</p>
-                </div>
-                <p className="text-xl font-bold text-purple-400">
-                  {formatUSD(directsBusinessData.teamPortfolioUsd ? 
-                    directsBusinessData.teamPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0)}
-                </p>
-                <p className="text-xs text-purple-400/60 mt-1">Team business</p>
-              </div>
-              
-              <div className="cyber-glass border border-neon-orange/30 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <TrendingUp size={16} className="text-neon-orange" />
-                  <p className="text-xs text-neon-orange/70 uppercase tracking-wider font-semibold">Total Volume</p>
-                </div>
-                <p className="text-xl font-bold text-neon-orange">
-                  {formatUSD((() => {
-                    const directTotal = directsBusinessData.selfPortfolioUsd ? 
-                      directsBusinessData.selfPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0;
-                    const teamTotal = directsBusinessData.teamPortfolioUsd ? 
-                      directsBusinessData.teamPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0;
-                    return directTotal + teamTotal;
-                  })())}
-                </p>
-                <p className="text-xs text-neon-orange/60 mt-1">Combined business</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Expandable Detailed Table */}
-          {showTeamBusinessTable && (
-            <div className="border-t border-neon-orange/20">
-              {/* Search Bar */}
-              <div className="px-6 py-4 bg-dark-800/20 border-b border-neon-orange/10">
-                <div className="relative max-w-md">
-                  <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by address..."
-                    value={teamBusinessSearchTerm}
-                    onChange={(e) => setTeamBusinessSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-dark-800 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-neon-orange/50"
-                  />
-                </div>
-              </div>
-
-              {/* Table Headers */}
-              <div className="bg-dark-800/50 px-6 py-3 border-b border-neon-orange/20">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 text-xs uppercase tracking-wider text-neon-orange/70 font-semibold">
-                  <div className="lg:col-span-1">#</div>
-                  <div className="lg:col-span-4">Direct Address</div>
-                  <div className="lg:col-span-2 text-right">Direct Volume (USD)</div>
-                  <div className="lg:col-span-2 text-right">Team Volume (USD)</div>
-                  <div className="lg:col-span-2 text-right">Total Volume (USD)</div>
-                  <div className="lg:col-span-1 text-right">Contribution %</div>
-                </div>
-              </div>
-
-              {/* Table Content */}
-              <div className="divide-y divide-neon-orange/10 max-h-96 overflow-y-auto">
-                {directsBusinessData.directs
-                  .map((address, index) => ({
-                    address,
-                    index,
-                    selfUsd: directsBusinessData.selfPortfolioUsd?.[index] || 0,
-                    teamUsd: directsBusinessData.teamPortfolioUsd?.[index] || 0,
-                  }))
-                  .filter(item => 
-                    !teamBusinessSearchTerm.trim() || 
-                    item.address.toLowerCase().includes(teamBusinessSearchTerm.toLowerCase())
-                  )
-                  .map((item) => {
-                    const sumUsd = item.selfUsd + item.teamUsd;
-                    const totalSum = directsBusinessData.selfPortfolioUsd && directsBusinessData.teamPortfolioUsd ?
-                      directsBusinessData.selfPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) +
-                      directsBusinessData.teamPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0;
-                    const contributionPercent = totalSum > 0 
-                      ? ((sumUsd / totalSum) * 100).toFixed(2)
-                      : '0.00';
-
-                    return (
-                      <div key={item.index} className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 px-6 py-4 hover:bg-neon-orange/5 transition-colors">
-                        {/* Index */}
-                        <div className="lg:col-span-1 text-sm text-gray-400 font-mono">
-                          <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Index:</span>
-                          {item.index + 1}
-                        </div>
-                        
-                        {/* Address */}
-                        <div className="lg:col-span-4 font-mono text-sm text-cyan-100 break-all">
-                          <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Address:</span>
-                          <div className="flex items-center gap-2">
-                            <span>{item.address}</span>
-                            <button
-                              onClick={() => copyToClipboard(item.address)}
-                              className="p-1 hover:bg-neon-orange/20 rounded text-neon-orange hover:text-white transition-colors"
-                            >
-                              {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {/* Direct Volume */}
-                        <div className="lg:col-span-2 lg:text-right">
-                          <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Direct Volume:</span>
-                          <span className="font-semibold text-blue-400">{formatUSD(item.selfUsd)}</span>
-                        </div>
-                        
-                        {/* Team Volume */}
-                        <div className="lg:col-span-2 lg:text-right">
-                          <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Team Volume:</span>
-                          <span className="font-semibold text-purple-400">{formatUSD(item.teamUsd)}</span>
-                        </div>
-                        
-                        {/* Total Volume */}
-                        <div className="lg:col-span-2 lg:text-right">
-                          <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Total Volume:</span>
-                          <span className="font-bold text-neon-orange">{formatUSD(sumUsd)}</span>
-                        </div>
-                        
-                        {/* Contribution % */}
-                        <div className="lg:col-span-1 lg:text-right">
-                          <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Contribution:</span>
-                          <span className="font-semibold text-neon-green">{contributionPercent}%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                
-                {/* Totals Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 px-6 py-4 bg-gradient-to-r from-neon-orange/10 to-transparent border-t-2 border-neon-orange/30">
-                  <div className="lg:col-span-1"></div>
-                  <div className="lg:col-span-4 font-bold text-neon-orange uppercase tracking-wider">
-                    TOTALS
-                  </div>
-                  <div className="lg:col-span-2 lg:text-right">
-                    <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Total Direct:</span>
-                    <span className="font-bold text-blue-400">
-                      {formatUSD(directsBusinessData.selfPortfolioUsd ? 
-                        directsBusinessData.selfPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0)}
-                    </span>
-                  </div>
-                  <div className="lg:col-span-2 lg:text-right">
-                    <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Total Team:</span>
-                    <span className="font-bold text-purple-400">
-                      {formatUSD(directsBusinessData.teamPortfolioUsd ? 
-                        directsBusinessData.teamPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0)}
-                    </span>
-                  </div>
-                  <div className="lg:col-span-2 lg:text-right">
-                    <span className="block lg:hidden text-xs text-neon-orange/70 mb-1">Grand Total:</span>
-                    <span className="font-bold text-neon-orange text-lg">
-                      {formatUSD((() => {
-                        const directTotal = directsBusinessData.selfPortfolioUsd ? 
-                          directsBusinessData.selfPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0;
-                        const teamTotal = directsBusinessData.teamPortfolioUsd ? 
-                          directsBusinessData.teamPortfolioUsd.reduce((sum, val) => sum + (val || 0), 0) : 0;
-                        return directTotal + teamTotal;
-                      })())}
-                    </span>
-                  </div>
-                  <div className="lg:col-span-1 lg:text-right">
-                    <span className="font-bold text-neon-green">100.00%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

@@ -1147,6 +1147,34 @@ export default function Dashboard() {
     }
   };
 
+
+  const [directTeamInfo,setDirecTeamInfo]= useState(null);
+
+  useEffect(()=>{
+    let cancelled = false;
+    const loadDirectTeamInfo = async () => {
+      if (!userAddress) {
+        setDirecTeamInfo(null);
+        return;
+      }
+      try {
+        const data = await getDirectsPortfolioBreakdown(userAddress);
+        console.log('Direct Team Info:', data);
+        if (cancelled) return;
+        setDirecTeamInfo(data || null);
+      } catch (err) {
+        console.warn('Failed to load direct team info:', err);
+        if (!cancelled) {
+          setDirecTeamInfo(null);
+        }
+      }
+    };
+    loadDirectTeamInfo();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress]);
+
   
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -1358,22 +1386,17 @@ export default function Dashboard() {
               </div>
               
               <div className="flex justify-between items-center py-1">
-                <span className="text-xs text-neon-orange/70 font-medium">Self Business:</span>
+                <span className="text-xs text-neon-orange/70 font-medium">Direct Volume:</span>
                 <span className="text-sm font-semibold text-neon-orange">
-                  {directsPortfolioData?.summary ? 
-                    formatUSD(directsPortfolioData.summary.totalSelfUsd) : 
-                    formatUSD(0)
-                  }
+                {(parseFloat(directTeamInfo?.summary?.totalSelfUsdRaw)/1e14).toFixed(2) || '0.00'} USD
+
                 </span>
               </div>
               
               <div className="flex justify-between items-center py-1">
                 <span className="text-xs text-neon-orange/70 font-medium">Team Business:</span>
                 <span className="text-sm font-semibold text-neon-orange">
-                  {directsPortfolioData?.summary ? 
-                    formatUSD(directsPortfolioData.summary.totalTeamUsd) : 
-                    (teamMemberDetails && formatUSD(microToUsd(teamMemberDetails.teamBusinessUSD)))
-                  }
+                  {(parseFloat(directTeamInfo?.summary?.totalSelfUsdRaw)/1e16).toFixed(2) || '0.00'} USD
                 </span>
               </div>
               
@@ -1571,7 +1594,7 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Temporary Debug Button for CappingIncomeManager - Remove in production */}
-                  {process.env.NODE_ENV === 'development' && (
+                  {/* {process.env.NODE_ENV === 'development' && (
                     <div className="col-span-full mt-2 flex gap-2">
                       <button
                         onClick={async () => {
@@ -1606,7 +1629,7 @@ export default function Dashboard() {
                         🧪 Test DirectsBreakdown
                       </button>
                     </div>
-                  )}
+                  )} */}
                   <div className="p-3 sm:p-4 cyber-glass rounded-xl border border-neon-orange/30 hover:border-neon-orange/80 transition-all">
                     <p className="text-[11px] text-neon-orange uppercase tracking-wider">
                       Remaining Cap
@@ -2120,7 +2143,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
                   <p className="text-cyan-400 text-xs font-medium uppercase">L1 (Top)</p>
-                  <p className="text-lg font-bold text-cyan-300">{formatUSD(volumeData.cappedVolumes.L1)}</p>
+                  <p className="text-[12px] md:text[15px] lgtext-lg  font-bold text-cyan-300">{formatUSD(volumeData.cappedVolumes.L1)}</p>
                   <p className="text-xs text-cyan-400/70">{formatRAMA(volumeData.cappedVolumes.L1 / 0.1)}</p>
                 </div>
                 <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
