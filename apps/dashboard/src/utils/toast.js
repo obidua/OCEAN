@@ -4,11 +4,60 @@ let toastId = 0;
 
 const TOAST_DURATION = 5000; // 5 seconds default
 
-// Play notification sound
-const playNotificationSound = (type) => {
+// Global audio context for mobile/PWA optimization
+let globalAudioContext = null;
+let audioInitialized = false;
+
+// Initialize audio context with mobile support
+const initializeAudioContext = async () => {
+  if (globalAudioContext && globalAudioContext.state !== 'closed') {
+    if (globalAudioContext.state === 'suspended') {
+      await globalAudioContext.resume();
+    }
+    return globalAudioContext;
+  }
+
   try {
-    // Create audio context for different notification sounds
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) {
+      console.warn('Web Audio API not supported');
+      return null;
+    }
+
+    globalAudioContext = new AudioContext();
+    
+    // Resume context if suspended (required for mobile browsers)
+    if (globalAudioContext.state === 'suspended') {
+      await globalAudioContext.resume();
+    }
+    
+    audioInitialized = true;
+    return globalAudioContext;
+  } catch (error) {
+    console.warn('Failed to initialize audio context:', error);
+    return null;
+  }
+};
+
+// Public function to initialize audio on user interaction (for mobile)
+export const enableAudio = async () => {
+  const context = await initializeAudioContext();
+  if (context && context.state === 'running') {
+    console.log('Audio system enabled for mobile/PWA');
+    return true;
+  }
+  return false;
+};
+
+// Play notification sound
+const playNotificationSound = async (type) => {
+  try {
+    // Get or create audio context
+    const audioContext = await initializeAudioContext();
+    if (!audioContext) {
+      console.warn('Audio context not available for sound notification');
+      return;
+    }
     
     // Different sound patterns for different events
     const soundPatterns = {
@@ -112,17 +161,34 @@ const playNotificationSound = (type) => {
         oscillator.stop(audioContext.currentTime + 0.2 + index * 0.1);
       });
     }
+    
+    // Cleanup audio context after a delay to avoid memory leaks
+    setTimeout(() => {
+      try {
+        if (globalAudioContext && globalAudioContext.state !== 'closed') {
+          // Don't close the global context for better mobile performance
+          // Just let it manage itself for reuse
+        }
+      } catch (e) {
+        // Audio context cleanup failed, ignore
+      }
+    }, 2000); // Increased timeout for mobile performance
+    
   } catch (error) {
     console.warn('Could not play notification sound:', error);
   }
 };
 
-// Initialize toast container
+// Initialize toast container - mobile responsive
 const initToastContainer = () => {
   if (!toastContainer) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toast-container';
-    toastContainer.className = 'fixed top-4 right-4 z-[9999] flex flex-col gap-3 max-w-md pointer-events-none';
+    toastContainer.className = `
+      fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] 
+      flex flex-col gap-2 w-full max-w-sm px-4 pointer-events-none
+      sm:top-4 sm:right-4 sm:left-auto sm:transform-none sm:translate-x-0 sm:px-0 sm:max-w-md sm:gap-3
+    `.trim();
     document.body.appendChild(toastContainer);
   }
   return toastContainer;
@@ -204,19 +270,21 @@ const createToastElement = (type, title, message, duration, options = {}) => {
   toast.classList.add(borderColor, ...bgGradientClasses);
 
   toast.innerHTML = `
-    <div class="flex items-start gap-3">
+    <div class="flex items-start gap-2 sm:gap-3">
       <div class="flex-shrink-0 mt-0.5 ${iconColor}">
-        ${icon}
+        <div class="w-4 h-4 sm:w-5 sm:h-5">
+          ${icon}
+        </div>
       </div>
       <div class="flex-1 min-w-0">
-        ${title ? `<p class="text-sm font-semibold text-cyan-300 mb-1">${title}</p>` : ''}
-        <p class="text-sm text-cyan-300/90 toast-message">${message}</p>
+        ${title ? `<p class="text-xs sm:text-sm font-semibold text-cyan-300 mb-1 truncate">${title}</p>` : ''}
+        <p class="text-xs sm:text-sm text-cyan-300/90 toast-message line-clamp-2">${message}</p>
       </div>
       <button 
         onclick="document.getElementById('toast-${id}').remove()" 
-        class="flex-shrink-0 text-cyan-300/60 hover:text-cyan-300 transition-colors"
+        class="text-cyan-300/60 hover:text-cyan-300 transition-colors ml-1 sm:ml-2 flex-shrink-0"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>

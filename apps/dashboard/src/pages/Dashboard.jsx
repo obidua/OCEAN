@@ -22,12 +22,14 @@ import {
   Pause,
   Volume2,
   VolumeX,
+  Play,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatUSD, formatRAMA } from "../utils/contractData";
 import NumberPopup from "../components/NumberPopup";
 import LivePriceFeed from "../components/LivePriceFeed";
 import IncomeNotificationOverlay from "../components/IncomeNotificationOverlay";
+import { enableAudio } from "../utils/toast";
 import {
   LineChart,
   Line,
@@ -74,6 +76,7 @@ export default function Dashboard() {
 
   // Sound system and income tracking state
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [audioInitialized, setAudioInitialized] = useState(false);
   const previousValuesRef = useRef({});
 
   const { address, isConnected } = useAppKitAccount();
@@ -1321,6 +1324,21 @@ export default function Dashboard() {
     }
   };
 
+  // Initialize audio for mobile/PWA
+  const initializeAudio = async () => {
+    try {
+      const success = await enableAudio();
+      setAudioInitialized(success);
+      if (success) {
+        console.log('Audio system initialized for mobile/PWA');
+        // Play a welcome sound
+        financialSounds.playCoinDrop(1);
+      }
+    } catch (error) {
+      console.warn('Failed to initialize audio:', error);
+    }
+  };
+
   const [directTeamInfo, setDirecTeamInfo] = useState(null);
 
   useEffect(() => {
@@ -1363,7 +1381,21 @@ export default function Dashboard() {
       )}
 
       {/* Sound Control */}
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row gap-2 items-end sm:items-center justify-end">
+        {/* Mobile Audio Initialization Button */}
+        {/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && !audioInitialized && (
+          <button
+            onClick={initializeAudio}
+            className="cyber-glass border border-neon-green/50 hover:border-neon-green rounded-xl px-3 py-2 text-neon-green hover:bg-neon-green/10 transition-all flex items-center gap-2 text-sm"
+            title="Enable audio for mobile devices"
+          >
+            <Play size={16} />
+            <span className="hidden sm:inline">Enable Audio</span>
+            <span className="sm:hidden">Audio</span>
+          </button>
+        )}
+        
+        {/* Sound Toggle */}
         <button
           onClick={toggleSounds}
           className="cyber-glass border border-cyan-500/30 hover:border-cyan-500/60 rounded-xl px-3 py-2 text-cyan-300 hover:text-white transition-all flex items-center gap-2 text-sm"

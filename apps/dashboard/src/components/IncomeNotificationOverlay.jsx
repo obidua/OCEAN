@@ -1,5 +1,6 @@
 // Universal Income Notification Component
 // Shows income notifications that work across all pages in the app
+// Mobile responsive with stacked notifications
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -59,65 +60,74 @@ const IncomeNotificationOverlay = () => {
   if (notifications.length === 0) return null;
 
   return createPortal(
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm pointer-events-none">
-      {notifications.map((notification) => {
-        const config = getIncomeConfig(notification.type);
-        const icon = getIncomeIcon(notification.type);
-        
-        return (
-          <div
-            key={notification.id}
-            className={`
-              cyber-glass border rounded-xl p-4 shadow-2xl 
-              transform transition-all duration-500 ease-out
-              animate-slide-in-right pointer-events-auto
-              border-${config.color}-500/40 bg-gradient-to-br 
-              from-${config.color}-500/10 to-${config.color}-600/5
-              hover:from-${config.color}-500/20 hover:to-${config.color}-600/10
-            `}
-            style={{
-              boxShadow: `0 0 20px ${incomeTracker.getColorValue(config.color)}40`
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div className={`flex-shrink-0 mt-0.5 text-${config.color}-400`}>
-                {icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <p className={`text-sm font-semibold text-${config.color}-300`}>
-                    {config.icon} {config.label}
-                  </p>
-                  <button 
-                    onClick={() => removeNotification(notification.id)}
-                    className={`text-${config.color}-300/60 hover:text-${config.color}-300 transition-colors`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
+    <div className="fixed inset-x-0 top-4 z-[9999] flex flex-col items-center gap-2 px-4 pointer-events-none">
+      {/* Mobile responsive container */}
+      <div className="w-full max-w-sm mx-auto space-y-2">
+        {notifications.map((notification, index) => {
+          const config = getIncomeConfig(notification.type);
+          const icon = getIncomeIcon(notification.type);
+          
+          // Stack notifications on mobile - show them one by one with slight delay
+          const mobileDelay = index * 0.1; // 100ms delay between each notification
+          
+          return (
+            <div
+              key={notification.id}
+              className={`
+                cyber-glass border rounded-xl p-3 sm:p-4 shadow-2xl 
+                transform transition-all duration-500 ease-out
+                animate-slide-in-right pointer-events-auto
+                border-${config.color}-500/40 bg-gradient-to-br 
+                from-${config.color}-500/10 to-${config.color}-600/5
+                hover:from-${config.color}-500/20 hover:to-${config.color}-600/10
+                w-full relative
+              `}
+              style={{
+                boxShadow: `0 0 20px ${incomeTracker.getColorValue(config.color)}40`,
+                animationDelay: `${mobileDelay}s`,
+                zIndex: 9999 - index // Stack notifications properly
+              }}
+            >
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className={`flex-shrink-0 mt-0.5 text-${config.color}-400`}>
+                  {icon}
                 </div>
-                <p className={`text-lg font-bold text-${config.color}-200`}>
-                  {formatAmount(notification.increase)}
-                </p>
-                {notification.metadata?.source && (
-                  <p className={`text-xs text-${config.color}-300/70 mt-1`}>
-                    {notification.metadata.source}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-xs sm:text-sm font-semibold text-${config.color}-300 truncate`}>
+                      {config.icon} {config.label}
+                    </p>
+                    <button 
+                      onClick={() => removeNotification(notification.id)}
+                      className={`text-${config.color}-300/60 hover:text-${config.color}-300 transition-colors ml-2 flex-shrink-0`}
+                    >
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <p className={`text-base sm:text-lg font-bold text-${config.color}-200`}>
+                    {formatAmount(notification.increase)}
                   </p>
-                )}
+                  {notification.metadata?.source && (
+                    <p className={`text-xs text-${config.color}-300/70 mt-1 truncate`}>
+                      {notification.metadata.source}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Progress bar for auto-dismiss */}
+              <div className="mt-2 sm:mt-3 h-0.5 sm:h-1 bg-black/20 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full bg-${config.color}-500 rounded-full animate-shrink`}
+                  style={{ animationDuration: '5s' }}
+                />
               </div>
             </div>
-            
-            {/* Progress bar for auto-dismiss */}
-            <div className="mt-3 h-1 bg-black/20 rounded-full overflow-hidden">
-              <div 
-                className={`h-full bg-${config.color}-500 rounded-full animate-shrink`}
-                style={{ animationDuration: '5s' }}
-              />
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>,
     document.body
   );

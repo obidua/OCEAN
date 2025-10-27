@@ -2,6 +2,92 @@ import { useEffect, useState, useRef } from 'react';
 import { X, Loader2, CheckCircle, AlertCircle, Wallet, FileCheck, Rocket, Award, ExternalLink, Copy } from 'lucide-react';
 import { useWaitForTransactionReceipt } from 'wagmi';
 
+// Import improved sound system
+const playTransactionSound = async (stage) => {
+  // Use global audio context for better mobile performance
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  
+  if (!AudioContext) return;
+
+  try {
+    // Try to get existing audio context or create new one
+    let audioContext;
+    if (window.globalAudioContext && window.globalAudioContext.state !== 'closed') {
+      audioContext = window.globalAudioContext;
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+    } else {
+      audioContext = new AudioContext();
+      window.globalAudioContext = audioContext;
+    }
+    
+    const soundConfig = {
+      prepare: { frequency: 500, type: 'sine', duration: 0.3 },
+      sign: { frequency: 600, type: 'triangle', duration: 0.4 },
+      processing: { frequency: 700, type: 'sine', duration: 0.5, pulse: true },
+      success: [523.25, 659.25, 783.99, 1046.50], // Success chord
+      error: { frequency: 300, type: 'sawtooth', duration: 0.6 }
+    };
+
+    const config = soundConfig[stage];
+    
+    if (Array.isArray(config)) {
+      // Play chord for success
+      config.forEach((freq, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + index * 0.1 + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + index * 0.1 + 0.4);
+        
+        oscillator.start(audioContext.currentTime + index * 0.1);
+        oscillator.stop(audioContext.currentTime + index * 0.1 + 0.4);
+      });
+    } else if (config) {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(config.frequency, audioContext.currentTime);
+      oscillator.type = config.type;
+      
+      if (config.pulse && stage === 'processing') {
+        // Pulsing sound for processing
+        const lfo = audioContext.createOscillator();
+        const lfoGain = audioContext.createGain();
+        
+        lfo.frequency.setValueAtTime(2, audioContext.currentTime); // 2Hz pulse
+        lfo.connect(lfoGain);
+        lfoGain.connect(gainNode.gain);
+        lfoGain.gain.setValueAtTime(0.05, audioContext.currentTime);
+        
+        lfo.start(audioContext.currentTime);
+        lfo.stop(audioContext.currentTime + config.duration);
+      }
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + config.duration);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + config.duration);
+    }
+    
+  } catch (error) {
+    console.warn('Could not play transaction sound:', error);
+  }
+};
+
 const STAGES = {
   PREPARE: 'prepare',
   SIGN: 'sign',
@@ -54,16 +140,25 @@ const ProgressiveTransactionModal = ({
 
     // Stage 1: Transaction prepared, waiting for hash
     if (!txHash) {
+      if (stage !== STAGES.PREPARE) {
+        playTransactionSound('prepare');
+      }
       setStage(STAGES.PREPARE);
       setProgress(10);
     }
     // Stage 2: Hash received, waiting for user to sign
     else if (txHash && !isLoading && !isSuccess && !isError) {
+      if (stage !== STAGES.SIGN) {
+        playTransactionSound('sign');
+      }
       setStage(STAGES.SIGN);
       setProgress(25);
     }
     // Stage 3: Transaction is being processed on blockchain
     else if (isLoading) {
+      if (stage !== STAGES.PROCESSING) {
+        playTransactionSound('processing');
+      }
       setStage(STAGES.PROCESSING);
       setProgress(50);
       
@@ -80,6 +175,9 @@ const ProgressiveTransactionModal = ({
     }
     // Stage 4: Transaction succeeded
     else if (isSuccess) {
+      if (stage !== STAGES.SUCCESS) {
+        playTransactionSound('success');
+      }
       setStage(STAGES.SUCCESS);
       setProgress(100);
       
@@ -119,6 +217,9 @@ const ProgressiveTransactionModal = ({
     }
     // Stage 5: Transaction failed
     else if (isError) {
+      if (stage !== STAGES.ERROR) {
+        playTransactionSound('error');
+      }
       setStage(STAGES.ERROR);
       setProgress(0);
       
@@ -196,9 +297,9 @@ const ProgressiveTransactionModal = ({
   const Icon = currentConfig.icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-dark-950/80 backdrop-blur-sm animate-in fade-in duration-300">
       <div
-        className="relative w-full max-w-md cyber-glass rounded-2xl p-6 md:p-8 border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 animate-in zoom-in-95 duration-300"
+        className="relative w-full max-w-sm sm:max-w-md cyber-glass rounded-2xl p-4 sm:p-6 md:p-8 border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 animate-in zoom-in-95 duration-300 mx-2"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -219,31 +320,31 @@ const ProgressiveTransactionModal = ({
           {/* Icon */}
           <div className="flex justify-center">
             <div
-              className={`relative p-6 rounded-full bg-gradient-to-br ${currentConfig.bgColor} ${
+              className={`relative p-4 sm:p-6 rounded-full bg-gradient-to-br ${currentConfig.bgColor} ${
                 currentConfig.pulse ? 'animate-pulse' : ''
               }`}
             >
-              <Icon size={48} className={currentConfig.iconColor} />
+              <Icon size={32} className={`sm:w-12 sm:h-12 ${currentConfig.iconColor}`} />
               {stage === STAGES.PROCESSING && (
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-400 animate-spin" />
+                <div className="absolute inset-0 rounded-full border-2 sm:border-4 border-transparent border-t-cyan-400 animate-spin" />
               )}
             </div>
           </div>
 
           {/* Title */}
           <div className="space-y-2">
-            <h3 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green">
               {title}
             </h3>
-            <p className="text-base md:text-lg font-semibold text-cyan-300">{currentConfig.title}</p>
-            <p className="text-sm text-cyan-300/80">{currentConfig.subtitle}</p>
+            <p className="text-sm sm:text-base md:text-lg font-semibold text-cyan-300">{currentConfig.title}</p>
+            <p className="text-xs sm:text-sm text-cyan-300/80">{currentConfig.subtitle}</p>
           </div>
 
           {/* Amount display */}
           {amount && amountLabel && stage !== STAGES.ERROR && (
-            <div className="cyber-glass rounded-xl p-4 border border-cyan-500/20">
+            <div className="cyber-glass rounded-xl p-3 sm:p-4 border border-cyan-500/20">
               <p className="text-xs text-cyan-400 uppercase tracking-wide mb-1">{amountLabel}</p>
-              <p className="text-2xl md:text-3xl font-bold text-neon-green">{amount}</p>
+              <p className="text-xl sm:text-2xl md:text-3xl font-bold text-neon-green">{amount}</p>
             </div>
           )}
 
