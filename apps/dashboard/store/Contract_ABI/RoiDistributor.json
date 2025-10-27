@@ -292,6 +292,19 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "maxPeriods",
+        "type": "uint32"
+      }
+    ],
+    "name": "claimROIUpTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "dailyRateBoosterTier0",
     "outputs": [

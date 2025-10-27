@@ -69,6 +69,28 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
     nextAchievements
   } = SlabIncomeData;
 
+  // Debug log for slab level (can be removed after testing)
+  console.log('🎯 SlabIncomeScreen Debug:', {
+    slabLevel,
+    message: `Contract index should be ${slabLevel - 1}, Display level should be ${slabLevel}`
+  });
+
+  // Helper function to get slab info safely
+  const getSlabInfo = (level) => {
+    if (!level || level < 1 || level > SLAB_LEVELS.length) {
+      return { isValid: false, slabData: null, arrayIndex: -1 };
+    }
+    const arrayIndex = level - 1; // Convert 1-based level to 0-based array index
+    return {
+      isValid: true,
+      slabData: SLAB_LEVELS[arrayIndex],
+      arrayIndex: arrayIndex,
+      displayLevel: level
+    };
+  };
+
+  const currentSlabInfo = getSlabInfo(slabLevel);
+
   // Helper function to render progress bars
   const ProgressBar = ({ label, current, target, percentage, color = "cyan" }) => {
     const clampedPercentage = Math.min(percentage || 0, 100);
@@ -123,15 +145,18 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
             </div>
           </div>
           <p className="text-5xl font-bold mb-2 text-neon-green relative z-10">
-            {slabLevel || "—"}
+            {currentSlabInfo.isValid ? currentSlabInfo.displayLevel : "—"}
           </p>
           <p className="text-lg text-cyan-300 relative z-10">
-            {slabLevel > 0 && SLAB_LEVELS[slabLevel - 1]
-              ? `${formatPercentage(
-                  SLAB_LEVELS[slabLevel - 1].percentageBPS
-                )} Income Share`
+            {currentSlabInfo.isValid && currentSlabInfo.slabData
+              ? `${formatPercentage(currentSlabInfo.slabData.percentageBPS)} Income Share`
               : "—"}
           </p>
+          {currentSlabInfo.isValid && (
+            <p className="text-xs text-cyan-400/70 mt-2 relative z-10">
+              Slab Level {currentSlabInfo.displayLevel} (Contract Index: {currentSlabInfo.arrayIndex})
+            </p>
+          )}
         </div>
 
         <div className="cyber-glass border border-cyan-500/40 rounded-2xl p-6 relative overflow-hidden">
@@ -224,9 +249,9 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                 <span className="text-neon-green font-semibold">Example:</span>
               </p>
               <p className="text-cyan-300">
-                • You are at Slab {slabLevel || "—"} and earn{" "}
-                {slabLevel > 0 && SLAB_LEVELS[slabLevel - 1]
-                  ? formatPercentage(SLAB_LEVELS[slabLevel - 1].percentageBPS)
+                • You are at Slab {currentSlabInfo.isValid ? currentSlabInfo.displayLevel : "—"} and earn{" "}
+                {currentSlabInfo.isValid && currentSlabInfo.slabData
+                  ? formatPercentage(currentSlabInfo.slabData.percentageBPS)
                   : "—"}{" "}
                 daily on qualified volume.
               </p>

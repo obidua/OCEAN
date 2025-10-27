@@ -99,10 +99,41 @@ if (!isConfigValid) {
   checkEnvironmentConfig(); // Show detailed info for debugging
 }
 
-const RPC_URL =
-  resolveEnvValue("RPC_URL") ||
-  "https://blockchain.ramestta.com";
-const web3 = new Web3(RPC_URL);
+// Dual RPC URLs for load balancing and faster responses
+const RPC_URLs = [
+  "https://blockchain.ramestta.com",
+  "https://blockchain2.ramestta.com"
+];
+
+// Create multiple Web3 instances for load balancing
+const web3Instances = RPC_URLs.map(url => new Web3(url));
+const web3 = web3Instances[0]; // Primary instance for backward compatibility
+
+// Dual RPC utility for faster contract calls
+const callWithDualRPC = async (contractMethod, methodName = 'unknown') => {
+  const promises = web3Instances.map(async (web3Instance, index) => {
+    try {
+      const startTime = Date.now();
+      const result = await contractMethod();
+      const duration = Date.now() - startTime;
+      console.log(`[RPC-${index + 1}] ${methodName} completed in ${duration}ms`);
+      return { result, rpcIndex: index + 1, duration };
+    } catch (error) {
+      console.warn(`[RPC-${index + 1}] ${methodName} failed:`, error.message);
+      throw error;
+    }
+  });
+
+  try {
+    // Return the first successful result
+    const { result, rpcIndex, duration } = await Promise.any(promises);
+    console.log(`[DUAL-RPC] ${methodName} fastest response from RPC-${rpcIndex} (${duration}ms)`);
+    return result;
+  } catch (error) {
+    console.error(`[DUAL-RPC] All RPCs failed for ${methodName}:`, error);
+    throw new Error(`All RPC endpoints failed: ${error.message}`);
+  }
+};
 
 const USD_MICRO = 1e6;
 const RAMA_DECIMALS = 1e18;
@@ -131,8 +162,13 @@ const hasAddress = (addr) =>
   addr.length === 42 &&
   addr.toLowerCase() !== ZERO_ADDRESS.toLowerCase();
 
+// Create contract instance with primary web3 (backward compatibility)
 const makeContract = (abi, address) =>
   hasAddress(address) ? new web3.eth.Contract(abi, address) : null;
+
+// Create multiple contract instances for dual RPC calls
+const makeDualContracts = (abi, address) => 
+  hasAddress(address) ? web3Instances.map(web3Instance => new web3Instance.eth.Contract(abi, address)) : [];
 
 const toNumber = (value) => {
   if (value === null || value === undefined) return 0;
@@ -1751,7 +1787,12 @@ export const useStore = create((set, get) => ({
             }
           }
 
+
+          const cap_used= await cappingIncomeManager.methods.getEarnedByKind(userAddress).call();
+
+          console.log("cap_used",cap_used)
           return {
+            cap_used,
             totals: {
               totalValueUsd: fromMicroUSD(
                 pick(summary, "totalStakedUsdMicro", 0)
@@ -3756,7 +3797,9 @@ export const useStore = create((set, get) => ({
 
       const qualifiedVolumeUsd = safeFromMicroUSD(qualifiedBusinessUSD);
       // Convert 0-based contract index to 1-based display level
-      const slabLevel = (Number(currentSlabIdx) || 0) + 1;
+      // Contract index 0 = Display Level 1, Contract index 1 = Display Level 2, etc.
+      const contractSlabIndex = Number(currentSlabIdx) || 0;
+      const slabLevel = contractSlabIndex + 1; // Always add 1 to convert to display level
       const directs = (Number(currentL1) || 0) + (Number(currentL2) || 0) + (Number(currentLrest) || 0);
       const canClaim = Boolean(canClaimSlab);
       const lastClaimEpoch = Number(lastClaimAt) || 0;
@@ -4266,7 +4309,9 @@ export const useStore = create((set, get) => ({
       // Calculate volume metrics
       const totalQualified = fromMicroUSD(qualifiedBusinessUSD || 0);
       // Convert 0-based contract index to 1-based display level
-      const currentSlabIndex = parseInt(slabIndex || 0) + 1;
+      // Contract index 0 = Display Level 1, Contract index 1 = Display Level 2, etc.
+      const contractSlabIndex = parseInt(slabIndex || 0);
+      const currentSlabIndex = contractSlabIndex + 1; // Always add 1 to convert to display level
 
       // Volume performance analysis
       const volumePerformance = {
@@ -6939,6 +6984,811 @@ export const useStore = create((set, get) => ({
       console.log('[Store] Contract cache invalidated and contracts re-initialized');
     } catch (error) {
       console.error('[Store] Error invalidating contract cache:', error);
+    }
+  },
+
+  // Get capping income summary with totals from CappingIncomeManager using dual RPC
+  getCappingIncomeData: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching CappingIncomeManager data for:', userAddress);
+      console.log('[Store] Using dual RPC endpoints for faster response');
+
+      // Create dual contract instances
+      const cappingIncomeContracts = makeDualContracts(
+        CappingIncomeManagerABI,
+        Contract["CappingIncomeManager"]
+      );
+
+      if (cappingIncomeContracts.length === 0) {
+        throw new Error("CappingIncomeManager contract not available");
+      }
+
+      console.log('[Store] CappingIncomeManager address:', Contract["CappingIncomeManager"]);
+
+      // Use dual RPC for faster response
+      const earnedByKind = await callWithDualRPC(
+        () => cappingIncomeContracts[0].methods.getEarnedByKind(userAddress).call(),
+        'getEarnedByKind'
+      );
+
+      console.log('[Store] CappingIncomeManager earnedByKind raw response:', earnedByKind);
+
+      // Extract values (they should be in USD6 format - 6 decimal places)
+      const roiUSD6 = BigInt(earnedByKind[0] || '0');
+      const directUSD6 = BigInt(earnedByKind[1] || '0');
+      const slabUSD6 = BigInt(earnedByKind[2] || '0');
+      const slabOverrideUSD6 = BigInt(earnedByKind[3] || '0');
+
+      // Sum all income types
+      const totalEarnedUSD6 = roiUSD6 + directUSD6 + slabUSD6 + slabOverrideUSD6;
+
+      // Convert from USD6 (micro USD) to regular USD
+      const totalEarnedUSD = fromMicroUSD(totalEarnedUSD6);
+      
+      console.log('[Store] CappingIncomeManager breakdown:', {
+        roi: fromMicroUSD(roiUSD6),
+        direct: fromMicroUSD(directUSD6),
+        slab: fromMicroUSD(slabUSD6),
+        slabOverride: fromMicroUSD(slabOverrideUSD6),
+        total: totalEarnedUSD
+      });
+
+      const result = {
+        breakdown: {
+          roi: fromMicroUSD(roiUSD6),
+          direct: fromMicroUSD(directUSD6),
+          slab: fromMicroUSD(slabUSD6),
+          slabOverride: fromMicroUSD(slabOverrideUSD6)
+        },
+        totalEarnedUSD,
+        rawValues: {
+          roiUSD6: roiUSD6.toString(),
+          directUSD6: directUSD6.toString(),
+          slabUSD6: slabUSD6.toString(),
+          slabOverrideUSD6: slabOverrideUSD6.toString(),
+          totalEarnedUSD6: totalEarnedUSD6.toString()
+        }
+      };
+
+      console.log('[Store] CappingIncomeManager final result:', result);
+      return result;
+    } catch (error) {
+      console.error('[Store] Error fetching CappingIncomeManager data:', error);
+      
+      // Return safe fallback values
+      return {
+        breakdown: {
+          roi: 0,
+          direct: 0,
+          slab: 0,
+          slabOverride: 0
+        },
+        totalEarnedUSD: 0,
+        rawValues: {
+          roiUSD6: '0',
+          directUSD6: '0',
+          slabUSD6: '0',
+          slabOverrideUSD6: '0',
+          totalEarnedUSD6: '0'
+        },
+        error: error.message
+      };
+    }
+  },
+
+  // Get direct members portfolio breakdown from OceanicView with dual RPC optimization
+  getDirectsPortfolioBreakdown: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching directs portfolio breakdown for:', userAddress);
+      console.log('[Store] Using dual RPC endpoints for faster response');
+
+      // Create dual contract instances
+      const oceanicViewContracts = makeDualContracts(OceanicViewABI, Contract["Oceanicview"]);
+      if (oceanicViewContracts.length === 0) {
+        throw new Error("OceanicView contract not available");
+      }
+
+      console.log('[Store] OceanicView address:', Contract["Oceanicview"]);
+
+      // Use dual RPC for faster response
+      const result = await callWithDualRPC(
+        () => oceanicViewContracts[0].methods.getDirectsPortfolioBreakdown(userAddress).call(),
+        'getDirectsPortfolioBreakdown'
+      );
+
+      console.log('[Store] Raw directs portfolio breakdown:', result);
+
+      // Extract and parse the response
+      const [
+        directs,
+        selfUsd,
+        teamUsd,
+        sumUsd,
+        totalSelfUsd,
+        totalTeamUsd,
+        totalSumUsd
+      ] = result;
+
+      // Convert USD values from wei (18 decimals) to regular USD
+      // Process each direct member with their portfolio data
+      const directsData = directs.map((address, index) => {
+        const selfUsdValue = fromWadToUsd(selfUsd[index] || '0');
+        const teamUsdValue = fromWadToUsd(teamUsd[index] || '0');
+        const sumUsdValue = fromWadToUsd(sumUsd[index] || '0');
+
+        return {
+          address,
+          selfUsd: selfUsdValue,
+          teamUsd: teamUsdValue,
+          sumUsd: sumUsdValue,
+          selfUsdRaw: selfUsd[index] || '0',
+          teamUsdRaw: teamUsd[index] || '0',
+          sumUsdRaw: sumUsd[index] || '0',
+          // Team business calculation: each user's own portfolio + their team's volume
+          totalBusiness: selfUsdValue + teamUsdValue,
+          hasTeam: teamUsdValue > 0,
+          // Portfolio strength indicators
+          portfolioRatio: teamUsdValue > 0 ? (teamUsdValue / selfUsdValue).toFixed(2) : '0',
+          contributionToTotal: sumUsdValue
+        };
+      });
+
+      // Calculate comprehensive summary statistics
+      const summary = {
+        totalSelfUsd: fromWadToUsd(totalSelfUsd),
+        totalTeamUsd: fromWadToUsd(totalTeamUsd),
+        totalSumUsd: fromWadToUsd(totalSumUsd),
+        totalSelfUsdRaw: totalSelfUsd,
+        totalTeamUsdRaw: totalTeamUsd,
+        totalSumUsdRaw: totalSumUsd,
+        directCount: directs.length,
+        // Additional business metrics
+        averageDirectPortfolio: directs.length > 0 ? fromWadToUsd(totalSelfUsd) / directs.length : 0,
+        averageTeamVolume: directs.length > 0 ? fromWadToUsd(totalTeamUsd) / directs.length : 0,
+        teamPenetration: directs.length > 0 ? directsData.filter(d => d.hasTeam).length / directs.length : 0,
+        strongestDirect: directsData.reduce((max, current) => 
+          current.totalBusiness > (max?.totalBusiness || 0) ? current : max, null
+        ),
+        // Network health indicators
+        teamBusinessRatio: fromWadToUsd(totalSelfUsd) > 0 ? 
+          (fromWadToUsd(totalTeamUsd) / fromWadToUsd(totalSelfUsd)).toFixed(2) : '0'
+      };
+
+      // Sort directs by total business (self + team) for better display
+      directsData.sort((a, b) => b.totalBusiness - a.totalBusiness);
+
+      console.log('[Store] Processed directs portfolio breakdown:', {
+        directsData: directsData.slice(0, 3), // Log first 3 for brevity
+        summary,
+        totalDirects: directsData.length
+      });
+
+      // Team business calculation example based on your data:
+      // User 0x8e12c1204d29A5B236A866B470279B52C0707472:
+      // - Self Portfolio: 110000000000000000 (0.11 USD)
+      // - Team Volume: 2500000000 (0.0000025 USD) 
+      // - Total Business: 0.11 + 0.0000025 = 0.1100025 USD
+      console.log('[Store] Team business calculation example:');
+      directsData.forEach((direct, index) => {
+        if (index < 3) { // Log first 3 examples
+          console.log(`Direct ${index + 1} (${direct.address.slice(0, 6)}...${direct.address.slice(-4)}):
+            Self Portfolio: $${direct.selfUsd.toFixed(6)}
+            Team Volume: $${direct.teamUsd.toFixed(6)}
+            Total Business: $${direct.totalBusiness.toFixed(6)}
+            Has Team: ${direct.hasTeam ? 'Yes' : 'No'}`
+          );
+        }
+      });
+
+      return {
+        directs: directsData,
+        summary,
+        success: true,
+        timestamp: Date.now(),
+        rpcOptimized: true
+      };
+    } catch (error) {
+      console.error('[Store] Error fetching directs portfolio breakdown:', error);
+      
+      return {
+        directs: [],
+        summary: {
+          totalSelfUsd: 0,
+          totalTeamUsd: 0,
+          totalSumUsd: 0,
+          totalSelfUsdRaw: '0',
+          totalTeamUsdRaw: '0',
+          totalSumUsdRaw: '0',
+          directCount: 0,
+          averageDirectPortfolio: 0,
+          averageTeamVolume: 0,
+          teamPenetration: 0,
+          strongestDirect: null,
+          teamBusinessRatio: '0'
+        },
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  },
+
+  // Enhanced ROI Distribution functions with multi-day claiming support
+  getMaxPeriodsPerClaim: async () => {
+    try {
+      console.log('[Store] Fetching max periods per claim...');
+      
+      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (roiDistributorContracts.length === 0) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      const maxPeriods = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods.maxPeriodsPerClaim().call(),
+        'maxPeriodsPerClaim'
+      );
+
+      console.log('[Store] Max periods per claim:', maxPeriods);
+      return Number(maxPeriods);
+    } catch (error) {
+      console.error('[Store] Error fetching max periods per claim:', error);
+      return 100; // Default fallback
+    }
+  },
+
+  // Get user's auto window for claiming periods
+  getAutoWindow: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching auto window for:', userAddress);
+      
+      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (roiDistributorContracts.length === 0) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      const autoWindow = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods._autoWindow(userAddress).call(),
+        '_autoWindow'
+      );
+
+      console.log('[Store] Raw auto window data:', autoWindow);
+
+      const fromPeriod = Number(autoWindow.fromPeriod || autoWindow[0]);
+      const lastPeriod = Number(autoWindow.lastPeriod || autoWindow[1]);
+      const totalPeriods = lastPeriod - fromPeriod + 1;
+
+      // Calculate smart claiming strategy (max 99 periods per transaction)
+      const maxPeriodsPerTx = 99;
+      const totalTransactions = Math.ceil(totalPeriods / maxPeriodsPerTx);
+      
+      const claimingPlan = [];
+      for (let i = 0; i < totalTransactions; i++) {
+        const txFromPeriod = fromPeriod + (i * maxPeriodsPerTx);
+        const txToPeriod = Math.min(txFromPeriod + maxPeriodsPerTx - 1, lastPeriod);
+        const txPeriods = txToPeriod - txFromPeriod + 1;
+        
+        claimingPlan.push({
+          transactionNumber: i + 1,
+          fromPeriod: txFromPeriod,
+          toPeriod: txToPeriod,
+          periodsCount: txPeriods,
+          // Estimate dates (assuming daily periods)
+          estimatedFromDate: new Date(Date.now() - (lastPeriod - txFromPeriod + 1) * 24 * 60 * 60 * 1000).toLocaleDateString(),
+          estimatedToDate: new Date(Date.now() - (lastPeriod - txToPeriod + 1) * 24 * 60 * 60 * 1000).toLocaleDateString()
+        });
+      }
+
+      const result = {
+        fromPeriod,
+        lastPeriod,
+        totalPeriods,
+        totalTransactions,
+        claimingPlan,
+        canClaim: totalPeriods > 0,
+        success: true,
+        timestamp: Date.now(),
+        rpcOptimized: true
+      };
+
+      console.log('[Store] Processed auto window:', result);
+      return result;
+    } catch (error) {
+      console.error('[Store] Error fetching auto window:', error);
+      
+      return {
+        fromPeriod: 0,
+        lastPeriod: 0,
+        totalPeriods: 0,
+        totalTransactions: 0,
+        claimingPlan: [],
+        canClaim: false,
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  },
+
+  // Get per-day ROI breakdown for claiming preview
+  getPerDayROIBreakdown: async (userAddress, fromPeriod = null, toPeriod = null) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching per-day ROI breakdown for:', userAddress);
+      console.log('[Store] Period range:', { fromPeriod, toPeriod });
+
+      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (roiDistributorContracts.length === 0) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      // If no periods specified, get the auto window
+      let actualFromPeriod = fromPeriod;
+      let actualToPeriod = toPeriod;
+
+      if (!fromPeriod || !toPeriod) {
+        const autoWindow = await callWithDualRPC(
+          () => roiDistributorContracts[0].methods._autoWindow(userAddress).call(),
+          '_autoWindow'
+        );
+        
+        actualFromPeriod = fromPeriod || Number(autoWindow.fromPeriod);
+        actualToPeriod = toPeriod || Number(autoWindow.lastPeriod);
+        
+        console.log('[Store] Auto window:', { actualFromPeriod, actualToPeriod });
+      }
+
+      // Get per-period preview
+      const perPeriodData = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods.perPeriodPreview(
+          userAddress, 
+          actualFromPeriod, 
+          actualToPeriod
+        ).call(),
+        'perPeriodPreview'
+      );
+
+      console.log('[Store] Raw per-period data:', perPeriodData);
+
+      const [periodIds, usdPerPeriod, ramaPerPeriod, epochsCount] = perPeriodData;
+
+      // Process daily breakdown
+      const dailyBreakdown = periodIds.map((periodId, index) => {
+        const usdAmount = fromMicroUSD(BigInt(usdPerPeriod[index] || '0'));
+        const ramaAmount = parseFloat(Web3.utils.fromWei(ramaPerPeriod[index] || '0', 'ether'));
+        
+        return {
+          periodId: Number(periodId),
+          day: index + 1,
+          usdAmount,
+          ramaAmount,
+          usdRaw: usdPerPeriod[index] || '0',
+          ramaRaw: ramaPerPeriod[index] || '0',
+          // Calculate date from period (assuming daily periods)
+          estimatedDate: new Date(Date.now() - (periodIds.length - index - 1) * 24 * 60 * 60 * 1000).toLocaleDateString()
+        };
+      });
+
+      // Calculate totals
+      const totalUsd = dailyBreakdown.reduce((sum, day) => sum + day.usdAmount, 0);
+      const totalRama = dailyBreakdown.reduce((sum, day) => sum + day.ramaAmount, 0);
+
+      const summary = {
+        totalDays: Number(epochsCount),
+        totalUsd,
+        totalRama,
+        fromPeriod: actualFromPeriod,
+        toPeriod: actualToPeriod,
+        averageDailyUsd: totalUsd > 0 ? totalUsd / dailyBreakdown.length : 0,
+        averageDailyRama: totalRama > 0 ? totalRama / dailyBreakdown.length : 0
+      };
+
+      console.log('[Store] Processed daily breakdown:', {
+        summary,
+        totalDays: dailyBreakdown.length,
+        sampleDays: dailyBreakdown.slice(0, 3)
+      });
+
+      return {
+        dailyBreakdown,
+        summary,
+        success: true,
+        timestamp: Date.now(),
+        rpcOptimized: true
+      };
+    } catch (error) {
+      console.error('[Store] Error fetching per-day ROI breakdown:', error);
+      
+      return {
+        dailyBreakdown: [],
+        summary: {
+          totalDays: 0,
+          totalUsd: 0,
+          totalRama: 0,
+          fromPeriod: 0,
+          toPeriod: 0,
+          averageDailyUsd: 0,
+          averageDailyRama: 0
+        },
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  },
+
+  // Enhanced getUnclaimedROI with detailed period information
+  getUnclaimedROIDetailed: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching detailed unclaimed ROI for:', userAddress);
+
+      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (roiDistributorContracts.length === 0) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      const unclaimedData = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods.getUnclaimedROI(userAddress).call(),
+        'getUnclaimedROI'
+      );
+
+      console.log('[Store] Raw unclaimed ROI data:', unclaimedData);
+
+      const [usdTotalMicro, ramaTotalWei, fromPeriod, lastPeriod, epochsCount] = unclaimedData;
+
+      const totalUsd = fromMicroUSD(BigInt(usdTotalMicro));
+      const totalRama = parseFloat(Web3.utils.fromWei(ramaTotalWei, 'ether'));
+
+      const result = {
+        totalUsd,
+        totalRama,
+        fromPeriod: Number(fromPeriod),
+        lastPeriod: Number(lastPeriod),
+        epochsCount: Number(epochsCount),
+        usdRaw: usdTotalMicro,
+        ramaRaw: ramaTotalWei,
+        // Calculate claimable days
+        claimableDays: Number(epochsCount),
+        periodRange: `${fromPeriod} - ${lastPeriod}`,
+        canClaim: totalUsd > 0 || totalRama > 0,
+        success: true,
+        timestamp: Date.now(),
+        rpcOptimized: true
+      };
+
+      console.log('[Store] Processed unclaimed ROI:', result);
+      return result;
+    } catch (error) {
+      console.error('[Store] Error fetching detailed unclaimed ROI:', error);
+      
+      return {
+        totalUsd: 0,
+        totalRama: 0,
+        fromPeriod: 0,
+        lastPeriod: 0,
+        epochsCount: 0,
+        usdRaw: '0',
+        ramaRaw: '0',
+        claimableDays: 0,
+        periodRange: '0 - 0',
+        canClaim: false,
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  },
+
+  // Get preview of portfolio-based claiming
+  getPortfolioClaimPreview: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching portfolio claim preview for:', userAddress);
+
+      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (roiDistributorContracts.length === 0) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      const portfolioPreview = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods.previewClaimPerPortfolio(userAddress).call(),
+        'previewClaimPerPortfolio'
+      );
+
+      console.log('[Store] Raw portfolio preview:', portfolioPreview);
+
+      const [pids, usdTotals, ramaTotals, epochCounts, fromPeriod, lastPeriod] = portfolioPreview;
+
+      // Process portfolio breakdown
+      const portfolioBreakdown = pids.map((pid, index) => ({
+        pid: Number(pid),
+        usdTotal: fromMicroUSD(BigInt(usdTotals[index] || '0')),
+        ramaTotal: parseFloat(Web3.utils.fromWei(ramaTotals[index] || '0', 'ether')),
+        epochCount: Number(epochCounts[index]),
+        usdRaw: usdTotals[index] || '0',
+        ramaRaw: ramaTotals[index] || '0'
+      }));
+
+      // Calculate totals
+      const totalUsd = portfolioBreakdown.reduce((sum, p) => sum + p.usdTotal, 0);
+      const totalRama = portfolioBreakdown.reduce((sum, p) => sum + p.ramaTotal, 0);
+      const totalEpochs = portfolioBreakdown.reduce((sum, p) => sum + p.epochCount, 0);
+
+      const result = {
+        portfolioBreakdown,
+        summary: {
+          totalPortfolios: pids.length,
+          totalUsd,
+          totalRama,
+          totalEpochs,
+          fromPeriod: Number(fromPeriod),
+          lastPeriod: Number(lastPeriod),
+          periodRange: `${fromPeriod} - ${lastPeriod}`
+        },
+        success: true,
+        timestamp: Date.now(),
+        rpcOptimized: true
+      };
+
+      console.log('[Store] Processed portfolio preview:', result);
+      return result;
+    } catch (error) {
+      console.error('[Store] Error fetching portfolio claim preview:', error);
+      
+      return {
+        portfolioBreakdown: [],
+        summary: {
+          totalPortfolios: 0,
+          totalUsd: 0,
+          totalRama: 0,
+          totalEpochs: 0,
+          fromPeriod: 0,
+          lastPeriod: 0,
+          periodRange: '0 - 0'
+        },
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  },
+
+  // Smart ROI claiming with automatic period management
+  claimAccruedROISmart: async (fromAddress) => {
+    try {
+      if (!fromAddress) throw new Error("Missing sender address");
+
+      console.log('[Store] Creating smart claimROIUpTo transaction for:', fromAddress);
+
+      // Get auto window to determine periods
+      const autoWindow = await get().getAutoWindow(fromAddress);
+      if (!autoWindow.success || !autoWindow.canClaim) {
+        throw new Error("No claimable periods available");
+      }
+
+      console.log('[Store] Auto window result:', autoWindow);
+
+      // Use the first claiming plan (99 periods max)
+      const firstClaim = autoWindow.claimingPlan[0];
+      if (!firstClaim) {
+        throw new Error("No claiming plan available");
+      }
+
+      const periodsToClaimFirst = firstClaim.periodsCount;
+      console.log('[Store] Claiming', periodsToClaimFirst, 'periods in first transaction');
+
+      const roiDistributor = makeContract(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (!roiDistributor) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      // Create the transaction object for claimROIUpTo
+      const transaction = roiDistributor.methods.claimROIUpTo(periodsToClaimFirst);
+
+      // Estimate gas
+      let gasEstimate;
+      try {
+        gasEstimate = await transaction.estimateGas({ from: fromAddress });
+        console.log('[Store] claimROIUpTo gas estimate:', gasEstimate);
+      } catch (err) {
+        console.error('Gas estimation failed for claimROIUpTo:', err);
+        gasEstimate = 350000; // Fallback gas limit
+      }
+
+      const txObject = {
+        from: fromAddress,
+        to: Contract["RoiDistribution"],
+        data: transaction.encodeABI(),
+        gas: Math.floor(Number(gasEstimate) * 1.2), // Add 20% buffer
+        gasPrice: await web3.eth.getGasPrice(),
+        // Add metadata for UI display
+        _metadata: {
+          claimingStrategy: 'smart',
+          currentTransaction: 1,
+          totalTransactions: autoWindow.totalTransactions,
+          periodsInThisTx: periodsToClaimFirst,
+          totalPeriods: autoWindow.totalPeriods,
+          fromPeriod: firstClaim.fromPeriod,
+          toPeriod: firstClaim.toPeriod,
+          estimatedFromDate: firstClaim.estimatedFromDate,
+          estimatedToDate: firstClaim.estimatedToDate,
+          hasMoreTransactions: autoWindow.totalTransactions > 1
+        }
+      };
+
+      console.log('[Store] Smart claimROIUpTo transaction object:', txObject);
+      return txObject;
+    } catch (error) {
+      console.error('claimAccruedROISmart error:', error);
+      throw error;
+    }
+  },
+
+  claimAllROI: async (fromAddress) => {
+    try {
+      if (!fromAddress) throw new Error("Missing sender address");
+
+      console.log('[Store] Creating claimROI transaction for:', fromAddress);
+
+      const roiDistributor = makeContract(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (!roiDistributor) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      // Create the transaction object
+      const transaction = roiDistributor.methods.claimROI();
+
+      // Estimate gas
+      let gasEstimate;
+      try {
+        gasEstimate = await transaction.estimateGas({ from: fromAddress });
+        console.log('[Store] claimROI gas estimate:', gasEstimate);
+      } catch (err) {
+        console.error('Gas estimation failed for claimROI:', err);
+        gasEstimate = 300000; // Fallback gas limit
+      }
+
+      const txObject = {
+        from: fromAddress,
+        to: Contract["RoiDistribution"],
+        data: transaction.encodeABI(),
+        gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer
+        gasPrice: await web3.eth.getGasPrice(),
+      };
+
+      console.log('[Store] claimROI transaction object:', txObject);
+      return txObject;
+    } catch (error) {
+      console.error('claimAllROI error:', error);
+      throw error;
+    }
+  },
+
+  claimROIUpTo: async (fromAddress, maxPeriods) => {
+    try {
+      if (!fromAddress) throw new Error("Missing sender address");
+      if (!maxPeriods || maxPeriods <= 0) throw new Error("Invalid maxPeriods");
+
+      console.log('[Store] Creating claimROIUpTo transaction for:', fromAddress, 'maxPeriods:', maxPeriods);
+
+      const roiDistributor = makeContract(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (!roiDistributor) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      // Create the transaction object
+      const transaction = roiDistributor.methods.claimROIUpTo(maxPeriods);
+
+      // Estimate gas
+      let gasEstimate;
+      try {
+        gasEstimate = await transaction.estimateGas({ from: fromAddress });
+        console.log('[Store] claimROIUpTo gas estimate:', gasEstimate);
+      } catch (err) {
+        console.error('Gas estimation failed for claimROIUpTo:', err);
+        gasEstimate = 350000; // Fallback gas limit (higher than claimROI)
+      }
+
+      const txObject = {
+        from: fromAddress,
+        to: Contract["RoiDistribution"],
+        data: transaction.encodeABI(),
+        gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer
+        gasPrice: await web3.eth.getGasPrice(),
+      };
+
+      console.log('[Store] claimROIUpTo transaction object:', txObject);
+      return txObject;
+    } catch (error) {
+      console.error('claimROIUpTo error:', error);
+      throw error;
+    }
+  },
+
+  // Get claim history for user
+  getROIClaimHistory: async (userAddress, offset = 0, limit = 50) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching ROI claim history for:', userAddress);
+
+      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
+      if (roiDistributorContracts.length === 0) {
+        throw new Error("RoiDistributor contract not available");
+      }
+
+      // Get total count first
+      const totalCount = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods.getClaimHistoryCount(userAddress).call(),
+        'getClaimHistoryCount'
+      );
+
+      if (Number(totalCount) === 0) {
+        return {
+          claimHistory: [],
+          totalCount: 0,
+          hasMore: false,
+          success: true,
+          timestamp: Date.now()
+        };
+      }
+
+      // Get claim history slice
+      const historyData = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods.getClaimHistorySlice(userAddress, offset, limit).call(),
+        'getClaimHistorySlice'
+      );
+
+      console.log('[Store] Raw claim history data:', historyData);
+
+      // Process claim history
+      const claimHistory = historyData.map((claim) => ({
+        fromPeriod: Number(claim.fromPeriod),
+        toPeriod: Number(claim.toPeriod),
+        usdTotal: fromMicroUSD(BigInt(claim.usdTotal || '0')),
+        ramaTotal: parseFloat(Web3.utils.fromWei(claim.ramaTotal || '0', 'ether')),
+        claimedAt: Number(claim.claimedAt),
+        epoch: Number(claim.epoch),
+        claimedDate: new Date(Number(claim.claimedAt) * 1000).toLocaleDateString(),
+        claimedTime: new Date(Number(claim.claimedAt) * 1000).toLocaleTimeString(),
+        daysClaimed: Number(claim.toPeriod) - Number(claim.fromPeriod) + 1,
+        usdRaw: claim.usdTotal || '0',
+        ramaRaw: claim.ramaTotal || '0'
+      }));
+
+      const result = {
+        claimHistory,
+        totalCount: Number(totalCount),
+        hasMore: offset + limit < Number(totalCount),
+        currentOffset: offset,
+        currentLimit: limit,
+        success: true,
+        timestamp: Date.now(),
+        rpcOptimized: true
+      };
+
+      console.log('[Store] Processed claim history:', result);
+      return result;
+    } catch (error) {
+      console.error('[Store] Error fetching ROI claim history:', error);
+      
+      return {
+        claimHistory: [],
+        totalCount: 0,
+        hasMore: false,
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
     }
   },
 

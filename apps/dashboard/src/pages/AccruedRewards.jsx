@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   TrendingUp,
   Coins,
@@ -12,15 +12,23 @@ import {
   Rocket,
   History,
   Timer,
-  X
+  X,
+  Calendar,
+  BarChart3,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useWaitForTransactionReceipt } from 'wagmi';
 import { useTransaction } from '../../config/register';
 import { useStore } from '../../store/useUserInfoStore';
 import NumberPopup from '../components/NumberPopup';
 import Tooltip from '../components/Tooltip';
+import ROIDaysBreakdown from '../components/ROIDaysBreakdown';
+import IncomeNotificationOverlay from '../components/IncomeNotificationOverlay';
 import { formatUSD } from '../utils/contractData';
 import toast from '../utils/toast';
+import financialSounds from '../utils/financialSounds';
+import incomeTracker from '../utils/incomeTracker';
 import { useAppKitAccount } from '@reown/appkit/react';
 import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
 
@@ -167,14 +175,26 @@ export default function AccruedRewards() {
   const [sortDir, setSortDir] = useState('desc');
   const [filterMode, setFilterMode] = useState('all');
   const [isClaiming, setIsClaiming] = useState(false);
+  const [viewMode, setViewMode] = useState('legacy'); // 'legacy' or 'daysBreakdown'
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [claimHistory, setClaimHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [claimConfirmData, setClaimConfirmData] = useState(null);
+  const [showSoundSettings, setShowSoundSettings] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [expandedPortfolio, setExpandedPortfolio] = useState(null);
   const [portfolioDebugInfo, setPortfolioDebugInfo] = useState(null);
   const [debugLoading, setDebugLoading] = useState(false);
+  const [autoWindowInfo, setAutoWindowInfo] = useState(null);
+
+  // Ref to prevent multiple success notifications
+  const successHandledRef = useRef(false);
+  
+  // Ref to track previous ROI values for sound notifications
+  const previousROIRef = useRef(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -197,12 +217,69 @@ export default function AccruedRewards() {
   const getTotalsClaimedFromDistributor = useStore((s) => s.getTotalsClaimedFromDistributor);
   const getPidClaimsSlice = useStore((s) => s.getPidClaimsSlice);
   const debugPortfolioUsdForPeriod = useStore((s) => s.debugPortfolioUsdForPeriod);
+  
+  // New enhanced ROI functions
+  const getPerDayROIBreakdown = useStore((s) => s.getPerDayROIBreakdown);
+  const getUnclaimedROIDetailed = useStore((s) => s.getUnclaimedROIDetailed);
+  const getMaxPeriodsPerClaim = useStore((s) => s.getMaxPeriodsPerClaim);
+  const claimAllROI = useStore((s) => s.claimAllROI);
+  const claimROIUpTo = useStore((s) => s.claimROIUpTo);
+  const getROIClaimHistory = useStore((s) => s.getROIClaimHistory);
+  const claimAccruedROISmart = useStore((s) => s.claimAccruedROISmart);
+  const getAutoWindow = useStore((s) => s.getAutoWindow);
 
   const { handleSendTx, hash } = useTransaction();
   const { data: receipt, isSuccess, isError } = useWaitForTransactionReceipt({
     hash,
     confirmations: 1,
   });
+
+  // Function to detect ROI changes and play sounds
+  const checkROIChangesAndPlaySounds = useCallback((newDashboard) => {
+    if (!newDashboard) return;
+
+    const address = userAddress || '';
+    
+    // Track different types of income
+    incomeTracker.trackValue(
+      `roi-unclaimed-${address}`,
+      newDashboard?.totals?.unclaimed?.usd || 0,
+      'roi',
+      { source: 'ROI Generation', dashboard: newDashboard }
+    );
+
+    incomeTracker.trackValue(
+      `roi-claimed-${address}`,
+      newDashboard?.totals?.claimed?.usd || 0,
+      'portfolio',
+      { source: 'Claimed ROI', dashboard: newDashboard }
+    );
+
+    incomeTracker.trackValue(
+      `total-roi-${address}`,
+      newDashboard?.totals?.roi?.usd || 0,
+      'portfolio',
+      { source: 'Total ROI', dashboard: newDashboard }
+    );
+
+    // Track individual portfolio ROI if available
+    if (newDashboard?.portfolios) {
+      newDashboard.portfolios.forEach((portfolio, index) => {
+        if (portfolio?._derived?.unclaimedUsd > 0) {
+          incomeTracker.trackValue(
+            `portfolio-${portfolio.portfolioId}-${address}`,
+            portfolio._derived.unclaimedUsd,
+            'portfolio',
+            { 
+              source: 'Portfolio ROI',
+              portfolioId: portfolio.portfolioId,
+              dashboard: newDashboard 
+            }
+          );
+        }
+      });
+    }
+  }, [userAddress]);
 
   const loadData = useCallback(async () => {
     const effectiveAddress = userAddress || address;
@@ -220,7 +297,7 @@ export default function AccruedRewards() {
       const offset = (currentPage - 1) * pageSize;
       
       // Fetch core stats and portfolio ids in parallel
-      const [totals, timing, window, pidListRaw, preview, rates, distClaimedTotals] = await Promise.all([
+      const [totals, timing, window, pidListRaw, preview, rates, distClaimedTotals, autoWindow] = await Promise.all([
         getROITotals(effectiveAddress),
         getROITiming(),
         getUnclaimedROIWindow(effectiveAddress),
@@ -228,6 +305,10 @@ export default function AccruedRewards() {
         getRoiPreviewPerPortfolio(effectiveAddress),
         getDailyRates(),
         getTotalsClaimedFromDistributor(effectiveAddress),
+        getAutoWindow(effectiveAddress).catch(err => {
+          console.warn('[AccruedRewards] Auto window load failed:', err);
+          return null;
+        }),
       ]);
 
       const pidList = (pidListRaw || []).map(Number).filter(n => Number.isFinite(n) && n > 0);
@@ -338,6 +419,10 @@ export default function AccruedRewards() {
       // Leave from/last from distributor window; portfolio dates can still be used for UI hints if needed
 
       setDashboard(dashboardData);
+      setAutoWindowInfo(autoWindow);
+      
+      // Check for ROI changes and play sounds
+      checkROIChangesAndPlaySounds(dashboardData);
 
     } catch (err) {
       console.error('Failed to load  data:', err);
@@ -350,22 +435,69 @@ export default function AccruedRewards() {
     } finally {
       setLoading(false);
     }
-  }, [userAddress, address, getROITotals, getROITiming, getUnclaimedROIWindow, getPortfolioIds, getRoiPreviewPerPortfolio, getDailyRates, getPaidUsdByPidMap, currentPage, pageSize]);
+  }, [userAddress, address, getROITotals, getROITiming, getUnclaimedROIWindow, getPortfolioIds, getRoiPreviewPerPortfolio, getDailyRates, getPaidUsdByPidMap, currentPage, pageSize, getAutoWindow, checkROIChangesAndPlaySounds]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Load sound settings
+  useEffect(() => {
+    const enabled = localStorage.getItem('financialSoundsEnabled');
+    if (enabled !== null) {
+      setSoundEnabled(enabled === 'true');
+    }
+  }, []);
+
+  // Auto-refresh data every 30 seconds to detect ROI changes
+  useEffect(() => {
+    if (!isConnected || !address) return;
+
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-checking for ROI changes...');
+      loadData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [isConnected, address, loadData]);
 
   const handleRefresh = () => {
     if (loading) return;
     loadData();
   };
 
+  const toggleSounds = () => {
+    const newEnabled = !soundEnabled;
+    setSoundEnabled(newEnabled);
+    financialSounds.setEnabled(newEnabled);
+    
+    // Play a test sound when enabling
+    if (newEnabled) {
+      financialSounds.playCoinDrop(1);
+    }
+  };
+
+  // Function to simulate ROI increase for testing
+  const simulateROIIncrease = () => {
+    if (!dashboard) return;
+    
+    const simulatedDashboard = {
+      ...dashboard,
+      totals: {
+        ...dashboard.totals,
+        unclaimed: {
+          ...dashboard.totals.unclaimed,
+          usd: (dashboard.totals.unclaimed.usd || 0) + Math.random() * 50 + 10 // Add 10-60 USD
+        }
+      }
+    };
+    
+    checkROIChangesAndPlaySounds(simulatedDashboard);
+    setDashboard(simulatedDashboard);
+  };
+
   const handleClaim = useCallback(async () => {
     try {
-      setIsClaiming(true);
-      setShowClaimModal(true);
-      
       if (!dashboard || dashboard.totals.unclaimed.usd <= 0) {
         throw new Error('No rewards available to claim.');
       }
@@ -374,7 +506,48 @@ export default function AccruedRewards() {
         return;
       }
 
-      const tx = await claimAccruedROI(address);
+      // Load auto window information to show confirmation details
+      try {
+        const autoWindow = await getAutoWindow(address);
+        setAutoWindowInfo(autoWindow);
+        
+        if (autoWindow && autoWindow.success && autoWindow.canClaim && autoWindow.claimingPlan?.[0]) {
+          const firstClaim = autoWindow.claimingPlan[0];
+          setClaimConfirmData({
+            totalDays: autoWindow.totalPeriods,
+            claimingDays: firstClaim.periodsCount,
+            fromDate: firstClaim.estimatedFromDate,
+            toDate: firstClaim.estimatedToDate,
+            totalTransactions: autoWindow.totalTransactions,
+            estimatedAmount: dashboard.totals.unclaimed.usd,
+            autoWindow: autoWindow
+          });
+          setShowConfirmModal(true);
+        } else {
+          throw new Error('No claimable periods available');
+        }
+        
+        console.log('[AccruedRewards] Auto window info loaded:', autoWindow);
+      } catch (autoErr) {
+        console.error('[AccruedRewards] Failed to load auto window info:', autoErr);
+        setError(autoErr?.message || 'Failed to load claiming information');
+      }
+    } catch (err) {
+      console.error('Failed to prepare claim:', err);
+      setError(err?.message || 'Failed to prepare claim');
+    } 
+  }, [getAutoWindow, dashboard, isConnected, address]);
+
+  const handleConfirmClaim = useCallback(async () => {
+    try {
+      setShowConfirmModal(false);
+      setIsClaiming(true);
+      setShowClaimModal(true);
+      
+      // Reset success flag for new transaction
+      successHandledRef.current = false;
+
+      const tx = await claimAccruedROISmart(address);
       if (!tx) {
         throw new Error('Unable to build claim transaction');
       }
@@ -385,18 +558,92 @@ export default function AccruedRewards() {
       setError(err?.message || 'Failed to claim rewards');
       setIsClaiming(false);
       setShowClaimModal(false);
-    } 
-  }, [claimAccruedROI, handleSendTx, dashboard, isConnected, address]);
+    }
+  }, [claimAccruedROISmart, handleSendTx, address]);
 
   const handleClaimModalClose = () => {
     setShowClaimModal(false);
     setIsClaiming(false);
+    setShowConfirmModal(false);
+    setError(null);
+    setAutoWindowInfo(null);
+    setClaimConfirmData(null);
   };
 
   const handleClaimSuccess = async () => {
-    toast.success('Daily Accrued Reward claimed successfully');
-    await loadData();
+    try {
+      // Prevent multiple calls
+      if (successHandledRef.current) {
+        console.log('Success already handled, skipping...');
+        return;
+      }
+      successHandledRef.current = true;
+      
+      // Close the modal and reset states first
+      setShowClaimModal(false);
+      setIsClaiming(false);
+      setError(null);
+      setAutoWindowInfo(null);
+      setClaimConfirmData(null);
+      
+      // Show success notification (only once)
+      toast.success('ROI Accrued Reward claimed successfully', {
+        title: 'Success',
+        duration: 4000,
+        playSound: false // We'll use our custom financial sound instead
+      });
+      
+      // Play transaction success sound
+      financialSounds.playTransactionSuccess();
+      
+      // Reload data to reflect the claim
+      await loadData();
+      
+      // Reset the success flag after a delay
+      setTimeout(() => {
+        successHandledRef.current = false;
+      }, 2000);
+    } catch (err) {
+      console.error('Error in handleClaimSuccess:', err);
+      successHandledRef.current = false;
+    }
   };
+
+  // New handler for days-based claiming
+  const handleClaimDays = useCallback(async (maxPeriods = null) => {
+    try {
+      setIsClaiming(true);
+      setShowClaimModal(true);
+      
+      if (!isConnected) {
+        throw new Error('Wallet not connected.');
+      }
+
+      const effectiveAddress = userAddress || address;
+      let tx;
+
+      if (maxPeriods) {
+        // Claim specific number of days
+        tx = await claimROIUpTo(effectiveAddress, maxPeriods);
+        console.log('[AccruedRewards] Claiming', maxPeriods, 'days');
+      } else {
+        // Claim all available days
+        tx = await claimAllROI(effectiveAddress);
+        console.log('[AccruedRewards] Claiming all available days');
+      }
+
+      if (!tx) {
+        throw new Error('Unable to build claim transaction');
+      }
+
+      handleSendTx(tx);
+    } catch (err) {
+      console.error('Failed to claim ROI days:', err);
+      setError(err?.message || 'Failed to claim ROI days');
+      setIsClaiming(false);
+      setShowClaimModal(false);
+    }
+  }, [claimAllROI, claimROIUpTo, handleSendTx, isConnected, address, userAddress]);
 
   const handleViewHistory = async () => {
     setShowHistoryModal(true);
@@ -459,6 +706,9 @@ export default function AccruedRewards() {
 
   return (
     <>
+      {/* Universal Income Notifications */}
+      <IncomeNotificationOverlay />
+      
       <ClaimHistoryModal 
         isOpen={showHistoryModal} 
         onClose={() => setShowHistoryModal(false)} 
@@ -485,6 +735,45 @@ export default function AccruedRewards() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-dark-900/60 rounded-lg border border-cyan-500/30 overflow-hidden">
+              <button
+                onClick={() => setViewMode('legacy')}
+                className={`px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-2 ${
+                  viewMode === 'legacy' 
+                    ? 'bg-cyan-500/20 text-cyan-300 border-r border-cyan-500/40' 
+                    : 'text-gray-400 hover:text-cyan-300 border-r border-gray-600'
+                }`}
+              >
+                <BarChart3 size={14} />
+                <span>Legacy View</span>
+              </button>
+              <button
+                onClick={() => setViewMode('daysBreakdown')}
+                className={`px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-2 ${
+                  viewMode === 'daysBreakdown' 
+                    ? 'bg-cyan-500/20 text-cyan-300' 
+                    : 'text-gray-400 hover:text-cyan-300'
+                }`}
+              >
+                <Calendar size={14} />
+                <span>Days Breakdown</span>
+              </button>
+            </div>
+            
+            {/* Smart Claiming Info */}
+            {autoWindowInfo && autoWindowInfo.success && autoWindowInfo.canClaim && autoWindowInfo.claimingPlan?.[0] && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs">
+                <Timer size={14} className="text-emerald-400" />
+                <span className="text-emerald-200">
+                  Ready to claim: {autoWindowInfo.claimingPlan[0].estimatedFromDate} to {autoWindowInfo.claimingPlan[0].estimatedToDate}
+                  {autoWindowInfo.totalTransactions > 1 && (
+                    <span className="text-emerald-300/80"> ({autoWindowInfo.totalTransactions} transactions)</span>
+                  )}
+                </span>
+              </div>
+            )}
+            
             <button
               onClick={handleRefresh}
               disabled={loading}
@@ -506,6 +795,71 @@ export default function AccruedRewards() {
               </span>
             </button>
             <button
+              onClick={toggleSounds}
+              className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+                soundEnabled 
+                  ? 'border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/10' 
+                  : 'border-gray-500/40 text-gray-400 hover:bg-gray-500/10'
+              }`}
+              title={soundEnabled ? 'Sound ON - Click to disable' : 'Sound OFF - Click to enable'}
+            >
+              <span className="flex items-center gap-2">
+                {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                <span>{soundEnabled ? 'Sound ON' : 'Sound OFF'}</span>
+              </span>
+            </button>
+            
+            {/* Sound Test Buttons (for development/demo) */}
+            {soundEnabled && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => financialSounds.playCoinDrop(5)}
+                  className="px-2 py-1 text-xs rounded border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
+                  title="Test Coin Drop Sound"
+                >
+                  🪙
+                </button>
+                <button
+                  onClick={() => financialSounds.playROIIncome(100)}
+                  className="px-2 py-1 text-xs rounded border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
+                  title="Test ROI Income Sound"
+                >
+                  💰
+                </button>
+                <button
+                  onClick={() => financialSounds.playMoneyOut(50)}
+                  className="px-2 py-1 text-xs rounded border border-red-500/30 text-red-300 hover:bg-red-500/10"
+                  title="Test Money Out Sound"
+                >
+                  📤
+                </button>
+                <button
+                  onClick={simulateROIIncrease}
+                  className="px-2 py-1 text-xs rounded border border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
+                  title="Simulate ROI Increase"
+                >
+                  🚀
+                </button>
+                <button
+                  onClick={() => {
+                    // Test income tracker with fake increase
+                    const fakeAmount = Math.random() * 100 + 10;
+                    incomeTracker.trackValue(
+                      `test-roi-${Date.now()}`,
+                      fakeAmount,
+                      'roi',
+                      { source: 'Test Income' }
+                    );
+                  }}
+                  className="px-2 py-1 text-xs rounded border border-green-500/30 text-green-300 hover:bg-green-500/10"
+                  title="Test Income Glow Effect"
+                >
+                  ✨
+                </button>
+              </div>
+            )}
+            
+            <button
               onClick={handleClaim}
               disabled={!canClaimGlobal || isClaiming}
               className="px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 text-white transition-all shadow-lg hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
@@ -518,7 +872,7 @@ export default function AccruedRewards() {
               ) : (
                 <span className="flex items-center gap-2">
                   <Coins size={16} />
-                  <span>Claim All Reward</span>
+                  <span>Claim Accrued Reward</span>
                 </span>
               )}
             </button>
@@ -533,7 +887,11 @@ export default function AccruedRewards() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 space-y-2">
+          <div 
+            className="cyber-glass rounded-xl border border-cyan-500/30 p-4 space-y-2"
+            data-income-type="portfolio"
+            data-income-key={`roi-claimed-${userAddress || address}`}
+          >
             <div className="flex items-center gap-2 text-cyan-300/70">
               <Coins size={18} />
               <span className="text-xs uppercase tracking-wide">Total Claimed Reward</span>
@@ -548,7 +906,11 @@ export default function AccruedRewards() {
             </p>
           </div>
 
-          <div className="cyber-glass rounded-xl border border-emerald-500/30 p-4 space-y-2">
+          <div 
+            className="cyber-glass rounded-xl border border-emerald-500/30 p-4 space-y-2"
+            data-income-type="roi"
+            data-income-key={`roi-unclaimed-${userAddress || address}`}
+          >
             <div className="flex items-center gap-2 text-emerald-300/70">
               <TrendingUp size={18} />
               <span className="text-xs uppercase tracking-wide">Unclaimed Reward</span>
@@ -563,7 +925,10 @@ export default function AccruedRewards() {
             </p>
           </div>
 
-          <div className="cyber-glass rounded-xl border border-purple-500/30 p-4 space-y-2">
+          <div 
+            className="cyber-glass rounded-xl border border-purple-500/30 p-4 space-y-2"
+            data-income-type="portfolio"
+          >
             <div className="flex items-center gap-2 text-purple-300/70">
               <Rocket size={18} />
               <span className="text-xs uppercase tracking-wide">Active Boosters</span>
@@ -576,7 +941,10 @@ export default function AccruedRewards() {
             </p>
           </div>
 
-          <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 space-y-2">
+          <div 
+            className="cyber-glass rounded-xl border border-cyan-500/30 p-4 space-y-2"
+            data-income-type="portfolio"
+          >
             <div className="flex items-center gap-2 text-cyan-300/70">
               <TrendingUp size={18} />
               <span className="text-xs uppercase tracking-wide">Portfolios with Reward</span>
@@ -632,7 +1000,20 @@ export default function AccruedRewards() {
           </div>
         </div>
 
-       <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 sm:p-6">
+        {/* Conditional View Rendering */}
+        {viewMode === 'daysBreakdown' ? (
+          <ROIDaysBreakdown
+            userAddress={userAddress || address}
+            getPerDayROIBreakdown={getPerDayROIBreakdown}
+            getUnclaimedROIDetailed={getUnclaimedROIDetailed}
+            getMaxPeriodsPerClaim={getMaxPeriodsPerClaim}
+            onClaimDays={handleClaimDays}
+            className="mt-6"
+          />
+        ) : (
+          // Legacy Portfolio View
+          <>
+            <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-xl font-semibold text-cyan-100">
               All Portfolios
@@ -760,15 +1141,96 @@ export default function AccruedRewards() {
             </table>
           </div>
         </div>
+          </>
+        )}
       </div>
+
+      {/* Claim Confirmation Modal */}
+      {showConfirmModal && claimConfirmData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="cyber-glass rounded-xl border border-cyan-500/30 p-6 w-full max-w-md mx-4 space-y-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 text-cyan-300 mb-4">
+                <Coins size={24} />
+                <h2 className="text-xl font-bold">Confirm ROI Claim</h2>
+              </div>
+              
+              <div className="space-y-4 text-left">
+                <div className="bg-dark-900/60 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Total Pending Days:</span>
+                    <span className="text-cyan-300 font-semibold">{claimConfirmData.totalDays} days</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Claiming Now:</span>
+                    <span className="text-emerald-300 font-semibold">{claimConfirmData.claimingDays} days</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Period:</span>
+                    <span className="text-cyan-200 text-sm">{claimConfirmData.fromDate} to {claimConfirmData.toDate}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">Estimated Amount:</span>
+                    <span className="text-green-300 font-bold">{formatUSD(claimConfirmData.estimatedAmount)}</span>
+                  </div>
+                  
+                  {claimConfirmData.totalTransactions > 1 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Total Transactions:</span>
+                      <span className="text-orange-300 font-semibold">{claimConfirmData.totalTransactions}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {claimConfirmData.totalTransactions > 1 && (
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle size={16} className="text-orange-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-orange-200 text-sm">
+                        <p className="font-semibold mb-1">Multiple Transactions Required</p>
+                        <p>Due to blockchain limits, this will require {claimConfirmData.totalTransactions} separate transactions. You can claim the remaining periods later.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmClaim}
+                  className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 text-white font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Coins size={16} />
+                    Confirm Claim
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progressive Transaction Modal */}
       <ProgressiveTransactionModal
         isOpen={showClaimModal}
         onClose={handleClaimModalClose}
         txHash={hash}
-        title="Claim Accrued"
-        description="Claiming your portfolio growth rewards"
+        title="Claim Accrued Reward"
+        description={
+          autoWindowInfo && autoWindowInfo.success && autoWindowInfo.claimingPlan?.[0] 
+            ? `Claiming rewards from ${autoWindowInfo.claimingPlan[0].estimatedFromDate} to ${autoWindowInfo.claimingPlan[0].estimatedToDate} (${autoWindowInfo.claimingPlan[0].periodsCount} periods)${autoWindowInfo.totalTransactions > 1 ? ` - Transaction 1 of ${autoWindowInfo.totalTransactions}` : ''}`
+            : "Claiming your portfolio growth rewards using smart period management"
+        }
         successMessage="Your rewards have been claimed successfully!"
         onSuccess={handleClaimSuccess}
         amount={dashboard?.totals?.unclaimed?.usd ? formatUSD(dashboard.totals.unclaimed.usd) : null}

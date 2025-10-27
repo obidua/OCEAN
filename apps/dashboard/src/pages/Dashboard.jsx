@@ -1,10 +1,11 @@
 // src/screens/Dashboard.jsx
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TrendingUp, Wallet, Users, Award, DollarSign, Clock, Zap, Gift, Trophy, ArrowUpRight, Loader2, X, RefreshCw, Copy, User2Icon, AlertCircle, Info, XCircle, Pause } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { TrendingUp, Wallet, Users, Award, DollarSign, Clock, Zap, Gift, Trophy, ArrowUpRight, Loader2, X, RefreshCw, Copy, User2Icon, AlertCircle, Info, XCircle, Pause, Volume2, VolumeX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatUSD, formatRAMA } from '../utils/contractData';
 import NumberPopup from '../components/NumberPopup';
 import LivePriceFeed from '../components/LivePriceFeed';
+import IncomeNotificationOverlay from '../components/IncomeNotificationOverlay';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useStore } from '../../store/useUserInfoStore';
 import { PortfolioStatus } from '../types/contract';
@@ -14,6 +15,8 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
 import CappedPortfolioFunnel from '../components/CappedPortfolioFunnel';
 import toast from '../utils/toast';
+import financialSounds from '../utils/financialSounds';
+import incomeTracker from '../utils/incomeTracker';
 
 export default function Dashboard() {
   const [portfolioIds, setPortFolioId] = useState([]);
@@ -38,9 +41,11 @@ export default function Dashboard() {
   const [roiTotalsLoading, setRoiTotalsLoading] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showCappedFunnel, setShowCappedFunnel] = useState(false);
-  const [showDebugModal, setShowDebugModal] = useState(false);
-  const [portfolioDebugInfo, setPortfolioDebugInfo] = useState(null);
-  const [debugLoading, setDebugLoading] = useState(false);
+
+  
+  // Sound system and income tracking state
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const previousValuesRef = useRef({});
 
   const { address, isConnected } = useAppKitAccount();
   const { handleSendTx, hash, isSuccess, isError, receipt } = useTransaction();
@@ -60,16 +65,26 @@ export default function Dashboard() {
   const getUnclaimedROIWindow = useStore((s) => s.getUnclaimedROIWindow);
   const getPaidUsdByPidMap = useStore((s) => s.getPaidUsdByPidMap);
   const getTotalsClaimedFromDistributor = useStore((s) => s.getTotalsClaimedFromDistributor);
-  const debugPortfolioUsdForPeriod = useStore((s) => s.debugPortfolioUsdForPeriod);
+
   const getROITiming = useStore((s) => s.getROITiming);
   const getMissedIncomeOverview = useStore((s) => s.getMissedIncomeOverview);
   const getLegsDetailedVolume = useStore((s) => s.getLegsDetailedVolume);
   const getVolumeAnalytics = useStore((s) => s.getVolumeAnalytics);
+  const getCappingIncomeData = useStore((s) => s.getCappingIncomeData);
+  const getDirectsPortfolioAndTeamVolumes = useStore((s) => s.getDirectsPortfolioAndTeamVolumes);
+  const getDirectsPortfolioBreakdown = useStore((s) => s.getDirectsPortfolioBreakdown);
+  const userAddressStore = useStore((s) => s.userAddress);
   const [comprehensiveCapStatus, setComprehensiveCapStatus] = useState(null);
   const [comprehensiveCapError, setComprehensiveCapError] = useState(null);
+  const [cappingIncomeData, setCappingIncomeData] = useState(null);
+  const [cappingIncomeLoading, setCappingIncomeLoading] = useState(false);
+  const [cappingIncomeError, setCappingIncomeError] = useState(null);
+  const [directsPortfolioData, setDirectsPortfolioData] = useState(null);
+  const [directsPortfolioLoading, setDirectsPortfolioLoading] = useState(false);
+  const [directsPortfolioError, setDirectsPortfolioError] = useState(null);
+
   const [teamSummary, setTeamSummary] = useState(null);
   const [teamMemberDetails, setTeamMemberDetails] = useState(null);
-  const userAddressStore = useStore((s) => s.userAddress);
   const userAddress =
     userAddressStore || (typeof window !== 'undefined' ? localStorage.getItem('userAddress') : null);
 
@@ -162,6 +177,8 @@ export default function Dashboard() {
           typeof getTeamSummary === 'function' ? getTeamSummary(userAddress, 50) : null,
           typeof getTeamMemberDetails === 'function' ? getTeamMemberDetails(userAddress) : null,
         ]);
+
+        console.log("#########", dashboardInfo);
 
         if (cancelled) return;
 
@@ -379,6 +396,70 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, [userAddress, getMissedIncomeOverview]);
+
+  // Load capping income data from CappingIncomeManager
+  useEffect(() => {
+    let cancelled = false;
+    const loadCappingIncome = async () => {
+      if (!userAddress || typeof getCappingIncomeData !== 'function') {
+        setCappingIncomeData(null);
+        setCappingIncomeLoading(false);
+        setCappingIncomeError(null);
+        return;
+      }
+      setCappingIncomeLoading(true);
+      setCappingIncomeError(null);
+      try {
+        const data = await getCappingIncomeData(userAddress);
+        if (cancelled) return;
+        setCappingIncomeData(data || null);
+      } catch (err) {
+        console.warn('Failed to load capping income data:', err);
+        if (!cancelled) {
+          setCappingIncomeData(null);
+          setCappingIncomeError(err?.message || 'Failed to load capping income data');
+        }
+      } finally {
+        if (!cancelled) setCappingIncomeLoading(false);
+      }
+    };
+    loadCappingIncome();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getCappingIncomeData]);
+
+  // Load directs portfolio breakdown from ComprehensiveView
+  useEffect(() => {
+    let cancelled = false;
+    const loadDirectsBreakdown = async () => {
+      if (!userAddress) {
+        setDirectsPortfolioData(null);
+        setDirectsPortfolioLoading(false);
+        setDirectsPortfolioError(null);
+        return;
+      }
+      setDirectsPortfolioLoading(true);
+      setDirectsPortfolioError(null);
+      try {
+        const data = await getDirectsPortfolioAndTeamVolumes(userAddress);
+        if (cancelled) return;
+        setDirectsPortfolioData(data || null);
+      } catch (err) {
+        console.warn('Failed to load directs portfolio breakdown:', err);
+        if (!cancelled) {
+          setDirectsPortfolioData(null);
+          setDirectsPortfolioError(err?.message || 'Failed to load directs portfolio breakdown');
+        }
+      } finally {
+        if (!cancelled) setDirectsPortfolioLoading(false);
+      }
+    };
+    loadDirectsBreakdown();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getDirectsPortfolioAndTeamVolumes]);
 
   // Load volume analytics from SlabManager
   useEffect(() => {
@@ -656,7 +737,11 @@ export default function Dashboard() {
 
   const cap4xUsd = comprehensiveCapStatus ? formatCapUsd(comprehensiveCapStatus.cap4xUSD6) : 0;
   const totalPortfolioUsd = comprehensiveCapStatus ? formatCapUsd(comprehensiveCapStatus.totalPortfolioValueUSD6) : portfolioCapUsd;
-  const totalIncomeEarnedUsd = comprehensiveCapStatus ? formatCapUsd(comprehensiveCapStatus.totalIncomeEarnedUSD6) : totalAccruedRewardUsd;
+  
+  // Use CappingIncomeManager data when available, otherwise fallback to comprehensive status or accrued rewards
+  const totalIncomeEarnedUsd = cappingIncomeData?.totalEarnedUSD ?? 
+    (comprehensiveCapStatus ? formatCapUsd(comprehensiveCapStatus.totalIncomeEarnedUSD6) : totalAccruedRewardUsd);
+    
   const remainingCapUsd = comprehensiveCapStatus ? formatCapUsd(comprehensiveCapStatus.remainingCapUSD6) : Math.max(0, cap4xUsd - totalIncomeEarnedUsd);
   const capProgressPercent = cap4xUsd > 0 ? Math.min(100, (totalIncomeEarnedUsd / cap4xUsd) * 100) : 0;
   const capProgressWidth = Number.isFinite(capProgressPercent) ? Math.max(0, Math.min(capProgressPercent, 100)) : 0;
@@ -756,7 +841,7 @@ export default function Dashboard() {
     'Pacific Master',
     'Ocean Sovereign',
   ];
-  const slabName = slabNames[slabLevel - 1] ?? 'None';
+  const slabName = slabNames[slabLevel] ?? 'None';
   const totalTeamMembers =
     teamSummary?.totalTeamSize ??
     DashBoardDetail?.teamCount ??
@@ -780,32 +865,7 @@ export default function Dashboard() {
     setSelectedPid(value === '' ? null : Number(value));
   };
 
-  // Auto-load debug info when portfolio is selected
-  useEffect(() => {
-    const loadDebugInfo = async () => {
-      if (!selectedPid) {
-        setPortfolioDebugInfo(null);
-        return;
-      }
 
-      setDebugLoading(true);
-      try {
-        const timing = await getROITiming();
-        const lastPeriod = timing?.lastDistributionTs || Math.floor(Date.now() / 1000);
-        const periodId = Math.floor(lastPeriod / 600);
-        
-        const debugInfo = await debugPortfolioUsdForPeriod(selectedPid, periodId);
-        setPortfolioDebugInfo(debugInfo);
-      } catch (err) {
-        console.error('Failed to load portfolio debug info:', err);
-        setPortfolioDebugInfo(null);
-      } finally {
-        setDebugLoading(false);
-      }
-    };
-
-    loadDebugInfo();
-  }, [selectedPid, debugPortfolioUsdForPeriod, getROITiming]);
 
   const qualifiedVolumeUsd =
     (userStatus?.qualifiedVolumeUsd ??
@@ -937,30 +997,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleViewDebug = async () => {
-    if (!selectedPid) {
-      toast.error('No portfolio selected');
-      return;
-    }
-    
-    setShowDebugModal(true);
-    setDebugLoading(true);
-    setPortfolioDebugInfo(null);
-    
-    try {
-      const timing = await getROITiming();
-      const lastPeriod = timing?.lastDistributionTs || Math.floor(Date.now() / 1000);
-      const periodId = Math.floor(lastPeriod / 600); // Convert timestamp to period ID
-      
-      const debugInfo = await debugPortfolioUsdForPeriod(selectedPid, periodId);
-      setPortfolioDebugInfo(debugInfo);
-    } catch (err) {
-      console.error('Failed to load debug info:', err);
-      toast.error('Failed to load portfolio debug info');
-    } finally {
-      setDebugLoading(false);
-    }
-  };
+
 
   const loadInlineDebug = async () => {
     if (!selectedPid || portfolioDebugInfo) return;
@@ -981,9 +1018,139 @@ export default function Dashboard() {
     }
   };
 
+  // Income tracking function to detect changes and trigger sounds/glows
+  const trackDashboardChanges = useCallback(() => {
+    if (!address || !isConnected) return;
+
+    const addressKey = address.toLowerCase();
+    
+    // Track main dashboard values
+    incomeTracker.trackValue(
+      `total-staked-${addressKey}`,
+      totalStakedUsd || 0,
+      'portfolio',
+      { source: 'Staked Portfolio', cardId: 'staked-portfolio' }
+    );
+
+    incomeTracker.trackValue(
+      `total-earned-${addressKey}`,
+      totalEarnedUsd || 0,
+      'income',
+      { source: 'Total Earned', cardId: 'total-earned' }
+    );
+
+    incomeTracker.trackValue(
+      `ready-to-claim-${addressKey}`,
+      readyToClaimUsd || 0,
+      'roi',
+      { source: 'Ready to Claim', cardId: 'ready-to-claim' }
+    );
+
+    incomeTracker.trackValue(
+      `total-accrued-${addressKey}`,
+      totalAccruedRewardUsd || 0,
+      'roi',
+      { source: 'Total Accrued', cardId: 'total-accrued' }
+    );
+
+    // Track individual income types
+    if (incomeTotalsBreakdown) {
+      incomeTracker.trackValue(
+        `direct-income-${addressKey}`,
+        directIncomeUsd || 0,
+        'direct',
+        { source: 'Direct Income', cardId: 'direct-income' }
+      );
+
+      incomeTracker.trackValue(
+        `slab-income-${addressKey}`,
+        slabUsd || 0,
+        'slab',
+        { source: 'Slab Income', cardId: 'slab-income' }
+      );
+
+      incomeTracker.trackValue(
+        `royalty-income-${addressKey}`,
+        royaltyUsd || 0,
+        'royalty',
+        { source: 'Royalty Income', cardId: 'royalty-income' }
+      );
+
+      incomeTracker.trackValue(
+        `reward-income-${addressKey}`,
+        rewardUsd || 0,
+        'reward',
+        { source: 'Reward Income', cardId: 'reward-income' }
+      );
+
+      incomeTracker.trackValue(
+        `growth-income-${addressKey}`,
+        growthUsd || 0,
+        'growth',
+        { source: 'Growth Income', cardId: 'growth-income' }
+      );
+    }
+  }, [
+    address,
+    isConnected,
+    totalStakedUsd,
+    totalEarnedUsd,
+    readyToClaimUsd,
+    totalAccruedRewardUsd,
+    incomeTotalsBreakdown,
+    directIncomeUsd,
+    slabUsd,
+    royaltyUsd,
+    rewardUsd,
+    growthUsd
+  ]);
+
+  // Load sound settings and track changes
+  useEffect(() => {
+    const enabled = localStorage.getItem('financialSoundsEnabled');
+    if (enabled !== null) {
+      setSoundEnabled(enabled === 'true');
+    }
+  }, []);
+
+  // Run income tracking when values change
+  useEffect(() => {
+    if (summaryReady && !isLoading) {
+      trackDashboardChanges();
+    }
+  }, [trackDashboardChanges, summaryReady, isLoading]);
+
+  // Auto-refresh to detect new income
+  useEffect(() => {
+    if (!isConnected || !address) return;
+
+    const interval = setInterval(() => {
+      // Refresh data silently to detect changes
+      if (!isLoading) {
+        getTOtalPortFolio(address).catch(() => {});
+        getDashboardDetails(address).catch(() => {});
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [isConnected, address, isLoading, getTOtalPortFolio, getDashboardDetails]);
+
+  // Sound toggle function
+  const toggleSounds = () => {
+    const newEnabled = !soundEnabled;
+    setSoundEnabled(newEnabled);
+    financialSounds.setEnabled(newEnabled);
+    
+    // Play a test sound when enabling
+    if (newEnabled) {
+      financialSounds.playCoinDrop(1);
+    }
+  };
+
   
   return (
     <div className="space-y-4 sm:space-y-6">
+      <IncomeNotificationOverlay />
       {dashError && (
         <div className="cyber-glass border border-red-400/40 bg-red-500/5 text-red-300 rounded-xl px-4 py-3 text-sm">
           {dashError}
@@ -995,8 +1162,24 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Sound Control */}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleSounds}
+          className="cyber-glass border border-cyan-500/30 hover:border-cyan-500/60 rounded-xl px-3 py-2 text-cyan-300 hover:text-white transition-all flex items-center gap-2 text-sm"
+          title={soundEnabled ? 'Disable sounds' : 'Enable sounds'}
+        >
+          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          <span className="hidden sm:inline">{soundEnabled ? 'Sounds On' : 'Sounds Off'}</span>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Link to="/dashboard" className="cyber-glass border border-cyan-500/30 hover:border-cyan-500/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden">
+        <Link 
+          to="/dashboard" 
+          id="staked-portfolio"
+          className="cyber-glass border border-cyan-500/30 hover:border-cyan-500/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden income-glow-target"
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center gap-3 mb-3 relative z-10">
             <div className="p-2 bg-cyan-500/20 rounded-lg flex-shrink-0 border border-cyan-500/30">
@@ -1021,7 +1204,8 @@ export default function Dashboard() {
           tabIndex={0}
           onClick={() => setShowIncomeModal(true)}
           onKeyDown={(e) => e.key === 'Enter' && setShowIncomeModal(true)}
-          className="w-full cyber-glass border border-neon-green/30 hover:border-neon-green/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden text-left cursor-pointer"
+          id="total-earned"
+          className="w-full cyber-glass border border-neon-green/30 hover:border-neon-green/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden text-left cursor-pointer income-glow-target"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center justify-between mb-3 relative z-10">
@@ -1065,7 +1249,8 @@ export default function Dashboard() {
 
         {/* Till Accrued (claimed + unclaimed) */}
         <div
-          className="w-full cyber-glass border border-neon-purple/30 hover:border-neon-purple/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden"
+          id="total-accrued"
+          className="w-full cyber-glass border border-neon-purple/30 hover:border-neon-purple/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden income-glow-target"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center justify-between mb-3 relative z-10">
@@ -1127,41 +1312,91 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Link to="/dashboard/team" className="cyber-glass border border-neon-orange/30 hover:border-neon-orange/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden">
+        <div 
+          id="team-network"
+          className="cyber-glass border border-neon-orange/30 hover:border-neon-orange/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden income-glow-target"
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-neon-orange/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="flex items-center gap-3 mb-3 relative z-10">
-            <div className="p-2 bg-neon-orange/20 rounded-lg flex-shrink-0 border border-neon-orange/30">
-              <Users size={20} className="text-neon-orange" />
+          <div className="flex items-center justify-between mb-3 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-neon-orange/20 rounded-lg flex-shrink-0 border border-neon-orange/30">
+                <Users size={20} className="text-neon-orange" />
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-neon-orange uppercase tracking-wide">Team Network</p>
             </div>
-            <p className="text-xs sm:text-sm font-medium text-neon-orange uppercase tracking-wide">Team Network</p>
+            <Link 
+              to="/dashboard/team-network"
+              className="px-3 py-1.5 text-xs bg-neon-orange/20 hover:bg-neon-orange/30 border border-neon-orange/40 rounded-lg text-neon-orange transition-colors flex items-center gap-1 font-medium"
+            >
+              <ArrowUpRight size={12} />
+              View Details
+            </Link>
           </div>
-          <p className="text-xl sm:text-2xl font-bold mb-2 text-neon-orange relative z-10">
-            {summaryLoading ? (
-              renderLoading()
-            ) : (
-              <>
-                {formatCount(totalTeamMembers)}
-                <span className="text-sm font-semibold text-neon-orange/80 ml-1">members</span>
-              </>
-            )}
-          </p>
-          {!summaryLoading && (
-            <div className="space-y-1 relative z-10">
-              <p className="text-xs text-neon-orange/70">
-                Directs: {formatCount(directMembers)}
-              </p>
-              {teamMemberDetails && (
-                <p className="text-xs text-neon-orange/70">
-                  Team Business: {formatUSD(microToUsd(teamMemberDetails.teamBusinessUSD))}
-                </p>
+          
+          {/* Main Stats */}
+          <div className="mb-4 relative z-10">
+            <p className="text-2xl sm:text-3xl font-bold mb-1 text-neon-orange">
+              {directsPortfolioLoading ? (
+                renderLoading()
+              ) : (
+                <>
+                  {directsPortfolioData?.summary?.directCount + (directsPortfolioData?.summary?.totalTeamCount || 0) || formatCount(totalTeamMembers)}
+                  <span className="text-sm font-semibold text-neon-orange/80 ml-1">members</span>
+                </>
               )}
+            </p>
+          </div>
+
+          {/* Detailed Breakdown */}
+          {!directsPortfolioLoading && (
+            <div className="space-y-2 relative z-10">
+              <div className="flex justify-between items-center py-1">
+                <span className="text-xs text-neon-orange/70 font-medium">Directs:</span>
+                <span className="text-sm font-semibold text-neon-orange">
+                  {directsPortfolioData?.summary?.directCount || formatCount(directMembers)}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center py-1">
+                <span className="text-xs text-neon-orange/70 font-medium">Self Business:</span>
+                <span className="text-sm font-semibold text-neon-orange">
+                  {directsPortfolioData?.summary ? 
+                    formatUSD(directsPortfolioData.summary.totalSelfUsd) : 
+                    formatUSD(0)
+                  }
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center py-1">
+                <span className="text-xs text-neon-orange/70 font-medium">Team Business:</span>
+                <span className="text-sm font-semibold text-neon-orange">
+                  {directsPortfolioData?.summary ? 
+                    formatUSD(directsPortfolioData.summary.totalTeamUsd) : 
+                    (teamMemberDetails && formatUSD(microToUsd(teamMemberDetails.teamBusinessUSD)))
+                  }
+                </span>
+              </div>
+              
+              <div className="border-t border-neon-orange/20 pt-2 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neon-orange/90 font-bold">Total Volume:</span>
+                  <span className="text-sm font-bold text-neon-orange">
+                    {directsPortfolioData?.summary ? 
+                      formatUSD(directsPortfolioData.summary.totalSumUsd) : 
+                      (teamMemberDetails && formatUSD(microToUsd(teamMemberDetails.teamBusinessUSD)))
+                    }
+                  </span>
+                </div>
+              </div>
             </div>
           )}
-          <div className="flex items-center gap-1 text-xs text-neon-orange/70 relative z-10">
-            <span>View Team</span>
-            <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-          </div>
-        </Link>
+          
+          {directsPortfolioError && (
+            <p className="text-xs text-red-400 mt-2 relative z-10">
+              {directsPortfolioError}
+            </p>
+          )}
+        </div>
 
         <Link to="/dashboard/safe-wallet" className="cyber-glass border border-cyan-400/30 hover:border-cyan-400/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1308,9 +1543,70 @@ export default function Dashboard() {
                       {formatUSD(totalIncomeEarnedUsd)}
                     </p>
                     <p className="text-[11px] text-neon-green/70 mt-1">
-                      Earned from ROI & slabs
+                      {cappingIncomeData ? 
+                        "All earnings (ROI, direct, slab, override)" : 
+                        "Earned from ROI & slabs"
+                      }
                     </p>
+                    {cappingIncomeData && cappingIncomeData.breakdown && (
+                      <div className="text-[9px] text-neon-green/50 mt-1 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>ROI:</span>
+                          <span>{formatUSD(cappingIncomeData.breakdown.roi)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Direct:</span>
+                          <span>{formatUSD(cappingIncomeData.breakdown.direct)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Slab:</span>
+                          <span>{formatUSD(cappingIncomeData.breakdown.slab)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Override:</span>
+                          <span>{formatUSD(cappingIncomeData.breakdown.slabOverride)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Temporary Debug Button for CappingIncomeManager - Remove in production */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="col-span-full mt-2 flex gap-2">
+                      <button
+                        onClick={async () => {
+                          console.log('[Dashboard] Testing CappingIncomeManager manually...');
+                          try {
+                            const data = await getCappingIncomeData(userAddress);
+                            console.log('[Dashboard] Manual test result:', data);
+                            alert(`Total Earned: $${data?.totalEarnedUSD?.toFixed(2) || '0.00'}\nBreakdown:\nROI: $${data?.breakdown?.roi?.toFixed(2) || '0.00'}\nDirect: $${data?.breakdown?.direct?.toFixed(2) || '0.00'}\nSlab: $${data?.breakdown?.slab?.toFixed(2) || '0.00'}\nOverride: $${data?.breakdown?.slabOverride?.toFixed(2) || '0.00'}`);
+                          } catch (err) {
+                            console.error('[Dashboard] Manual test error:', err);
+                            alert(`Error: ${err.message}`);
+                          }
+                        }}
+                        className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded border border-purple-500"
+                      >
+                        🧪 Test CappingIncome
+                      </button>
+                      <button
+                        onClick={async () => {
+                          console.log('[Dashboard] Testing DirectsPortfolioBreakdown manually...');
+                          try {
+                            const data = await getDirectsPortfolioBreakdown(userAddress);
+                            console.log('[Dashboard] Manual test result:', data);
+                            alert(`Total Directs: ${data?.summary?.directCount || 0}\nSelf Business: $${data?.summary?.totalSelfUsd?.toFixed(2) || '0.00'}\nTeam Business: $${data?.summary?.totalTeamUsd?.toFixed(2) || '0.00'}\nTotal Volume: $${data?.summary?.totalSumUsd?.toFixed(2) || '0.00'}`);
+                          } catch (err) {
+                            console.error('[Dashboard] Manual test error:', err);
+                            alert(`Error: ${err.message}`);
+                          }
+                        }}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded border border-green-500"
+                      >
+                        🧪 Test DirectsBreakdown
+                      </button>
+                    </div>
+                  )}
                   <div className="p-3 sm:p-4 cyber-glass rounded-xl border border-neon-orange/30 hover:border-neon-orange/80 transition-all">
                     <p className="text-[11px] text-neon-orange uppercase tracking-wider">
                       Remaining Cap
@@ -1560,7 +1856,7 @@ export default function Dashboard() {
                     <p className="text-lg sm:text-xl font-bold text-neon-orange group-hover:text-neon-glow transition-all">
                       {summaryReady ? slabName : '—'}
                     </p>
-                    <p className="text-xs text-neon-orange/70 mt-0.5">Level {slabLevel || '—'}</p>
+                    <p className="text-xs text-neon-orange/70 mt-0.5">Level {parseFloat(slabLevel)+1 || '—'}</p>
                   </div>
                 </div>
               )}
@@ -2004,7 +2300,7 @@ export default function Dashboard() {
           : null}
         amountLabel="Claiming Amount"
       />
+
     </div>
   );
-}
-
+};
