@@ -44,6 +44,8 @@ export default function TeamNetwork() {
   const getLegCapPercentages = useStore((state) => state.getLegCapPercentages);
   const getLegsDetailedVolume = useStore((state) => state.getLegsDetailedVolume);
   const getVolumeAnalytics = useStore((state) => state.getVolumeAnalytics);
+  const getDirectsPortfolioBreakdown = useStore((state) => state.getDirectsPortfolioBreakdown);
+
   const navigate = useNavigate();
 
   const [copied, setCopied] = useState(false);
@@ -386,6 +388,26 @@ export default function TeamNetwork() {
     };
   }, [directList.length, isLoading, viewMode]);
 
+
+  const [teamInfo,setTeamInfo]=useState(null);
+
+  useEffect(()=>{
+    const fetchTeamInfo=async()=>{
+      if(!userAddress)return;
+      try{
+        const info=await getDirectsPortfolioBreakdown(userAddress);
+        setTeamInfo(info);
+      }catch(err){
+        console.error('Failed to fetch team info:',err);
+        setTeamInfo(null);
+      }
+    };
+
+
+    fetchTeamInfo();
+  },[userAddress,getDirectsPortfolioBreakdown])
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -469,7 +491,7 @@ export default function TeamNetwork() {
             <div className="cyber-glass rounded-xl p-4 border border-cyan-500/30">
               <p className="text-xs text-cyan-300/90 mb-1 truncate">Direct Volume</p>
               <NumberPopup
-                value={formatUSD(totalDirectVolume)}
+                value={`${(parseFloat(teamInfo?.fullData["totalSelfUsd"]) / 1e6).toFixed(2) || "0.00"}`}
                 label="Direct Volume"
                 className="text-lg md:text-xl font-bold text-cyan-400"
               />
@@ -477,7 +499,8 @@ export default function TeamNetwork() {
             <div className="cyber-glass rounded-xl p-4 border border-cyan-500/30">
               <p className="text-xs text-cyan-300/90 mb-1 truncate">Team Volume</p>
               <NumberPopup
-                value={formatUSD(totalTeamVolume)}
+                value={`${(parseFloat(teamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"}`}
+
                 label="Team Volume"
                 className="text-lg md:text-xl font-bold text-neon-green"
               />

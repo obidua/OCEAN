@@ -7196,6 +7196,7 @@ export const useStore = create((set, get) => ({
       });
 
       return {
+        fullData:result,
         directs: directsData,
         summary,
         success: true,
