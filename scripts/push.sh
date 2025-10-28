@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-click push script for difi-ocean
+# One-click push script for OCEAN-DeFi-Ecosystem
 # Usage:
 #   ./scripts/push.sh                 # Auto message with timestamp
 #   ./scripts/push.sh -m "feat: update UI"
