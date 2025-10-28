@@ -14,8 +14,16 @@ const SlabIncome = () => {
   const [nextAchievements, setNextAchievements] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [incomeTotals, setIncomeTotals] = useState(null);
+  const [incomeTotalsLoading, setIncomeTotalsLoading] = useState(false);
+  const [incomeTotalsError, setIncomeTotalsError] = useState(null);
 
-  const { getSlabIncomeOverview, getSlabManagerDetails, getNextAchievementProgress } = useStore();
+  const {
+    getSlabIncomeOverview,
+    getSlabManagerDetails,
+    getNextAchievementProgress,
+    getIncomeTotals,
+  } = useStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +82,38 @@ const SlabIncome = () => {
     };
   }, [userAddress, getSlabIncomeOverview, getSlabManagerDetails, getNextAchievementProgress]);
 
+  useEffect(() => {
+    if (!userAddress || typeof getIncomeTotals !== "function") {
+      setIncomeTotals(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadTotals = async () => {
+      try {
+        setIncomeTotalsLoading(true);
+        setIncomeTotalsError(null);
+        const totals = await getIncomeTotals(userAddress);
+        if (!cancelled) {
+          setIncomeTotals(totals ?? null);
+        }
+      } catch (totalsErr) {
+        console.error("Failed to load income totals:", totalsErr);
+        if (!cancelled) {
+          setIncomeTotals(null);
+          setIncomeTotalsError(totalsErr?.message || "Unable to load income totals.");
+        }
+      } finally {
+        if (!cancelled) setIncomeTotalsLoading(false);
+      }
+    };
+
+    loadTotals();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getIncomeTotals]);
+
   // Process data for UI components
   const slabLevel = Number(slabDetails?.slabLevel ?? 0);
   const qualifiedVolumeUsd = parseFloat(slabDetails?.qualifiedVolumeUsd ?? 0);
@@ -82,12 +122,43 @@ const SlabIncome = () => {
   const newDirects = slabDetails?.newDirects ?? 0;
   
   // Income data
-  const slabIncomeUsd = slabDetails?.slabIncomeUsd ?? 0;
-  const slabIncomeRama = slabDetails?.slabIncomeRama ?? 0;
-  const slabIncomeAvailableUsd = slabDetails?.slabIncomeAvailableUsd ?? 0;
-  const slabIncomeAvailableRama = slabDetails?.slabIncomeAvailableRama ?? 0;
-  const overrideIncomeUsd = slabDetails?.overrideIncomeUsd ?? 0;
-  const overrideIncomeRama = slabDetails?.overrideIncomeRama ?? 0;
+  const slabIncomeUsdRaw = slabDetails?.slabIncomeUsd ?? 0;
+  const slabIncomeAvailableUsdRaw = slabDetails?.slabIncomeAvailableUsd ?? 0;
+  const slabIncomeRamaRaw = slabDetails?.slabIncomeRama ?? 0;
+  const slabIncomeAvailableRamaRaw = slabDetails?.slabIncomeAvailableRama ?? 0;
+  const overrideIncomeUsdRaw = slabDetails?.overrideIncomeUsd ?? 0;
+  const overrideIncomeRamaRaw = slabDetails?.overrideIncomeRama ?? 0;
+
+  const slabIncomeUsdDisplay =
+    incomeTotals?.slabIncomeUsd ?? slabIncomeUsdRaw ?? 0;
+  const slabIncomeAvailableUsdDisplay =
+    incomeTotals?.slabIncomeUsd ?? slabIncomeAvailableUsdRaw ?? slabIncomeUsdDisplay;
+  const overrideIncomeUsdDisplay =
+    incomeTotals?.overrideUsd ?? overrideIncomeUsdRaw ?? 0;
+
+  const usdToRamaRatio = (() => {
+    if (slabIncomeUsdRaw > 0 && slabIncomeRamaRaw > 0) {
+      return slabIncomeRamaRaw / slabIncomeUsdRaw;
+    }
+    if (overrideIncomeUsdRaw > 0 && overrideIncomeRamaRaw > 0) {
+      return overrideIncomeRamaRaw / overrideIncomeUsdRaw;
+    }
+    if (slabIncomeAvailableUsdRaw > 0 && slabIncomeAvailableRamaRaw > 0) {
+      return slabIncomeAvailableRamaRaw / slabIncomeAvailableUsdRaw;
+    }
+    return null;
+  })();
+
+  const convertUsdToRama = (usd) => {
+    if (!usdToRamaRatio || !isFinite(usdToRamaRatio)) return usd === 0 ? 0 : null;
+    return usd * usdToRamaRatio;
+  };
+
+  const slabIncomeRamaDisplay = convertUsdToRama(slabIncomeUsdDisplay) ?? 0;
+  const slabIncomeAvailableRamaDisplay =
+    convertUsdToRama(slabIncomeAvailableUsdDisplay) ?? 0;
+  const overrideIncomeRamaDisplay =
+    convertUsdToRama(overrideIncomeUsdDisplay) ?? 0;
   const royaltyIncomeUsd = slabDetails?.royaltyIncomeUsd ?? 0;
   const royaltyIncomeRama = slabDetails?.royaltyIncomeRama ?? 0;
 
@@ -117,12 +188,12 @@ const SlabIncome = () => {
     qualifiedVolumeUsd,
     directs,
     slabStatusLabel,
-    slabIncomeUsd,
-    slabIncomeRama,
-    slabIncomeAvailableUsd,
-    slabIncomeAvailableRama,
-    overrideIncomeUsd,
-    overrideIncomeRama,
+    slabIncomeUsd: slabIncomeUsdDisplay,
+    slabIncomeRama: slabIncomeRamaDisplay,
+    slabIncomeAvailableUsd: slabIncomeAvailableUsdDisplay,
+    slabIncomeAvailableRama: slabIncomeAvailableRamaDisplay,
+    overrideIncomeUsd: overrideIncomeUsdDisplay,
+    overrideIncomeRama: overrideIncomeRamaDisplay,
     royaltyIncomeUsd,
     royaltyIncomeRama,
     newDirects,
@@ -133,7 +204,10 @@ const SlabIncome = () => {
     slabPercents: slabManagerDetails?.slabPercents,
     rewardMilestones: slabManagerDetails?.rewardMilestones,
     royaltyTiers: slabManagerDetails?.royaltyTiers,
-    nextAchievements
+    nextAchievements,
+    incomeTotals,
+    incomeTotalsLoading,
+    incomeTotalsError,
   };
 
   const SameSlabData = {

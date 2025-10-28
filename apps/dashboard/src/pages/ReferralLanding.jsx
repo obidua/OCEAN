@@ -66,6 +66,10 @@ export default function ReferralLanding() {
   const handleConnect = async () => {
     setError('');
     if (!isConnected) {
+      // Temporarily disable sounds during wallet connection
+      if (typeof window !== 'undefined' && window.financialSounds) {
+        window.financialSounds.setTemporarilyDisabled(true, 15000); // Disable for 15 seconds
+      }
       await open();
     } else if (address) {
       // force re-run of validation

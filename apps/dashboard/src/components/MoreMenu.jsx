@@ -160,27 +160,74 @@ export default function MoreMenu({ isOpen, onClose = () => {} }) {
 
   const handleDisconnect = async () => {
     try {
-      // 1) Disconnect via wagmi
+      // Temporarily disable sounds during disconnect
+      if (typeof window !== 'undefined' && window.financialSounds) {
+        window.financialSounds.setTemporarilyDisabled(true, 10000);
+      }
+
+      // 1. Clear our internal state first
+      try {
+        clearUserAddress();
+        localStorage.removeItem('userAddress');
+      } catch {}
+
+      // 2. Clear wallet caches before disconnecting
+      nukeWalletCaches();
+
+      // 3. Disconnect wallet connections
       if (disconnectAsync) await disconnectAsync();
       else if (disconnect) await Promise.resolve(disconnect());
 
-      // 2) Also tear down provider sessions (WalletConnect/injected)
+      // 4. Additional provider cleanup
       try {
         const provider = await connector?.getProvider?.();
-        if (provider?.disconnect) await provider.disconnect(); // EIP-1193
-        if (provider?.wc?.destroy) await provider.wc.destroy(); // WC v2
-        if (provider?.close) await provider.close(); // some injected
+        if (provider?.disconnect) await provider.disconnect();
+        if (provider?.wc?.destroy) await provider.wc.destroy();
+        if (provider?.close) await provider.close();
       } catch {}
 
-      // 3) Clear caches + your own auth marker
-      nukeWalletCaches();
+      // 5. Clear any AppKit specific caches
       try {
-        clearUserAddress();
+        if (window.appKit && window.appKit.reset) {
+          window.appKit.reset();
+        }
+        // Clear AppKit specific storage
+        const appKitKeys = ['appkit', 'w3m', 'reown'];
+        appKitKeys.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+          } catch {}
+        });
       } catch {}
+
+      // 6. Clear any remaining wallet state
+      try {
+        // Clear IndexedDB wallet data
+        if (window.indexedDB) {
+          const deleteReq = window.indexedDB.deleteDatabase('appkit');
+          deleteReq.onsuccess = () => console.log('AppKit DB cleared');
+        }
+      } catch {}
+
+      // 7. Clear Service Worker caches to prevent wallet state persistence
+      try {
+        if ('serviceWorker' in navigator && 'caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          );
+          console.log('Service Worker caches cleared');
+        }
+      } catch (e) {
+        console.log('Cache clearing failed:', e);
+      }
+
     } finally {
-      // Important: avoid navigate()/onClose() churn.
-      // Do a hard replace so AuthGate catches you at /login without flicker.
-      window.location.replace("/login");
+      // 8. Add a small delay before redirect to ensure cleanup completes
+      setTimeout(() => {
+        window.location.replace('/login');
+      }, 750); // Increased delay for cache clearing
     }
   };
 

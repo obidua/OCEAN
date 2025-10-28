@@ -96,17 +96,36 @@ const getTransactionColor = (type) => {
 
 
 
+const USD_MICRO_FACTOR = 1e6;
+const RAMA_DECIMALS = 1e18;
+
+const toNumberSafe = (value) => {
+  if (value == null) return 0;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
 const transformLedgerEntry = (entry) => {
   const type = entry.isCredit
     ? CREDIT_KIND_TO_TYPE[Number(entry.kind)] || TRANSACTION_TYPES.MANUAL
     : DEBIT_KIND_TO_TYPE[Number(entry.kind)] || TRANSACTION_TYPES.WITHDRAW;
 
+  const usdRaw =
+    toNumberSafe(entry.usdAmount) ||
+    toNumberSafe(entry.amountUsd) ||
+    toNumberSafe(entry.usd);
+
+  const ramaRaw =
+    toNumberSafe(entry.ramaAmount) ||
+    toNumberSafe(entry.amountRama) ||
+    toNumberSafe(entry.rama);
+
   return {
     id: entry.memoReadable || entry.memo || `${entry.kind}-${entry.timestamp}`,
     type,
     isCredit: entry.isCredit,
-    amount_usd: parseFloat(entry.usdAmount) / 1e8, // assuming cents → dollars
-    amount_rama: parseFloat(entry.ramaAmount) / 1e18, // adjust if 18 decimals
+    amount_usd: usdRaw / USD_MICRO_FACTOR,
+    amount_rama: ramaRaw / RAMA_DECIMALS,
     timestamp: new Date(Number(entry.timestamp) * 1000)
       .toISOString()
       .replace("T", " ")
@@ -140,10 +159,15 @@ export default function TransactionHistory() {
   const [volumeLoading, setVolumeLoading] = useState(false);
   const [volumeError, setVolumeError] = useState('');
 
+  const [incomeTotalsDetail, setIncomeTotalsDetail] = useState(null);
+  const [incomeTotalsLoading, setIncomeTotalsLoading] = useState(false);
+  const [incomeTotalsError, setIncomeTotalsError] = useState('');
+
 
 
 
   const getIncomeTransaction = useStore((s) => s.getIncomeTransaction);
+  const getIncomeTotals = useStore((s) => s.getIncomeTotals);
   const getLegsDetailedVolume = useStore((s) => s.getLegsDetailedVolume);
   const getVolumeAnalytics = useStore((s) => s.getVolumeAnalytics);
   const userAddress = localStorage.getItem('userAddress') || null;
@@ -227,6 +251,40 @@ export default function TransactionHistory() {
     loadVolumeData();
   }, [userAddress, getVolumeAnalytics]);
 
+  useEffect(() => {
+    if (!userAddress || typeof getIncomeTotals !== 'function') {
+      setIncomeTotalsDetail(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIncomeTotalsLoading(true);
+    setIncomeTotalsError('');
+
+    getIncomeTotals(userAddress)
+      .then((totals) => {
+        if (!cancelled) {
+          setIncomeTotalsDetail(totals ?? null);
+        }
+      })
+      .catch((err) => {
+        console.error('Income totals load error:', err);
+        if (!cancelled) {
+          setIncomeTotalsDetail(null);
+          setIncomeTotalsError(err?.message || 'Failed to load income totals.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIncomeTotalsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getIncomeTotals]);
+
 
 
   const baseTransactions = transactions;
@@ -234,10 +292,12 @@ export default function TransactionHistory() {
   const totalsByKind = summary?.totalsByKind ?? null;
 
   const incomeStreamTotals = useMemo(() => {
+    let totals;
+
     if (totalsByKind) {
       const portfolioGrowthRaw =
         (totalsByKind.roi?.usd ?? 0) + (totalsByKind.growth?.usd ?? 0);
-      return {
+      totals = {
         portfolioGrowth: normalizeUsdDisplay(portfolioGrowthRaw),
         slabIncome: normalizeUsdDisplay(totalsByKind.slab?.usd ?? 0),
         royaltyIncome: normalizeUsdDisplay(totalsByKind.royalty?.usd ?? 0),
@@ -245,41 +305,64 @@ export default function TransactionHistory() {
         oneTimeReward: normalizeUsdDisplay(totalsByKind.reward?.usd ?? 0),
         spotIncome: normalizeUsdDisplay(totalsByKind.direct?.usd ?? 0),
       };
+    } else {
+      totals = {
+        portfolioGrowth: normalizeUsdDisplay(
+          baseTransactions
+            .filter((tx) => tx.type === TRANSACTION_TYPES.PORTFOLIO_GROWTH)
+            .reduce((sum, tx) => sum + tx.amount_usd, 0)
+        ),
+        slabIncome: normalizeUsdDisplay(
+          baseTransactions
+            .filter((tx) => tx.type === TRANSACTION_TYPES.SLAB_INCOME)
+            .reduce((sum, tx) => sum + tx.amount_usd, 0)
+        ),
+        royaltyIncome: normalizeUsdDisplay(
+          baseTransactions
+            .filter((tx) => tx.type === TRANSACTION_TYPES.ROYALTY_INCOME)
+            .reduce((sum, tx) => sum + tx.amount_usd, 0)
+        ),
+        sameSlabOverride: normalizeUsdDisplay(
+          baseTransactions
+            .filter((tx) => tx.type === TRANSACTION_TYPES.SAME_SLAB_OVERRIDE)
+            .reduce((sum, tx) => sum + tx.amount_usd, 0)
+        ),
+        oneTimeReward: normalizeUsdDisplay(
+          baseTransactions
+            .filter((tx) => tx.type === TRANSACTION_TYPES.ONE_TIME_REWARD)
+            .reduce((sum, tx) => sum + tx.amount_usd, 0)
+        ),
+        spotIncome: normalizeUsdDisplay(
+          baseTransactions
+            .filter((tx) => tx.type === TRANSACTION_TYPES.SPOT_INCOME)
+            .reduce((sum, tx) => sum + tx.amount_usd, 0)
+        ),
+      };
     }
 
-    return {
-      portfolioGrowth: normalizeUsdDisplay(
-        baseTransactions
-          .filter((tx) => tx.type === TRANSACTION_TYPES.PORTFOLIO_GROWTH)
-          .reduce((sum, tx) => sum + tx.amount_usd, 0)
-      ),
-      slabIncome: normalizeUsdDisplay(
-        baseTransactions
-          .filter((tx) => tx.type === TRANSACTION_TYPES.SLAB_INCOME)
-          .reduce((sum, tx) => sum + tx.amount_usd, 0)
-      ),
-      royaltyIncome: normalizeUsdDisplay(
-        baseTransactions
-          .filter((tx) => tx.type === TRANSACTION_TYPES.ROYALTY_INCOME)
-          .reduce((sum, tx) => sum + tx.amount_usd, 0)
-      ),
-      sameSlabOverride: normalizeUsdDisplay(
-        baseTransactions
-          .filter((tx) => tx.type === TRANSACTION_TYPES.SAME_SLAB_OVERRIDE)
-          .reduce((sum, tx) => sum + tx.amount_usd, 0)
-      ),
-      oneTimeReward: normalizeUsdDisplay(
-        baseTransactions
-          .filter((tx) => tx.type === TRANSACTION_TYPES.ONE_TIME_REWARD)
-          .reduce((sum, tx) => sum + tx.amount_usd, 0)
-      ),
-      spotIncome: normalizeUsdDisplay(
-        baseTransactions
-          .filter((tx) => tx.type === TRANSACTION_TYPES.SPOT_INCOME)
-          .reduce((sum, tx) => sum + tx.amount_usd, 0)
-      ),
-    };
-  }, [totalsByKind, baseTransactions]);
+    if (incomeTotalsDetail) {
+      totals = {
+        ...totals,
+        portfolioGrowth: normalizeUsdDisplay(
+          incomeTotalsDetail.growthUsd ?? totals.portfolioGrowth ?? 0
+        ),
+        slabIncome: normalizeUsdDisplay(
+          incomeTotalsDetail.slabIncomeUsd ?? totals.slabIncome ?? 0
+        ),
+        royaltyIncome: normalizeUsdDisplay(
+          incomeTotalsDetail.royaltyUsd ?? totals.royaltyIncome ?? 0
+        ),
+        oneTimeReward: normalizeUsdDisplay(
+          incomeTotalsDetail.rewardUsd ?? totals.oneTimeReward ?? 0
+        ),
+        spotIncome: normalizeUsdDisplay(
+          incomeTotalsDetail.directIncomeUsd ?? totals.spotIncome ?? 0
+        ),
+      };
+    }
+
+    return totals;
+  }, [totalsByKind, baseTransactions, incomeTotalsDetail]);
 
   const totalEarnings = useMemo(() => {
     if (totalsByKind) {
@@ -435,7 +518,24 @@ export default function TransactionHistory() {
 
       <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-        <h2 className="text-base sm:text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Income Stream Breakdown</h2>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-cyan-300 uppercase tracking-wide">
+            Income Stream Breakdown
+          </h2>
+          {incomeTotalsLoading && (
+            <Loader2 className="animate-spin text-cyan-400" size={16} />
+          )}
+          {!incomeTotalsLoading && incomeTotalsError && (
+            <span className="text-xs text-red-300 bg-red-500/10 border border-red-500/40 rounded-md px-2 py-1">
+              {incomeTotalsError}
+            </span>
+          )}
+          {!incomeTotalsLoading && !incomeTotalsError && incomeTotalsDetail && (
+            <span className="text-[11px] text-cyan-300/70 uppercase tracking-wide">
+              Data: ComprehensiveView.getIncomeTotals
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="p-3 cyber-glass border border-neon-green/30 rounded-lg">
             <p className="text-xs text-neon-green/90 mb-1">Portfolio Growth</p>

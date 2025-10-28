@@ -12,6 +12,7 @@ class FinancialSoundSystem {
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     this.userHasInteracted = false;
+    this.temporarilyDisabled = false; // For wallet connection periods
     
     // Bind methods for event listeners
     this.handleUserInteraction = this.handleUserInteraction.bind(this);
@@ -29,8 +30,26 @@ class FinancialSoundSystem {
       return false;
     }
     
+    // Don't play if temporarily disabled (e.g., during wallet operations)
+    if (this.temporarilyDisabled) {
+      return false;
+    }
+    
     this.lastPlayTime[soundType] = now;
     return this.enabled;
+  }
+
+  // Temporarily disable sounds (for wallet connection periods)
+  setTemporarilyDisabled(disabled, duration = 5000) {
+    this.temporarilyDisabled = disabled;
+    
+    if (disabled && duration > 0) {
+      // Auto-enable after duration
+      setTimeout(() => {
+        this.temporarilyDisabled = false;
+        console.log('🔊 Sound system re-enabled after wallet operation');
+      }, duration);
+    }
   }
 
   // Enable/disable sounds
@@ -62,19 +81,36 @@ class FinancialSoundSystem {
   // Set up mobile interaction listeners for audio initialization
   setupMobileListeners() {
     if (this.isMobile) {
+      // Use passive listeners that don't interfere with other interactions
       const events = ['touchstart', 'touchend', 'click', 'keydown'];
       events.forEach(event => {
-        document.addEventListener(event, this.handleUserInteraction, { once: true, passive: true });
+        document.addEventListener(event, this.handleUserInteraction, { 
+          passive: true,
+          capture: false // Don't capture events, let them bubble normally
+        });
       });
     }
   }
 
   // Handle user interaction for mobile audio initialization
-  async handleUserInteraction() {
+  async handleUserInteraction(event) {
+    // Don't consume the event - let it continue to other handlers
     if (!this.userHasInteracted) {
       this.userHasInteracted = true;
-      await this.initializeAudioContext();
-      console.log('🔊 Audio context initialized via user interaction');
+      
+      // Remove listeners after first interaction to avoid conflicts
+      if (this.isMobile) {
+        const events = ['touchstart', 'touchend', 'click', 'keydown'];
+        events.forEach(eventType => {
+          document.removeEventListener(eventType, this.handleUserInteraction);
+        });
+      }
+      
+      // Delay audio initialization to not interfere with current event
+      setTimeout(async () => {
+        await this.initializeAudioContext();
+        console.log('🔊 Audio context initialized via user interaction');
+      }, 100);
     }
   }
 
@@ -213,6 +249,12 @@ class FinancialSoundSystem {
     if (!this.enabled) return;
 
     try {
+      // Don't initialize audio during wallet connection processes
+      if (this.isWalletConnecting()) {
+        console.log('🔊 Skipping sound during wallet connection');
+        return;
+      }
+
       // Get the shared audio context
       const audioContext = await this.getAudioContext();
       
@@ -233,6 +275,29 @@ class FinancialSoundSystem {
     } catch (error) {
       console.warn('Could not play financial sound:', error);
     }
+  }
+
+  // Check if wallet connection is in progress
+  isWalletConnecting() {
+    // Check for common wallet connection indicators
+    if (typeof window !== 'undefined') {
+      // Check for active wallet modals or connection processes
+      const walletModal = document.querySelector('[data-testid="w3m-modal"]') || 
+                         document.querySelector('.w3m-modal') ||
+                         document.querySelector('[class*="wallet"]') ||
+                         document.querySelector('[id*="connect"]');
+      
+      if (walletModal && walletModal.style.display !== 'none') {
+        return true;
+      }
+      
+      // Check for AppKit connection state
+      if (window.appKit && window.appKit.state) {
+        return window.appKit.state.loading || window.appKit.state.connecting;
+      }
+    }
+    
+    return false;
   }
 
   // Public method to manually initialize audio (for settings page)
@@ -426,6 +491,7 @@ export const {
   playTransactionSuccess,
   setEnabled,
   setVolume,
+  setTemporarilyDisabled,
   initializeMobile,
   getAudioStatus,
   isAudioReady

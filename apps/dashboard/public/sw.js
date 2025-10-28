@@ -21,6 +21,23 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  // Don't cache wallet-related requests or auth-sensitive data
+  const url = new URL(event.request.url);
+  const skipCache = 
+    url.pathname.includes('/login') ||
+    url.pathname.includes('/auth') ||
+    url.pathname.includes('/wallet') ||
+    url.search.includes('wallet') ||
+    event.request.url.includes('appkit') ||
+    event.request.url.includes('walletconnect') ||
+    event.request.headers.get('authorization');
+
+  if (skipCache) {
+    // For sensitive requests, always fetch from network
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

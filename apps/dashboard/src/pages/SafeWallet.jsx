@@ -13,6 +13,9 @@ import {
   ChevronRight,
   X,
   Loader2,
+  Filter,
+  SortAsc,
+  SortDesc,
 } from 'lucide-react';
 import { formatRAMA, formatUSD } from '../utils/contractData';
 import AddressWithCopy from '../components/AddressWithCopy';
@@ -92,6 +95,12 @@ export default function SafeWallet() {
   const [historyEntries, setHistoryEntries] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
+
+  // Transaction History Filter State
+  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'credit', 'debit', 'income', 'withdrawal', 'portfolio'
+  const [selectedIncomeType, setSelectedIncomeType] = useState('all'); // 'all', 'roi', 'growth', 'royalty', 'slab', 'reward', 'direct', 'manual'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
+  const [sortBy, setSortBy] = useState('date'); // 'date', 'amount', 'type'
 
   // Income sources state
   const [incomeData, setIncomeData] = useState({
@@ -490,20 +499,86 @@ export default function SafeWallet() {
         fundSource,
         type,
         date: entry.timestamp ? formatDate(entry.timestamp) : '—',
+        rawTimestamp: Number(entry.timestamp) || 0,
         tokenAmount: grossRama,
       };
     },
     [formatDate]
   );
 
-  const historyRows = useMemo(
-    () => historyEntries.map(mapHistoryEntry).filter(Boolean),
-    [historyEntries, mapHistoryEntry]
-  );
+  const historyRows = useMemo(() => {
+    let filtered = historyEntries.map(mapHistoryEntry).filter(Boolean);
+
+    // Apply filters
+    if (selectedFilter !== 'all') {
+      if (selectedFilter === 'credit') {
+        filtered = filtered.filter(tx => tx.direction === 'credit');
+      } else if (selectedFilter === 'debit') {
+        filtered = filtered.filter(tx => tx.direction === 'debit');
+      } else {
+        filtered = filtered.filter(tx => tx.type === selectedFilter);
+      }
+    }
+
+    // Apply income type filter (only for credit transactions)
+    if (selectedIncomeType !== 'all') {
+      filtered = filtered.filter(tx => {
+        if (tx.direction !== 'credit') return true; // Keep all debit transactions
+        
+        const entry = historyEntries.find(e => e.timestamp === tx.rawTimestamp);
+        if (!entry) return false;
+        
+        const kind = Number(entry.kind ?? 0);
+        switch (selectedIncomeType) {
+          case 'roi': return kind === SAFEWALLET_KINDS.ROI;
+          case 'growth': return kind === SAFEWALLET_KINDS.GROWTH;
+          case 'royalty': return kind === SAFEWALLET_KINDS.ROYALTY;
+          case 'slab': return kind === SAFEWALLET_KINDS.SLAB;
+          case 'reward': return kind === SAFEWALLET_KINDS.REWARD;
+          case 'direct': return kind === SAFEWALLET_KINDS.DIRECT;
+          case 'manual': return kind === SAFEWALLET_KINDS.MANUAL;
+          default: return true;
+        }
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'amount':
+          aValue = Math.abs(a.netUsd);
+          bValue = Math.abs(b.netUsd);
+          break;
+        case 'type':
+          aValue = a.activity;
+          bValue = b.activity;
+          break;
+        case 'date':
+        default:
+          aValue = a.rawTimestamp || 0;
+          bValue = b.rawTimestamp || 0;
+          break;
+      }
+      
+      if (sortBy === 'type') {
+        // String comparison for type
+        const comparison = aValue.localeCompare(bValue);
+        return sortOrder === 'desc' ? -comparison : comparison;
+      } else {
+        // Numeric comparison for amount and date
+        const comparison = aValue - bValue;
+        return sortOrder === 'desc' ? -comparison : comparison;
+      }
+    });
+
+    return filtered;
+  }, [historyEntries, mapHistoryEntry, selectedFilter, selectedIncomeType, sortBy, sortOrder]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [historyRows.length]);
+  }, [historyRows.length, selectedFilter, selectedIncomeType, sortBy, sortOrder]);
 
   const paginatedHistory = useMemo(() => {
     const start = (currentPage - 1) * HISTORY_PAGE_SIZE;
@@ -534,6 +609,13 @@ export default function SafeWallet() {
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
+  };
+
+  const resetFilters = () => {
+    setSelectedFilter('all');
+    setSelectedIncomeType('all');
+    setSortBy('date');
+    setSortOrder('desc');
   };
 
   const handleOpenWithdraw = () => {
@@ -1348,6 +1430,120 @@ export default function SafeWallet() {
             <p className="text-xs text-cyan-300/80 mb-4 hidden sm:block">
               On-chain ledger pulled directly from the SafeWallet contract. Credits and debits reflect the latest contract state.
             </p>
+
+            {/* Filter Controls */}
+            <div className="mb-4 sm:mb-6 space-y-3">
+              {/* Primary Filters Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1 text-xs text-cyan-300/70">
+                  <Filter size={14} />
+                  <span>Filter:</span>
+                </div>
+                
+                {/* Filter Controls Row */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Transaction Type Filter */}
+                  <select
+                    value={selectedFilter}
+                    onChange={(e) => setSelectedFilter(e.target.value)}
+                    className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none min-w-[100px]"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="credit">Credits Only</option>
+                    <option value="debit">Debits Only</option>
+                    <option value="income">Income</option>
+                    <option value="withdrawal">Withdrawals</option>
+                    <option value="portfolio">Portfolio</option>
+                  </select>
+
+                  {/* Income Type Filter (shown only when credits are selected) */}
+                  {(selectedFilter === 'all' || selectedFilter === 'credit' || selectedFilter === 'income') && (
+                    <select
+                      value={selectedIncomeType}
+                      onChange={(e) => setSelectedIncomeType(e.target.value)}
+                      className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none min-w-[100px]"
+                    >
+                      <option value="all">All Income</option>
+                      <option value="roi">Portfolio Growth</option>
+                      <option value="growth">Spot Income</option>
+                      <option value="royalty">Royalty</option>
+                      <option value="slab">Slab Income</option>
+                      <option value="reward">Rewards</option>
+                      <option value="direct">Direct Income</option>
+                      <option value="manual">Manual</option>
+                    </select>
+                  )}
+                </div>
+
+                {/* Sort Controls */}
+                <div className="flex items-center gap-1 sm:ml-auto">
+                  <span className="text-xs text-cyan-300/70">Sort:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none min-w-[80px]"
+                  >
+                    <option value="date">Date</option>
+                    <option value="amount">Amount</option>
+                    <option value="type">Type</option>
+                  </select>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                    className="p-1 hover:bg-cyan-500/10 rounded transition-colors"
+                    title={`Sort ${sortOrder === 'desc' ? 'Ascending' : 'Descending'}`}
+                  >
+                    {sortOrder === 'desc' ? (
+                      <SortDesc size={14} className="text-cyan-400" />
+                    ) : (
+                      <SortAsc size={14} className="text-cyan-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Summary */}
+              <div className="flex items-center justify-between text-xs text-cyan-300/60">
+                <div className="flex items-center gap-2">
+                  {selectedFilter !== 'all' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+                      {selectedFilter === 'credit' ? 'Credits' : selectedFilter === 'debit' ? 'Debits' : selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)}
+                      <button
+                        onClick={() => setSelectedFilter('all')}
+                        className="hover:text-cyan-200"
+                        title="Clear filter"
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  )}
+                  {selectedIncomeType !== 'all' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
+                      {selectedIncomeType === 'roi' ? 'Portfolio Growth' : 
+                       selectedIncomeType === 'growth' ? 'Spot Income' :
+                       selectedIncomeType.charAt(0).toUpperCase() + selectedIncomeType.slice(1)}
+                      <button
+                        onClick={() => setSelectedIncomeType('all')}
+                        className="hover:text-cyan-200"
+                        title="Clear filter"
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  )}
+                  {(selectedFilter !== 'all' || selectedIncomeType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc') && (
+                    <button
+                      onClick={resetFilters}
+                      className="text-xs text-cyan-400 hover:text-cyan-200 underline ml-2"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                <span>
+                  {historyRows.length} of {historyEntries.length} records
+                </span>
+              </div>
+            </div>
 
             {historyError && (
               <div className="mb-4 p-3 border border-red-400/40 bg-red-500/10 text-red-200 rounded-lg text-xs">

@@ -6,14 +6,13 @@ import {
   Clock,
   AlertCircle,
   Zap,
-  Target,
   RefreshCw,
   Loader2,
   Info,
   Download,
+  Users,
 } from "lucide-react";
 import NumberPopup from "../components/NumberPopup";
-import Tooltip from "../components/Tooltip";
 import AddressWithCopy from "../components/AddressWithCopy";
 import { formatUSD, formatRAMA } from "../utils/contractData";
 import { useStore } from "../../store/useUserInfoStore";
@@ -68,18 +67,24 @@ const defaultOverview = {
   activeSpots: 0,
 };
 
+const createDefaultDownline = () => ({
+  items: [],
+  totals: { portfolioUsd: 0, roiUsd: 0, roiRama: 0 },
+  count: 0,
+});
+
 export default function SpotIncome() {
   const [overview, setOverview] = useState(defaultOverview);
   const [transactions, setTransactions] = useState([]);
-  const [portfolioTotals, setPortfolioTotals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [teamVolumeUsd, setTeamVolumeUsd] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [downline, setDownline] = useState({ items: [], totals: { portfolioUsd: 0, roiUsd: 0, roiRama: 0 }, count: 0 });
+  const [downline, setDownline] = useState(createDefaultDownline);
   const [downlineError, setDownlineError] = useState(null);
   const [showAllDownline, setShowAllDownline] = useState(false);
+  const [downlineLoading, setDownlineLoading] = useState(false);
 
   const getSpotIncomeSummary = useStore((s) => s.getSpotIncomeSummary);
   const getSpotIncomeTransactions = useStore(
@@ -95,9 +100,12 @@ export default function SpotIncome() {
     if (!userAddress) {
       setOverview(defaultOverview);
       setTransactions([]);
-      setPortfolioTotals([]);
       setHasMore(false);
       setTeamVolumeUsd(null);
+      setDownline(createDefaultDownline());
+      setDownlineError(null);
+      setShowAllDownline(false);
+      setDownlineLoading(false);
       return;
     }
 
@@ -110,7 +118,6 @@ export default function SpotIncome() {
       });
       setOverview(data?.overview ?? defaultOverview);
       setTransactions(data?.transactions ?? []);
-      setPortfolioTotals(data?.totalsByPortfolio ?? []);
       setHasMore(Boolean(data?.hasMore));
 
       if (getTeamNetworkData) {
@@ -130,24 +137,33 @@ export default function SpotIncome() {
 
   // Fetch downline daily accrued reward snapshot (ComprehensiveView)
       if (getDownlineRoiView) {
+        setDownlineLoading(true);
+        setShowAllDownline(false);
         try {
           const snap = await getDownlineRoiView(userAddress);
-          setDownline(snap || { items: [], totals: { portfolioUsd: 0, roiUsd: 0, roiRama: 0 }, count: 0 });
+          setDownline(snap ?? createDefaultDownline());
           setDownlineError(null);
         } catch (dlErr) {
           console.warn('Spot income downline Daily Accrued Reward fetch failed:', dlErr);
-          setDownline({ items: [], totals: { portfolioUsd: 0, roiUsd: 0, roiRama: 0 }, count: 0 });
+          setDownline(createDefaultDownline());
           setDownlineError(dlErr?.message || 'Unable to load downline daily accrued reward data.');
+        } finally {
+          setDownlineLoading(false);
         }
+      } else {
+        setDownline(createDefaultDownline());
+        setDownlineError(null);
+        setDownlineLoading(false);
       }
     } catch (err) {
       console.error(err);
       setError(err?.message || "Unable to load spot income data.");
       setOverview(defaultOverview);
       setTransactions([]);
-      setPortfolioTotals([]);
       setHasMore(false);
       setTeamVolumeUsd(null);
+      setDownline(createDefaultDownline());
+      setDownlineLoading(false);
     } finally {
       setLoading(false);
     }
@@ -217,22 +233,6 @@ export default function SpotIncome() {
     return normalizeUsdDisplay(raw);
   }, [overview]);
 
-  const totalDirectUsdValue = useMemo(() => {
-    const raw =
-      overview?.totalDirectUsdMicro != null
-        ? microToUsd(overview.totalDirectUsdMicro)
-        : overview?.totalDirectUsd ?? 0;
-    return normalizeUsdDisplay(raw);
-  }, [overview]);
-
-  const averageSpotUsdValue = useMemo(() => {
-    const raw =
-      overview?.averageSpotUsdMicro != null
-        ? microToUsd(overview.averageSpotUsdMicro)
-        : overview?.averageSpotUsd ?? 0;
-    return normalizeUsdDisplay(raw);
-  }, [overview]);
-
   const lifetimeRamaValue = useMemo(
     () =>
       overview?.lifetimeRamaWei != null
@@ -256,22 +256,6 @@ export default function SpotIncome() {
         : overview?.last24hRama ?? 0,
     [overview]
   );
-
-  const totalsByPortfolioNormalized = useMemo(() => {
-    return (portfolioTotals ?? [])
-      .map((item) => {
-        const usdValue =
-          item?.usdMicro != null ? microToUsd(item.usdMicro) : item?.usd ?? 0;
-        const ramaValue =
-          item?.ramaWei != null ? weiToRama(item.ramaWei) : item?.rama ?? 0;
-        return {
-          ...item,
-          usdValue: normalizeUsdDisplay(usdValue),
-          ramaValue,
-        };
-      })
-      .sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0));
-  }, [portfolioTotals]);
 
   const sortedTransactions = useMemo(() => {
     return (transactions ?? [])
@@ -299,12 +283,52 @@ export default function SpotIncome() {
     [sortedTransactions]
   );
 
-  const activeSpots = Number.isFinite(overview?.activeSpots)
-    ? overview.activeSpots
-    : totalsByPortfolioNormalized.length;
-  const totalEntries = Number.isFinite(overview?.totalEntries)
-    ? overview.totalEntries
-    : transactions.length;
+  const todayStats = useMemo(() => {
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      return { count: 0, usdValue: 0, ramaValue: 0 };
+    }
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const startTs = Math.floor(startOfDay.getTime() / 1000);
+    let usdMicroSum = 0;
+    let ramaWeiSum = 0;
+    let count = 0;
+
+    for (const tx of transactions) {
+      const ts = Number(tx?.timestamp);
+      if (!Number.isFinite(ts) || ts < startTs) continue;
+      const usdMicro = Number(tx?.amountUsdMicro ?? 0);
+      const ramaWei = Number(tx?.amountRamaWei ?? 0);
+      if (Number.isFinite(usdMicro)) {
+        usdMicroSum += usdMicro;
+      }
+      if (Number.isFinite(ramaWei)) {
+        ramaWeiSum += ramaWei;
+      }
+      count += 1;
+    }
+
+    return {
+      count,
+      usdValue: normalizeUsdDisplay(microToUsd(usdMicroSum)),
+      ramaValue: weiToRama(ramaWeiSum),
+    };
+  }, [transactions]);
+
+  const {
+    count: todayEntryCount,
+    usdValue: todayUsdValue,
+    ramaValue: todayRamaValue,
+  } = todayStats;
+
+  const displayedDownline = useMemo(() => {
+    const items = Array.isArray(downline?.items) ? downline.items : [];
+    return showAllDownline ? items : items.slice(0, 10);
+  }, [downline, showAllDownline]);
+
+  const downlineHasMore =
+    (Array.isArray(downline?.items) ? downline.items.length : 0) >
+    displayedDownline.length;
 
   const teamVolumeDisplay =
     teamVolumeUsd != null && Number.isFinite(Number(teamVolumeUsd))
@@ -453,25 +477,25 @@ export default function SpotIncome() {
         <div className="cyber-glass rounded-2xl p-5 border border-neon-green/40">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 cyber-glass border border-neon-green/30 rounded-lg">
-              <Target className="text-neon-green" size={20} />
+              <Zap className="text-neon-green" size={20} />
             </div>
             <div>
               <p className="text-xs font-medium text-cyan-300 uppercase tracking-wide">
-                Active Spot Sources
+                Today Spot Rewards
               </p>
               <p className="text-[11px] text-cyan-300/80">
-                Portfolios contributing to earnings
+                Direct income collected today
               </p>
             </div>
           </div>
           <p className="text-3xl font-bold text-neon-green">
-            {activeSpots}
+            {formatUSD(todayUsdValue)}
           </p>
           <p className="text-xs text-cyan-300/90 mt-1">
-            Avg credit: {formatUSD(averageSpotUsdValue)} per entry
+            Entries today: {todayEntryCount}
           </p>
           <p className="text-xs text-cyan-300/70 mt-1">
-            Total entries recorded: {totalEntries}
+            Total RAMA: {formatRAMA(todayRamaValue)}
           </p>
         </div>
 
@@ -500,134 +524,6 @@ export default function SpotIncome() {
           </p>
         </div>
       </div>
-
-      {totalsByPortfolioNormalized.length > 0 && (
-        <div className="cyber-glass rounded-2xl p-5 border border-neon-green/40 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/50 to-transparent" />
-          <div className="flex items-center justify-between mb-5 relative z-10">
-            <div>
-              <h2 className="text-lg font-semibold text-neon-green uppercase tracking-wide">
-                Portfolio Contribution
-              </h2>
-              <p className="text-xs text-cyan-300/80">
-                Direct income totals grouped by portfolio
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] text-cyan-300/80">
-                Total direct income
-              </p>
-              <p className="text-xl font-bold text-neon-green">
-                {formatUSD(totalDirectUsdValue)}
-              </p>
-            </div>
-          </div>
-          {loading ? (
-            <div className="text-sm text-cyan-300/70">
-              Syncing portfolio contribution breakdown…
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 relative z-10">
-              {totalsByPortfolioNormalized.map((item) => (
-                <div
-                  key={item.pid}
-                  className="cyber-glass rounded-xl p-4 border border-neon-green/30 hover:border-neon-green/60 transition-all"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-neon-green uppercase tracking-wide">
-                      Portfolio #{item.pid}
-                    </span>
-                    <Zap size={14} className="text-neon-green" />
-                  </div>
-                  <p className="text-xs text-cyan-300/80">Total USD</p>
-                  <p className="text-lg font-bold text-cyan-300">
-                    {formatUSD(item.usdValue)}
-                  </p>
-                  <p className="text-[11px] text-cyan-300/70 mt-1">
-                    {formatRAMA(item.ramaValue)} RAMA • {item.count} entries
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-  {/* Downline Daily Accrued Reward Table (added without changing existing sections) */}
-      {userAddress && (
-        <div className="cyber-glass rounded-2xl p-5 border border-cyan-500/30 overflow-x-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <Award size={18} className="text-cyan-400" />
-            <h3 className="text-base font-semibold text-cyan-300 uppercase tracking-wide">Downline Daily Accrued Reward</h3>
-            <span className="ml-auto text-[11px] text-cyan-300/70">{downline?.count ?? 0} members</span>
-          </div>
-
-          {downlineError ? (
-            <div className="text-sm text-yellow-200 bg-yellow-900/20 border border-yellow-500/40 rounded-lg px-3 py-2 mb-3">
-              {downlineError}
-            </div>
-          ) : null}
-
-          {!downline?.items?.length ? (
-            <div className="text-sm text-cyan-300/70 flex items-center gap-2">
-              <AlertCircle size={16} />
-              No downline daily accrued reward data available yet.
-            </div>
-          ) : (
-            <>
-              <table className="w-full text-sm min-w-[640px]">
-                <thead>
-                  <tr className="text-left text-cyan-300/70 border-b border-cyan-500/20">
-                    <th className="py-2 pr-4">#</th>
-                    <th className="py-2 pr-4">Member</th>
-                    <th className="py-2 pr-4 text-right">Portfolio (USD)</th>
-                    <th className="py-2 pr-4 text-right">Daily Accrued Reward (USD)</th>
-                    <th className="py-2 pr-4 text-right">Daily Accrued Reward (RAMA)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(showAllDownline ? downline.items : downline.items.slice(0, 10)).map((m, i) => (
-                    <tr key={`${m.member}-${i}`} className="border-b border-cyan-500/10">
-                      <td className="py-2 pr-4 align-middle text-cyan-300/80">{i + 1}</td>
-                      <td className="py-2 pr-4 align-middle">
-                        <AddressWithCopy
-                          address={m.member}
-                          copyLabel=""
-                          className="text-[11px]"
-                          textClassName="font-mono text-cyan-200 truncate max-w-[240px]"
-                        />
-                      </td>
-                      <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(m.portfolioUsd)}</td>
-                      <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(m.roiUsd)}</td>
-                      <td className="py-2 pr-4 text-right text-cyan-200">{formatRAMA(m.roiRama)} RAMA</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t border-cyan-500/20">
-                    <td colSpan={2} className="py-2 pr-4 text-right text-cyan-300/80">Totals</td>
-                    <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(downline?.totals?.portfolioUsd ?? 0)}</td>
-                    <td className="py-2 pr-4 text-right text-cyan-200">{formatUSD(downline?.totals?.roiUsd ?? 0)}</td>
-                    <td className="py-2 pr-4 text-right text-cyan-200">{formatRAMA(downline?.totals?.roiRama ?? 0)} RAMA</td>
-                  </tr>
-                </tfoot>
-              </table>
-
-              {downline.items.length > 10 && (
-                <div className="mt-3">
-                  <button
-                    onClick={() => setShowAllDownline((v) => !v)}
-                    className="px-3 py-2 text-xs font-semibold uppercase tracking-wide border border-cyan-500/30 rounded-lg text-cyan-200 hover:border-cyan-500/60 transition-all"
-                  >
-                    {showAllDownline ? 'Show Less' : `View More (${downline.items.length - 10} more)`}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="cyber-glass rounded-2xl p-5 border border-cyan-500/30">
           <div className="flex items-center gap-3 mb-5">
@@ -746,9 +642,170 @@ export default function SpotIncome() {
                 </p>
               </div>
             </div>
-          </div>
         </div>
       </div>
     </div>
+
+    {userAddress && false && (
+      <div className="cyber-glass rounded-2xl p-5 border border-cyan-500/40 relative overflow-hidden space-y-5">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/15 via-cyan-400/5 to-neon-green/10 pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+        <div className="relative z-10 flex flex-col gap-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-cyan-500/20 border border-cyan-500/30 rounded-lg">
+                <Award size={20} className="text-cyan-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-cyan-100 uppercase tracking-wide">
+                  Downline Daily Accrued Reward
+                </h3>
+                <p className="text-[11px] text-cyan-300/70">
+                  Snapshot of daily accrued ROI across your direct team.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 text-[11px] uppercase tracking-wide border border-cyan-500/40 rounded-full text-cyan-200 bg-cyan-500/10">
+                {downline?.count ?? 0} members
+              </span>
+              <span className="px-3 py-1 text-[11px] uppercase tracking-wide border border-neon-green/40 rounded-full text-neon-green bg-neon-green/10">
+                {formatUSD(downline?.totals?.roiUsd ?? 0)} daily
+              </span>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4 backdrop-blur">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-cyan-300/70">
+                <Users size={14} className="text-cyan-300" />
+                Team Members
+              </div>
+              <p className="text-2xl font-semibold text-cyan-100 mt-2">
+                {downline?.count ?? 0}
+              </p>
+            </div>
+            <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4 backdrop-blur">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-cyan-300/70">
+                <Coins size={14} className="text-cyan-300" />
+                Portfolio Value (USD)
+              </div>
+              <p className="text-2xl font-semibold text-cyan-100 mt-2">
+                {formatUSD(downline?.totals?.portfolioUsd ?? 0)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4 backdrop-blur">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-cyan-300/70">
+                <TrendingUp size={14} className="text-neon-green" />
+                Daily ROI
+              </div>
+              <p className="text-2xl font-semibold text-neon-green mt-2">
+                {formatUSD(downline?.totals?.roiUsd ?? 0)}
+              </p>
+              <p className="text-[11px] text-cyan-300/70 mt-1">
+                {formatRAMA(downline?.totals?.roiRama ?? 0)} RAMA
+              </p>
+            </div>
+          </div>
+
+          {!downlineLoading && downlineError && (
+            <div className="text-sm text-yellow-200 bg-yellow-900/20 border border-yellow-500/40 rounded-lg px-3 py-2">
+              {downlineError}
+            </div>
+          )}
+
+          {downlineLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="h-12 rounded-lg bg-cyan-500/15 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (downline?.items?.length ?? 0) > 0 ? (
+            <>
+              <div className="relative z-10 overflow-hidden rounded-xl border border-cyan-500/20 backdrop-blur">
+                <table className="w-full text-sm min-w-[640px]">
+                  <thead className="bg-cyan-500/10 text-[11px] uppercase tracking-wide text-cyan-300/80">
+                    <tr>
+                      <th className="py-3 px-4 text-left">#</th>
+                      <th className="py-3 px-4 text-left">Member</th>
+                      <th className="py-3 px-4 text-right">Portfolio (USD)</th>
+                      <th className="py-3 px-4 text-right">Daily ROI (USD)</th>
+                      <th className="py-3 px-4 text-right">Daily ROI (RAMA)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-cyan-500/15">
+                    {displayedDownline.map((m, i) => (
+                      <tr
+                        key={`${m.member}-${i}`}
+                        className="transition-colors hover:bg-cyan-500/5"
+                      >
+                        <td className="py-3 px-4 text-cyan-300/80 font-mono text-xs">
+                          {i + 1}
+                        </td>
+                        <td className="py-3 px-4">
+                          <AddressWithCopy
+                            address={m.member}
+                            copyLabel=""
+                            className="text-[11px]"
+                            textClassName="font-mono text-cyan-200 truncate max-w-[240px]"
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right text-cyan-100">
+                          {formatUSD(m.portfolioUsd)}
+                        </td>
+                        <td className="py-3 px-4 text-right text-neon-green">
+                          {formatUSD(m.roiUsd)}
+                        </td>
+                        <td className="py-3 px-4 text-right text-cyan-100">
+                          {formatRAMA(m.roiRama)} RAMA
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-cyan-500/5 text-cyan-200/90 text-sm">
+                    <tr>
+                      <td className="py-3 px-4 text-left" colSpan={2}>
+                        Totals
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {formatUSD(downline?.totals?.portfolioUsd ?? 0)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {formatUSD(downline?.totals?.roiUsd ?? 0)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {formatRAMA(downline?.totals?.roiRama ?? 0)} RAMA
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {downlineHasMore && (
+                <button
+                  onClick={() => setShowAllDownline((v) => !v)}
+                  className="self-start px-4 py-2 text-xs font-semibold uppercase tracking-wide border border-cyan-500/30 rounded-lg text-cyan-200 hover:border-cyan-500/60 transition-all"
+                >
+                  {showAllDownline
+                    ? "Show Less"
+                    : `View More (${
+                        (downline?.items?.length ?? 0) - displayedDownline.length
+                      } more)`}
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="text-sm text-cyan-300/80 flex items-center gap-2">
+              <AlertCircle size={16} />
+              No downline daily accrued reward data available yet.
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Trophy, Clock, CheckCircle, AlertCircle, TrendingUp, Award, Lock, History, RefreshCw } from 'lucide-react';
 import { useStore } from '../../store/useUserInfoStore';
 import { useAccount, useSendTransaction } from 'wagmi';
@@ -8,6 +8,7 @@ import {
   formatRAMA,
 } from '../utils/contractData';
 import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
+import AddressWithCopy from '../components/AddressWithCopy';
 
 const ROYALTY_TIER_NAMES = [
   'Coral Starter',
@@ -26,22 +27,103 @@ const ROYALTY_TIER_NAMES = [
   'Ocean Supreme',
 ];
 
-const parseMonthEpoch = (value) => {
-  if (!value) return '—';
-  const str = String(value);
-  if (str.length === 6) {
-    const year = str.slice(0, 4);
-    const month = str.slice(4);
-    return `${year}-${month}`;
+const SAFEWALLET_KINDS = {
+  ROYALTY: 2,
+};
+
+const USD_DIVISOR = 1e8;   // For legacy ledger data  
+const USD_MICRO_FACTOR = 1e6; // Same as TransactionHistory for transaction data
+const RAMA_DIVISOR = 1e18; // Same as TransactionHistory RAMA_DECIMALS
+
+const toNumberSafe = (value) => {
+  if (value == null) return 0;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
+const transformRoyaltyLedgerEntry = (entry) => {
+  if (!entry) {
+    return {
+      id: Math.random().toString(36).slice(2),
+      amountUsd: 0,
+      amountRama: 0,
+      rawTimestamp: 0,
+      memo: '',
+      txHash: null,
+      isCredit: true,
+      source: null,
+      status: 'Claimed',
+    };
   }
-  if (value > 1e9 && value < 1e13) {
-    try {
-      return new Date(Number(value) * 1000).toLocaleDateString();
-    } catch (err) {
-      return str;
-    }
+
+  const usdRaw =
+    entry.usdAmount ??
+    entry.amountUsd ??
+    entry.amount_usd ??
+    entry.usd ??
+    0;
+  const ramaRaw =
+    entry.ramaAmount ??
+    entry.amountRama ??
+    entry.amount_rama ??
+    entry.rama ??
+    0;
+  const timestamp =
+    toNumberSafe(entry.timestamp ?? entry.time ?? entry.createdAt ?? 0);
+  const memo =
+    entry.memoReadable ??
+    entry.memo ??
+    entry.detail ??
+    entry.description ??
+    'Royalty Claim';
+  const txHash =
+    entry.txHash ?? entry.transactionHash ?? entry.hash ?? null;
+  const isCreditRaw = entry.isCredit;
+  let isCredit = true;
+  if (typeof isCreditRaw === 'boolean') {
+    isCredit = isCreditRaw;
+  } else if (typeof isCreditRaw === 'number') {
+    isCredit = isCreditRaw !== 0;
+  } else if (typeof isCreditRaw === 'string') {
+    const normalized = isCreditRaw.trim().toLowerCase();
+    isCredit = !(normalized === 'false' || normalized === '0' || normalized === '');
   }
-  return str;
+  const source =
+    entry.source ??
+    entry.sourceAddress ??
+    entry.from ??
+    entry.sender ??
+    null;
+  const status =
+    entry.status ??
+    (isCredit ? 'Claimed' : 'Debited');
+
+  return {
+    id:
+      entry.id ??
+      entry.memoReadable ??
+      `${SAFEWALLET_KINDS.ROYALTY}-${timestamp}-${txHash ?? Math.random()
+        .toString(36)
+        .slice(2)}`,
+    amountUsd: toNumberSafe(usdRaw) / USD_DIVISOR,
+    amountRama: toNumberSafe(ramaRaw) / RAMA_DIVISOR,
+    rawTimestamp: timestamp,
+    memo,
+    txHash,
+    isCredit,
+    source,
+    status,
+  };
+};
+
+const formatLedgerTimestamp = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return '—';
+  try {
+    return new Date(numeric * 1000).toLocaleString();
+  } catch {
+    return '—';
+  }
 };
 
 export default function RoyaltyProgram() {
@@ -51,17 +133,45 @@ export default function RoyaltyProgram() {
     connectedAddress || userAddressStore || (typeof window !== 'undefined' ? localStorage.getItem('userAddress') : null);
 
   const [royaltyDetails, setRoyaltyDetails] = useState(null);
-  const [claimHistory, setClaimHistory] = useState([]);
+  const [royaltyLedger, setRoyaltyLedger] = useState([]);
+  const [royaltyLedgerLoading, setRoyaltyLedgerLoading] = useState(false);
+  const [royaltyLedgerError, setRoyaltyLedgerError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
   const [error, setError] = useState(null);
   const [showClaimModal, setShowClaimModal] = useState(false);
 
+  // Transaction History style data for actual claimed royalties
+  const [royaltyTransactions, setRoyaltyTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsError, setTransactionsError] = useState(null);
+
   const getRoyaltyOverview = useStore((s) => s.getRoyaltyOverview);
-  const getRoyaltyClaimHistory = useStore((s) => s.getRoyaltyClaimHistory);
+  const getIncomeTransaction = useStore((s) => s.getIncomeTransaction);
   const claimRoyaltyReward = useStore((s) => s.claimRoyaltyReward);
   const [claimTransaction, setClaimTransaction] = useState(null);
   const { data: txHash, sendTransaction } = useSendTransaction();
+
+  // Transform transaction entry to match TransactionHistory format
+  const transformTransactionEntry = useCallback((entry) => {
+    const usdRaw = toNumberSafe(entry.usdAmount) || toNumberSafe(entry.amountUsd) || toNumberSafe(entry.usd);
+    const ramaRaw = toNumberSafe(entry.ramaAmount) || toNumberSafe(entry.amountRama) || toNumberSafe(entry.rama);
+
+    return {
+      id: entry.memoReadable || entry.memo || `royalty-${entry.timestamp}`,
+      type: 'Royalty Income',
+      isCredit: entry.isCredit,
+      amount_usd: usdRaw / USD_MICRO_FACTOR, // Use 1e6 to match TransactionHistory exactly
+      amount_rama: ramaRaw / RAMA_DIVISOR,
+      timestamp: new Date(Number(entry.timestamp) * 1000)
+        .toISOString()
+        .replace("T", " ")
+        .slice(0, 19),
+      rawTimestamp: Number(entry.timestamp),
+      source: 'To Safe Wallet', // Changed from 'Safe Wallet' to 'To Safe Wallet'
+      status: entry.isCredit ? 'Claimed' : 'Pending',
+      txHash: entry.txHash || null,
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,8 +184,6 @@ export default function RoyaltyProgram() {
       setError(null);
       try {
         const res = await getRoyaltyOverview(userAddress);
-
-        console.log(res)
         if (!cancelled) setRoyaltyDetails(res);
       } catch (err) {
         console.error(err);
@@ -94,36 +202,88 @@ export default function RoyaltyProgram() {
     };
   }, [userAddress, getRoyaltyOverview]);
 
-  // Fetch real claim history from RoyaltyPaid events
-  useEffect(() => {
-    if (!userAddress) return;
-    
-    let cancelled = false;
-    setLoadingHistory(true);
+  const fetchRoyaltyLedger = useCallback(async () => {
+    if (!userAddress || typeof getIncomeTransaction !== 'function') {
+      setRoyaltyLedger([]);
+      setRoyaltyLedgerError(null);
+      return;
+    }
 
-    const loadHistory = async () => {
-      try {
-        const history = await getRoyaltyClaimHistory(userAddress, 50);
-        if (!cancelled) {
-          setClaimHistory(history);
-        }
-      } catch (err) {
-        console.error('Failed to load royalty claim history:', err);
-        if (!cancelled) {
-          setClaimHistory([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingHistory(false);
+    setRoyaltyLedgerLoading(true);
+    setRoyaltyLedgerError(null);
+
+    try {
+      const response = await getIncomeTransaction(
+        userAddress,
+        SAFEWALLET_KINDS.ROYALTY,
+        50,
+        0
+      );
+
+      let slices = [];
+      if (Array.isArray(response)) {
+        if (Array.isArray(response[0])) {
+          slices = response[0];
+        } else if (Array.isArray(response.slice)) {
+          slices = response.slice;
+        } else {
+          slices = response;
         }
       }
-    };
 
-    loadHistory();
-    return () => {
-      cancelled = true;
-    };
-  }, [userAddress, getRoyaltyClaimHistory]);
+      const transformed = (slices ?? [])
+        .map(transformRoyaltyLedgerEntry)
+        .filter((entry) => entry.amountUsd !== 0 || entry.amountRama !== 0);
+
+      transformed.sort(
+        (a, b) => (b.rawTimestamp ?? 0) - (a.rawTimestamp ?? 0)
+      );
+
+      setRoyaltyLedger(transformed);
+    } catch (err) {
+      console.error('Failed to load royalty ledger:', err);
+      setRoyaltyLedger([]);
+      setRoyaltyLedgerError(err?.message || 'Unable to load royalty history.');
+    } finally {
+      setRoyaltyLedgerLoading(false);
+    }
+  }, [userAddress, getIncomeTransaction]);
+
+  // Fetch royalty transactions using TransactionHistory approach
+  const fetchRoyaltyTransactions = useCallback(async () => {
+    if (!userAddress || !getIncomeTransaction) return;
+
+    setTransactionsLoading(true);
+    setTransactionsError(null);
+
+    try {
+      // Fetch royalty transactions specifically (kind = 2 for ROYALTY)
+      const result = await getIncomeTransaction(userAddress, SAFEWALLET_KINDS.ROYALTY, 100, 0);
+      console.log("Royalty transactions result:", result);
+
+      const slices = result[0] || result.slice || [];
+      const transformed = slices.map(transformTransactionEntry).filter(tx => tx.isCredit); // Only include claimed/credited royalties
+      
+      // Sort by timestamp (most recent first)
+      transformed.sort((a, b) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0));
+      
+      setRoyaltyTransactions(transformed);
+    } catch (err) {
+      console.error("Failed to load royalty transactions:", err);
+      setTransactionsError(err?.message || "Failed to load royalty transactions.");
+      setRoyaltyTransactions([]);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }, [userAddress, getIncomeTransaction, transformTransactionEntry]);
+
+  useEffect(() => {
+    fetchRoyaltyLedger();
+  }, [fetchRoyaltyLedger]);
+
+  useEffect(() => {
+    fetchRoyaltyTransactions();
+  }, [fetchRoyaltyTransactions]);
 
   const tiers = useMemo(() => {
     // Prefer normalized tiers from store (already in USD units)
@@ -155,20 +315,60 @@ export default function RoyaltyProgram() {
   const renewalTargetUsd = royaltyDetails?.renewalTargetUsd ?? 0;
 
   const nextMonthEpoch = royaltyDetails?.nextMonthEpoch ?? 0;
-  const nextClaimLabel = canClaim
-    ? 'Ready Now'
-    : nextMonthEpoch
-    ? parseMonthEpoch(nextMonthEpoch)
-    : 'Not Ready';
 
-  // Calculate totals
-  const totalRoyaltyUsd = currentTier ? currentTier.monthlyUsd * payoutsReceived : 0;
-  const totalRoyaltyRama = royaltyIncomeRama * payoutsReceived;
-  const claimedRoyaltyUsd = totalRoyaltyUsd - royaltyIncomeUsd;
-  const claimedRoyaltyRama = totalRoyaltyRama - royaltyIncomeRama;
-  const unclaimedRoyaltyUsd = royaltyIncomeUsd;
-  const unclaimedRoyaltyRama = royaltyIncomeRama;
-  const holdRoyaltyUsd = canClaim ? (currentTier?.monthlyUsd || 0) : 0;
+  const unclaimedRoyaltyUsd = Number(royaltyIncomeUsd || 0);
+  const unclaimedRoyaltyRama = Number(royaltyIncomeRama || 0);
+  const holdRoyaltyUsd = Number(currentTier?.monthlyUsd || 0);
+
+  // Calculate claimed royalty totals from actual transaction history
+  const claimedRoyaltyTotals = useMemo(() => {
+    if (!Array.isArray(royaltyTransactions) || royaltyTransactions.length === 0) {
+      return { usd: 0, rama: 0 };
+    }
+    return royaltyTransactions.reduce((acc, tx) => {
+      acc.usd += Number(tx.amount_usd || 0);
+      acc.rama += Number(tx.amount_rama || 0);
+      return acc;
+    }, { usd: 0, rama: 0 });
+  }, [royaltyTransactions]);
+
+  const royaltyLedgerTotals = useMemo(() => {
+    if (!Array.isArray(royaltyLedger) || royaltyLedger.length === 0) {
+      return { usd: 0, rama: 0 };
+    }
+    return royaltyLedger.reduce(
+      (acc, entry) => {
+        if (entry?.isCredit !== false) {
+          acc.usd += Number(entry?.amountUsd || 0);
+          acc.rama += Number(entry?.amountRama || 0);
+        }
+        return acc;
+      },
+      { usd: 0, rama: 0 }
+    );
+  }, [royaltyLedger]);
+
+  const fallbackClaimedUsd = Math.max(0, 0); // Initialize to 0 for now
+  const fallbackClaimedRama = Math.max(0, 0); // Initialize to 0 for now
+
+  const claimedRoyaltyUsd =
+    claimedRoyaltyTotals.usd > 0 ? claimedRoyaltyTotals.usd : 
+    royaltyLedgerTotals.usd > 0 ? royaltyLedgerTotals.usd : fallbackClaimedUsd;
+  const claimedRoyaltyRama =
+    claimedRoyaltyTotals.rama > 0 ? claimedRoyaltyTotals.rama :
+    royaltyLedgerTotals.rama > 0 ? royaltyLedgerTotals.rama : fallbackClaimedRama;
+
+  // Calculate totals - Total should equal claimed amount
+  const totalRoyaltyUsd = claimedRoyaltyUsd;
+  const totalRoyaltyRama = claimedRoyaltyRama;
+
+  const royaltyHistory = useMemo(() => {
+    // Prioritize transaction history data over ledger data
+    if (Array.isArray(royaltyTransactions) && royaltyTransactions.length > 0) {
+      return royaltyTransactions;
+    }
+    return Array.isArray(royaltyLedger) ? royaltyLedger : [];
+  }, [royaltyTransactions, royaltyLedger]);
 
   const handleClaimRoyalty = async () => {
     if (!connectedAddress || !canClaim) return;
@@ -214,16 +414,17 @@ export default function RoyaltyProgram() {
     // Reload royalty data
     if (userAddress) {
       getRoyaltyOverview(userAddress).then(setRoyaltyDetails).catch(() => {});
+      fetchRoyaltyLedger();
+      fetchRoyaltyTransactions(); // Also refresh transaction history
     }
   };
-
-  const payoutProgress = Math.min(100, (payoutsReceived % 12) * (100 / 12));
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-flex items-center gap-3">
           Royalty Program
+          <Trophy className="text-neon-orange" size={32} />
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
         <p className="text-cyan-300/90 mt-1">
@@ -243,8 +444,8 @@ export default function RoyaltyProgram() {
         </div>
       )}
 
-      {/* Ticket Size Boxes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Total Royalty */}
         <div className="cyber-glass border border-cyan-500/40 rounded-xl p-5 hover:border-cyan-500/60 transition-all">
           <div className="flex items-center justify-between mb-3">
@@ -271,17 +472,27 @@ export default function RoyaltyProgram() {
           <p className="text-xs text-cyan-300/60">{formatRAMA(claimedRoyaltyRama)} RAMA</p>
         </div>
 
-        {/* Unclaimed Royalty */}
-        <div className="cyber-glass border border-neon-purple/40 rounded-xl p-5 hover:border-neon-purple/60 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-neon-purple/20 to-pink-500/20">
-              <Lock className="text-neon-purple" size={20} />
+        {/* Current Level */}
+        <div className="cyber-glass border border-neon-orange/50 rounded-xl p-5 hover:border-neon-orange/70 transition-all text-white">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-white/15 rounded-lg">
+              <Trophy size={22} />
             </div>
-            <span className="text-xs text-neon-purple uppercase tracking-wider">Unclaimed</span>
+            <div>
+              <p className="text-xs text-cyan-200 uppercase tracking-wider">
+                Current Level
+              </p>
+              <p className="text-[11px] text-cyan-200/70">
+                Active royalty tier
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-cyan-300/70 uppercase tracking-wide mb-1">Unclaimed Royalty</p>
-          <p className="text-2xl md:text-3xl font-bold text-neon-purple mb-1">{formatUSD(unclaimedRoyaltyUsd)}</p>
-          <p className="text-xs text-cyan-300/60">{formatRAMA(unclaimedRoyaltyRama)} RAMA</p>
+          <p className="text-4xl font-bold text-white mb-2">{currentLevel}</p>
+          {currentTier && (
+            <p className="text-sm text-cyan-200/80">
+              {formatUSD(currentTier.monthlyUsd)} / month
+            </p>
+          )}
         </div>
 
         {/* Hold Reward */}
@@ -294,81 +505,8 @@ export default function RoyaltyProgram() {
           </div>
           <p className="text-xs text-cyan-300/70 uppercase tracking-wide mb-1">Hold / Next Month</p>
           <p className="text-2xl md:text-3xl font-bold text-neon-orange mb-1">{formatUSD(holdRoyaltyUsd)}</p>
-          {canClaim && !paused && (
-            <button
-              onClick={handleClaimRoyalty}
-              className="mt-2 w-full py-2 bg-gradient-to-r from-neon-orange to-red-500 text-white rounded-lg text-xs font-semibold hover:shadow-lg hover:shadow-neon-orange/50 transition-all"
-            >
-              Claim Now
-            </button>
-          )}
-          {paused && (
-            <p className="text-xs text-neon-orange/70 mt-2">Paused</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="cyber-glass border border-neon-orange/50 rounded-2xl p-6 text-white">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Trophy size={24} />
-            </div>
-            <div>
-              <p className="text-sm opacity-90">Current Level</p>
-              <p className="text-xs opacity-75">Your royalty tier</p>
-            </div>
-          </div>
-          <p className="text-5xl font-bold mb-2">{currentLevel}</p>
-          {currentTier && (
-            <p className="text-lg opacity-90">
-              {formatUSD(currentTier.monthlyUsd)} / month
-            </p>
-          )}
-        </div>
-
-        <div className="cyber-glass rounded-xl p-6 border border-cyan-500/30">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 cyber-glass border border-neon-green/20 rounded-lg">
-              <CheckCircle className="text-neon-green" size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-cyan-300">Payouts Received</p>
-              <p className="text-xs text-cyan-300/90">Lifetime</p>
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-cyan-300">{payoutsReceived}</p>
-          <div className="mt-3 h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-600 to-teal-600"
-              style={{ width: `${payoutProgress}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="cyber-glass rounded-xl p-6 border border-cyan-500/30">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 cyber-glass border border-cyan-500/20 rounded-lg">
-              <Clock className="text-cyan-400" size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-cyan-300">Next Claim</p>
-              <p className="text-xs text-cyan-300/90">Monthly eligibility</p>
-            </div>
-          </div>
-          <p className="text-lg font-bold text-cyan-300">{nextClaimLabel}</p>
-          {canClaim && (
-            <button className="mt-3 w-full py-2 bg-gradient-to-r from-cyan-500 to-neon-green text-white rounded-lg text-sm font-medium">
-              Claim Royalty
-            </button>
-          )}
-          {!canClaim && paused && (
-            <p className="text-xs text-neon-orange mt-3">
-              Royalty payouts are currently paused.
-            </p>
-          )}
-          <p className="text-xs text-cyan-300/70 mt-3">
-            Pending royalty: {formatUSD(royaltyIncomeUsd)} • {formatRAMA(royaltyIncomeRama)} RAMA
+          <p className="text-xs text-cyan-300/70 mt-2">
+            Royalty payouts are auto-credited to your Safe Wallet.
           </p>
         </div>
       </div>
@@ -377,17 +515,30 @@ export default function RoyaltyProgram() {
       <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <History className="text-cyan-400" size={20} />
             <h2 className="text-lg font-semibold text-cyan-300">Claimed History</h2>
+            <History className="text-cyan-400" size={20} />
           </div>
-          {loadingHistory && (
+          {(royaltyLedgerLoading || transactionsLoading) && (
             <RefreshCw size={16} className="text-cyan-400 animate-spin" />
           )}
         </div>
 
         <div className="overflow-x-auto">
           <div className="max-h-96 overflow-y-auto custom-scrollbar">
-            {claimHistory.length === 0 ? (
+            {(royaltyLedgerLoading || transactionsLoading) ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="h-12 rounded-lg bg-cyan-500/10 border border-cyan-500/20 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : (royaltyLedgerError || transactionsError) ? (
+              <div className="text-sm text-red-200 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">
+                {royaltyLedgerError || transactionsError}
+              </div>
+            ) : royaltyHistory.length === 0 ? (
               <div className="text-center py-12 text-cyan-300/60">
                 <Trophy size={48} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm">No royalty claims yet</p>
@@ -395,42 +546,74 @@ export default function RoyaltyProgram() {
               </div>
             ) : (
               <table className="w-full">
-                <thead className="sticky top-0 bg-dark-950 z-10">
+                <thead className="sticky top-0 bg-dark-950/90 backdrop-blur z-10 text-xs uppercase tracking-wider text-cyan-300/70">
                   <tr className="border-b border-cyan-500/20">
-                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Month</th>
-                    <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Tier</th>
-                    <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">USD Amount</th>
-                    <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">RAMA Amount</th>
-                    <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Claimed At</th>
+                    <th className="text-left py-3 px-4">Sr. No.</th>
+                    <th className="text-left py-3 px-4">Type</th>
+                    <th className="text-right py-3 px-4">Amount (USD)</th>
+                    <th className="text-right py-3 px-4">Amount (RAMA)</th>
+                    <th className="text-left py-3 px-4">Date</th>
+                    <th className="text-left py-3 px-4">To</th>
+                    <th className="text-right py-3 px-4">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-cyan-500/10">
-                  {claimHistory.map((claim, idx) => (
-                    <tr key={idx} className="hover:bg-cyan-500/5 transition-colors">
-                      <td className="py-3 px-4 text-cyan-200 whitespace-nowrap">
-                        {parseMonthEpoch(claim.monthEpoch)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-cyan-100 font-medium">{claim.tier}</span>
-                          <span className="text-xs text-cyan-300/70">{claim.tierName}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-right text-cyan-100 font-semibold">
-                        {formatUSD(claim.amountUsd)}
-                      </td>
-                      <td className="py-3 px-4 text-right text-cyan-100">
-                        {formatRAMA(claim.amountRama)}
-                      </td>
-                      <td className="py-3 px-4 text-right text-cyan-300/80 text-sm whitespace-nowrap">
-                        {new Date(claim.claimedAt * 1000).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </td>
-                    </tr>
-                  ))}
+                  {royaltyHistory.map((entry, idx) => {
+                    const isTransactionFormat = entry.type && entry.amount_usd !== undefined;
+                    return (
+                      <tr key={entry.id} className="hover:bg-cyan-500/5 transition-colors">
+                        <td className="py-3 px-4 text-cyan-200 text-sm font-mono">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-neon-orange/20 rounded border border-neon-orange/30">
+                              <Trophy size={14} className="text-neon-orange" />
+                            </div>
+                            <span className="text-sm text-cyan-100 font-medium">
+                              Royalty Income
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right text-neon-green font-semibold">
+                          {isTransactionFormat 
+                            ? formatUSD(entry.amount_usd) 
+                            : formatUSD(entry.amountUsd)}
+                        </td>
+                        <td className="py-3 px-4 text-right text-cyan-100">
+                          {isTransactionFormat 
+                            ? entry.amount_rama.toFixed(5)
+                            : formatRAMA(entry.amountRama)}
+                        </td>
+                        <td className="py-3 px-4 text-cyan-200 whitespace-nowrap text-sm">
+                          {isTransactionFormat 
+                            ? entry.timestamp 
+                            : formatLedgerTimestamp(entry.rawTimestamp)}
+                        </td>
+                        <td className="py-3 px-4 text-cyan-300/90 font-mono text-sm">
+                          {isTransactionFormat 
+                            ? (entry.source || 'To Safe Wallet')
+                            : 'To Safe Wallet'}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                            (isTransactionFormat ? entry.isCredit : (entry.isCredit !== false))
+                              ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' 
+                              : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                          }`}>
+                            {(isTransactionFormat ? entry.isCredit : (entry.isCredit !== false)) ? (
+                              <CheckCircle size={12} />
+                            ) : (
+                              <Clock size={12} />
+                            )}
+                            {isTransactionFormat 
+                              ? entry.status 
+                              : (entry.status || ((entry.isCredit === false) ? 'Debited' : 'Claimed'))}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -439,8 +622,9 @@ export default function RoyaltyProgram() {
       </div>
 
       <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
-        <h2 className="text-lg font-semibold text-cyan-300 mb-4">
+        <h2 className="text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-3">
           Royalty Tiers
+          <TrendingUp className="text-cyan-400" size={20} />
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {tiers?.map((tier, idx) => {
@@ -519,7 +703,10 @@ export default function RoyaltyProgram() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
-          <h3 className="font-semibold text-cyan-300 mb-4">Program Rules</h3>
+          <h3 className="font-semibold text-cyan-300 mb-4 flex items-center gap-3">
+            Program Rules
+            <AlertCircle className="text-cyan-400" size={18} />
+          </h3>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">

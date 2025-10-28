@@ -19,6 +19,8 @@ import {
   AlertCircle,
   Info,
   XCircle,
+  CheckCircle,
+  Lock,
   Pause,
   Coins,
 } from "lucide-react";
@@ -1600,49 +1602,40 @@ export default function Dashboard() {
 
         <div
           id="team-network"
-          className="cyber-glass border border-neon-orange/30 hover:border-neon-orange/80 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden income-glow-target"
+          className="cyber-glass border border-neon-orange/40 rounded-xl p-4 sm:p-5 text-white transition-all group relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-neon-orange/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="flex items-center justify-between mb-3 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-neon-orange/20 rounded-lg flex-shrink-0 border border-neon-orange/30">
-                <Users size={20} className="text-neon-orange" />
-              </div>
-              <p className="text-xs sm:text-sm font-medium text-neon-orange uppercase tracking-wide">
-                Team Network
-              </p>
+          
+          <div className="flex items-center gap-3 mb-3 relative z-10">
+            <div className="p-2 bg-neon-orange/20 rounded-lg flex-shrink-0 border border-neon-orange/30">
+              <Users size={20} className="text-neon-orange" />
             </div>
-            <Link
-              to="/dashboard/team"
-              className="px-3 py-1.5 text-xs bg-neon-orange/20 hover:bg-neon-orange/30 border border-neon-orange/40 rounded-lg text-neon-orange transition-colors flex items-center gap-1 font-medium"
-            >
-              <ArrowUpRight size={12} />
-              View Details
-            </Link>
-          </div>
-
-          {/* Main Stats */}
-          <div className="mb-4 relative z-10">
-            <p className="text-2xl sm:text-3xl font-bold mb-1 text-neon-orange">
-              {directsPortfolioLoading ? (
-                renderLoading()
-              ) : (
-                <>
-                  {directsPortfolioData?.summary?.directCount +
-                    (directsPortfolioData?.summary?.totalTeamCount || 0) ||
-                    formatCount(totalTeamMembers)}
-                  <span className="text-sm font-semibold text-neon-orange/80 ml-1">
-                    members
-                  </span>
-                </>
-              )}
+            <p className="text-xs sm:text-sm font-medium text-neon-orange uppercase tracking-wide">
+              Team Network
             </p>
           </div>
 
-          {/* Detailed Breakdown */}
+          {/* Main Members Count */}
+          <div className="mb-3 relative z-10">
+            {directsPortfolioLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-neon-orange/20 rounded animate-pulse"></div>
+                <div className="w-20 h-5 bg-neon-orange/20 rounded animate-pulse"></div>
+              </div>
+            ) : (
+              <p className="text-xl sm:text-2xl font-bold mb-2 text-neon-orange relative z-10">
+                {directsPortfolioData?.summary?.directCount +
+                  (directsPortfolioData?.summary?.totalTeamCount || 0) ||
+                  formatCount(totalTeamMembers)}{" "}
+                <span className="text-sm font-medium text-neon-orange/80">members</span>
+              </p>
+            )}
+          </div>
+
+          {/* Business Metrics */}
           {!directsPortfolioLoading && (
             <div className="space-y-2 relative z-10">
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center">
                 <span className="text-xs text-neon-orange/70 font-medium">
                   Directs:
                 </span>
@@ -1652,28 +1645,39 @@ export default function Dashboard() {
                 </span>
               </div>
 
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center">
                 <span className="text-xs text-neon-orange/70 font-medium">
                   Direct Volume:
                 </span>
                 <span className="text-sm font-semibold text-neon-orange">
-                  {(parseFloat(directTeamInfo?.fullData["totalSelfUsd"]) / 1e6).toFixed(2) || "0.00"}{" "}
+                  ${(parseFloat(directTeamInfo?.fullData["totalSelfUsd"]) / 1e6).toFixed(2) || "0.00"}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center">
                 <span className="text-xs text-neon-orange/70 font-medium">
                   Team Business:
                 </span>
                 <span className="text-sm font-semibold text-neon-orange">
-                  {(parseFloat(directTeamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"}{" "}
-                  USD
+                  ${(parseFloat(directTeamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"} USD
                 </span>
               </div>
-
-              
             </div>
           )}
+
+          {/* View Details Link */}
+          <div className="flex items-center gap-1 text-xs text-neon-orange/90 relative z-10 mt-3">
+            <Link
+              to="/dashboard/team"
+              className="flex items-center gap-1 hover:text-neon-orange transition-colors"
+            >
+              <span>View Details</span>
+              <ArrowUpRight
+                size={14}
+                className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+              />
+            </Link>
+          </div>
 
           {directsPortfolioError && (
             <p className="text-xs text-red-400 mt-2 relative z-10">
@@ -2574,14 +2578,67 @@ export default function Dashboard() {
               Royalty Status
             </p>
           </div>
-          <p className="text-2xl font-bold text-cyan-300">
-            Level {royaltyLevel || "—"}
-          </p>
-          <p className="text-xs text-cyan-300/90 mt-1">
-            {royaltyPayouts != null
-              ? `${formatUSD(royaltyPayouts)} lifetime`
-              : "Royalty accrual data pending"}
-          </p>
+          
+          {/* Enhanced Royalty Display */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="text-2xl font-bold text-cyan-300">
+                Level {royaltyLevel || "—"}
+              </p>
+              {royaltyLevel > 0 && (
+                <div className="px-2 py-1 bg-neon-orange/20 rounded-full border border-neon-orange/30">
+                  <span className="text-xs font-medium text-neon-orange">
+                    {(() => {
+                      const ROYALTY_TIER_NAMES = [
+                        'Coral Starter', 'Pearl Diver', 'Sea Explorer', 'Wave Rider',
+                        'Tide Surge', 'Deep Blue', 'Ocean Guardian', 'Marine Commander',
+                        'Aqua Captain', 'Current Master', 'Sea Legend', 'Trident Icon',
+                        'Poseidon Crown', 'Ocean Supreme'
+                      ];
+                      return ROYALTY_TIER_NAMES[royaltyLevel - 1] || 'Unknown';
+                    })()}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {/* Current Tier Monthly Amount */}
+            {royaltyLevel > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-cyan-300/80">Monthly:</span>
+                <span className="font-semibold text-neon-orange">
+                  {(() => {
+                    const monthlyAmounts = [
+                      30, 100, 250, 500, 1000, 2500, 5000, 12500, 25000, 
+                      50000, 125000, 250000, 500000, 1000000
+                    ];
+                    const amount = monthlyAmounts[royaltyLevel - 1];
+                    return amount ? formatUSD(amount) : '—';
+                  })()} /mo
+                </span>
+              </div>
+            )}
+            
+            {/* Lifetime Earnings */}
+            <p className="text-xs text-cyan-300/90">
+              {royaltyPayouts != null
+                ? `${formatUSD(royaltyPayouts)} lifetime earned`
+                : "Royalty data synchronizing..."}
+            </p>
+            
+            {/* Achievement Status */}
+            {royaltyLevel > 0 ? (
+              <div className="flex items-center gap-1 mt-2">
+                <CheckCircle className="text-neon-green" size={12} />
+                <span className="text-xs text-neon-green font-medium">Qualified</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 mt-2">
+                <Lock className="text-cyan-400/60" size={12} />
+                <span className="text-xs text-cyan-400/60">Not Qualified</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
