@@ -211,15 +211,18 @@ const SlabIncome = () => {
   };
 
   const SameSlabData = {
-    totalOverrideRama,
-    totalOverrideUsd,
-    sameSlabPartners,
-    overrideL1,
-    overrideL2,
-    overrideL3,
-    // Enhanced data
-    legsDetailed: slabDetails?.legsDetailed,
-    legBreakdown: slabDetails?.legBreakdown
+    totalOverrideRama: 0,
+    totalOverrideUsd: 0,
+    sameSlabPartners: {
+      firstWave: [],
+      secondWave: [],
+      thirdWave: [],
+    },
+    overrideL1: 0,
+    overrideL2: 0,
+    overrideL3: 0,
+    legsDetailed: [],
+    legBreakdown: { L1: 0, L2: 0, Lrest: 0, total: 0 },
   };
 
   return (

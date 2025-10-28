@@ -91,6 +91,14 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
 
   const currentSlabInfo = getSlabInfo(slabLevel);
 
+  // Force slab income card values to zero (no distribution released yet)
+  const displaySlabIncomeUsd = 0;
+  const displaySlabIncomeRama = 0;
+  const displaySlabIncomeAvailableUsd = 0;
+  const displaySlabIncomeAvailableRama = 0;
+  const displayOverrideIncomeUsd = 0;
+  const displayOverrideIncomeRama = 0;
+
   // Helper function to render progress bars
   const ProgressBar = ({ label, current, target, percentage, color = "cyan" }) => {
     const clampedPercentage = Math.min(percentage || 0, 100);
@@ -202,20 +210,20 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
           <p className="text-sm text-cyan-300/80 relative z-10">
             Total:{" "}
             <span className="font-semibold text-neon-orange">
-              {formatUSD(slabIncomeUsd)}
+              {formatUSD(displaySlabIncomeUsd)}
             </span>{" "}
-            ≈ {formatRAMA(slabIncomeRama)} RAMA
+            ≈ {formatRAMA(displaySlabIncomeRama)} RAMA
           </p>
           <p className="text-sm text-cyan-300/80 relative z-10 mt-1">
             Available now:{" "}
             <span className="font-semibold text-neon-orange">
-              {formatUSD(slabIncomeAvailableUsd)}
+              {formatUSD(displaySlabIncomeAvailableUsd)}
             </span>{" "}
-            ≈ {formatRAMA(slabIncomeAvailableRama)} RAMA
+            ≈ {formatRAMA(displaySlabIncomeAvailableRama)} RAMA
           </p>
           <p className="text-xs text-cyan-300/70 relative z-10 mt-2">
-            Same-slab override pending: {formatUSD(overrideIncomeUsd)} •{" "}
-            {formatRAMA(overrideIncomeRama)} RAMA
+            Same-slab override pending: {formatUSD(displayOverrideIncomeUsd)} •{" "}
+            {formatRAMA(displayOverrideIncomeRama)} RAMA
           </p>
         </div>
       </div>
@@ -480,10 +488,12 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
               {achievementsData.slabs?.slice(-5).reverse().map((achievement, idx) => (
                 <div key={`slab-${achievement.id}`} className="flex items-center gap-3 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    {achievement.id}
+                    {(Number(achievement.id) || 0) + 1}
                   </div>
                   <div className="flex-1">
-                    <p className="text-green-400 font-medium">Slab {achievement.id} Achieved</p>
+                    <p className="text-green-400 font-medium">
+                      Slab {(Number(achievement.id) || 0) + 1} Achieved
+                    </p>
                     <p className="text-sm text-green-300/70">
                       {achievement.achievedDate?.toLocaleDateString()} - ${achievement.totalQualified?.toLocaleString()}
                     </p>
