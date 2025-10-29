@@ -747,6 +747,7 @@ useEffect(() => {
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
                       <div className="rounded-xl border border-cyan-500/20 bg-dark-950/60 p-4 space-y-3">
                         <p className="text-xs uppercase tracking-wide text-cyan-300/60">Amount (USD)</p>
                         <div className="relative">
@@ -815,7 +816,13 @@ useEffect(() => {
                           Based on the latest on-chain conversion from Portfolio Manager.
                         </p>
                       </div>
+
                     </div>
+
+                    <div className="flex items-center justify-between border-t border-cyan-500/20 pt-4">
+                        <p className="text-xs uppercase tracking-wide text-cyan-300/60">{amtInUSD>5000?"Tier 2":"Tier 1"}</p>
+                        <p className="text-xs font-semibold text-cyan-100">{amtInUSD>5000?"0.4%":"0.3%"}</p>
+                      </div>
                   </div>
 
                   <div className="space-y-3">
