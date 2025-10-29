@@ -333,7 +333,7 @@ export default function SafeWallet() {
   const totalInflowsRama = inflowTotals.rama;
   const availableAfterFeeUsd = usdValue * 0.95;
   const availableAfterFeeRama = ramaBalance * 0.95;
-  const formattedRamaBalance = formatRAMA(ramaBalance);
+  const formattedRamaBalance = ramaBalance ;
   const formattedUsdValue = formatUSD(usdValue);
   const formattedAvailableAfterFeeUsd = formatUSD(availableAfterFeeUsd);
   const formattedAvailableAfterFeeRama = formatRAMA(availableAfterFeeRama);
@@ -844,130 +844,132 @@ export default function SafeWallet() {
             className="fixed inset-0 z-40 bg-dark-950/80 backdrop-blur-sm"
             onClick={handleCloseWithdraw}
           />
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10">
-            <div className="relative w-full max-w-lg cyber-glass border border-cyan-500/40 rounded-2xl p-6 sm:p-8 space-y-6">
-              <button
-                onClick={handleCloseWithdraw}
-                className="absolute top-3 right-3 p-2 text-cyan-300/70 hover:text-white hover:bg-cyan-500/10 rounded-lg transition-all"
-                aria-label="Close withdraw dialog"
-              >
-                <X size={18} />
-              </button>
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center px-4 py-16 sm:py-20">
+              <div className="relative w-full max-w-lg cyber-glass border border-cyan-500/40 rounded-2xl p-6 sm:p-8 space-y-6 shadow-lg shadow-cyan-900/30 max-h-[90vh] overflow-y-auto">
+                <button
+                  onClick={handleCloseWithdraw}
+                  className="absolute top-3 right-3 p-2 text-cyan-300/70 hover:text-white hover:bg-cyan-500/10 rounded-lg transition-all"
+                  aria-label="Close withdraw dialog"
+                >
+                  <X size={18} />
+                </button>
 
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">Withdraw</p>
-                <h2 className="text-2xl font-bold text-white">Transfer to Connected Wallet</h2>
-                <p className="text-sm text-cyan-300/80">
-                  Choose how much you’d like to move out. A 5% network protection fee applies to every external withdrawal.
-                </p>
-              </div>
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">Withdraw</p>
+                  <h2 className="text-2xl font-bold text-white">Transfer to Connected Wallet</h2>
+                  <p className="text-sm text-cyan-300/80">
+                    Choose how much you’d like to move out. A 5% network protection fee applies to every external withdrawal.
+                  </p>
+                </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-cyan-200">Amount</span>
-                  <div className="flex items-center gap-2">
-                    {['USD', 'RAMA'].map((option) => (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-cyan-200">Amount</span>
+                    <div className="flex items-center gap-2">
+                      {['USD', 'RAMA'].map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => handleSelectCurrency(option)}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all ${
+                            withdrawCurrency === option
+                              ? 'border-neon-green/60 text-neon-green bg-neon-green/10'
+                              : 'border-cyan-500/30 text-cyan-300 hover:border-cyan-500/50'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="cyber-glass border border-cyan-500/30 rounded-xl flex items-center px-4 py-3">
+                    <input
+                      value={withdrawInput}
+                      onChange={(event) => setWithdrawInput(event.target.value)}
+                      placeholder={withdrawCurrency === 'USD' ? '0.00 USD' : '0.00 RAMA'}
+                      className="flex-1 bg-transparent text-lg font-semibold text-white placeholder-cyan-500/40 focus:outline-none"
+                      inputMode="decimal"
+                    />
+                    <span className="text-sm font-semibold text-cyan-300/80">{withdrawCurrency}</span>
+                  </div>
+                  {parsedInput > 0 && (
+                    <p className="text-xs text-cyan-300/70">
+                      ≈{' '}
+                      {withdrawCurrency === 'USD'
+                        ? `${formatRAMA(amountRama)} RAMA`
+                        : formatUSD(amountUsd)}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {[0.1, 0.25, 0.5, 0.75, 1].map((pct) => (
                       <button
-                        key={option}
-                        onClick={() => handleSelectCurrency(option)}
-                        className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all ${
-                          withdrawCurrency === option
-                            ? 'border-neon-green/60 text-neon-green bg-neon-green/10'
-                            : 'border-cyan-500/30 text-cyan-300 hover:border-cyan-500/50'
-                        }`}
+                        key={pct}
+                        onClick={() => handlePercentSelect(pct)}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-cyan-500/30 text-cyan-300 hover:border-neon-green/50 hover:text-neon-green transition-all"
                       >
-                        {option}
+                        {Math.round(pct * 100)}%
                       </button>
                     ))}
                   </div>
-                </div>
-                <div className="cyber-glass border border-cyan-500/30 rounded-xl flex items-center px-4 py-3">
-                  <input
-                    value={withdrawInput}
-                    onChange={(event) => setWithdrawInput(event.target.value)}
-                    placeholder={withdrawCurrency === 'USD' ? '0.00 USD' : '0.00 RAMA'}
-                    className="flex-1 bg-transparent text-lg font-semibold text-white placeholder-cyan-500/40 focus:outline-none"
-                    inputMode="decimal"
-                  />
-                  <span className="text-sm font-semibold text-cyan-300/80">{withdrawCurrency}</span>
-                </div>
-                {parsedInput > 0 && (
                   <p className="text-xs text-cyan-300/70">
-                    ≈{' '}
-                    {withdrawCurrency === 'USD'
-                      ? `${formatRAMA(amountRama)} RAMA`
-                      : formatUSD(amountUsd)}
+                    Available: {formattedUsdValue} • {formattedRamaBalance} RAMA
+                  </p>
+                </div>
+
+                <div className="space-y-3 cyber-glass border border-cyan-500/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between text-sm text-cyan-300/80">
+                    <span>Gross Amount</span>
+                    <span className="text-white font-semibold">
+                      {amountRama > 0 ? `${formatRAMA(amountRama)} RAMA` : '0 RAMA'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-cyan-300/60 text-right">
+                    ≈ {amountUsd > 0 ? formatUSD(amountUsd) : '$0.00'}
+                  </p>
+                  <div className="flex items-center justify-between text-sm text-cyan-300/80">
+                    <span>Fee (5%)</span>
+                    <span className="text-neon-orange font-semibold">
+                      {amountUsd > 0 ? `${formatRAMA(feeRama)} RAMA` : '0 RAMA'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-cyan-300/60 text-right">
+                    ≈ {amountUsd > 0 ? formatUSD(feeUsd) : '$0.00'}
+                  </p>
+                  <div className="flex items-center justify-between text-sm font-semibold text-neon-green">
+                    <span>Net to Wallet</span>
+                    <span>{amountUsd > 0 ? `${formatRAMA(netRama)} RAMA` : '0 RAMA'}</span>
+                  </div>
+                  <p className="text-[11px] text-cyan-300/60 text-right">
+                    ≈ {amountUsd > 0 ? formatUSD(netUsd) : '$0.00'}
+                  </p>
+                  {exceedsBalance && (
+                    <p className="text-xs text-neon-orange">
+                      Requested amount exceeds Safe Wallet balance. Enter a smaller amount or fund your wallet.
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleWithdrawSubmit}
+                  disabled={amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected}
+                  className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${
+                    amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected
+                      ? 'bg-cyan-500/20 text-cyan-300/40 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950 hover:shadow-neon-green'
+                  }`}
+                >
+                  {isViewMode ? 'Withdraw (View Only)' : !isConnected ? 'Connect Wallet to Withdraw' : 'Withdraw Now'}
+                </button>
+
+                {(isViewMode || !isConnected) && (
+                  <p className="text-[11px] text-cyan-300/60 text-center">
+                    {isViewMode 
+                      ? 'Withdrawals only available for connected wallet' 
+                      : 'Connect your wallet to withdraw funds'
+                    }
                   </p>
                 )}
-                <div className="flex flex-wrap gap-2">
-                  {[0.1, 0.25, 0.5, 0.75, 1].map((pct) => (
-                    <button
-                      key={pct}
-                      onClick={() => handlePercentSelect(pct)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-cyan-500/30 text-cyan-300 hover:border-neon-green/50 hover:text-neon-green transition-all"
-                    >
-                      {Math.round(pct * 100)}%
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-cyan-300/70">
-                  Available: {formattedUsdValue} • {formattedRamaBalance} RAMA
-                </p>
               </div>
-
-              <div className="space-y-3 cyber-glass border border-cyan-500/30 rounded-xl p-4">
-                <div className="flex items-center justify-between text-sm text-cyan-300/80">
-                  <span>Gross Amount</span>
-                  <span className="text-white font-semibold">
-                    {amountRama > 0 ? `${formatRAMA(amountRama)} RAMA` : '0 RAMA'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-cyan-300/60 text-right">
-                  ≈ {amountUsd > 0 ? formatUSD(amountUsd) : '$0.00'}
-                </p>
-                <div className="flex items-center justify-between text-sm text-cyan-300/80">
-                  <span>Fee (5%)</span>
-                  <span className="text-neon-orange font-semibold">
-                    {amountUsd > 0 ? `${formatRAMA(feeRama)} RAMA` : '0 RAMA'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-cyan-300/60 text-right">
-                  ≈ {amountUsd > 0 ? formatUSD(feeUsd) : '$0.00'}
-                </p>
-                <div className="flex items-center justify-between text-sm font-semibold text-neon-green">
-                  <span>Net to Wallet</span>
-                  <span>{amountUsd > 0 ? `${formatRAMA(netRama)} RAMA` : '0 RAMA'}</span>
-                </div>
-                <p className="text-[11px] text-cyan-300/60 text-right">
-                  ≈ {amountUsd > 0 ? formatUSD(netUsd) : '$0.00'}
-                </p>
-                {exceedsBalance && (
-                  <p className="text-xs text-neon-orange">
-                    Requested amount exceeds Safe Wallet balance. Enter a smaller amount or fund your wallet.
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={handleWithdrawSubmit}
-                disabled={amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected}
-                className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${
-                  amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected
-                    ? 'bg-cyan-500/20 text-cyan-300/40 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950 hover:shadow-neon-green'
-                }`}
-              >
-                {isViewMode ? 'Withdraw (View Only)' : !isConnected ? 'Connect Wallet to Withdraw' : 'Withdraw Now'}
-              </button>
-
-              {(isViewMode || !isConnected) && (
-                <p className="text-[11px] text-cyan-300/60 text-center">
-                  {isViewMode 
-                    ? 'Withdrawals only available for connected wallet' 
-                    : 'Connect your wallet to withdraw funds'
-                  }
-                </p>
-              )}
             </div>
           </div>
         </>

@@ -1,9 +1,16 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Waves, TrendingUp, Shield, Users, Award, Zap, ArrowRight, CheckCircle, Blocks, Lock, Network } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 import MoneyRevolution from './MoneyRevolution';
 
 export default function Home() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-950 via-dark-900 to-dark-950">
       <PublicNav />

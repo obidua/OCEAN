@@ -1,9 +1,16 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Lock, TrendingUp, Shield, DollarSign, ArrowRight, CheckCircle, Globe, Zap, BarChart3 } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 import TokenomicsComparison from '../components/TokenomicsComparison';
 
 export default function RamaTokenomics() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-950 via-dark-900 to-dark-950">
       <PublicNav />

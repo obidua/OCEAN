@@ -6,6 +6,23 @@ export default function PublicNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [learnMenuOpen, setLearnMenuOpen] = useState(false);
 
+  const scrollToTop = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      if (document?.documentElement) document.documentElement.scrollTop = 0;
+      if (document?.body) document.body.scrollTop = 0;
+    } catch (err) {
+      console.warn('Failed to scroll to top:', err);
+    }
+  };
+
+  const handleMobileNav = (extra) => () => {
+    scrollToTop();
+    if (typeof extra === 'function') extra();
+    setMobileMenuOpen(false);
+  };
+
   return (
     <nav className="fixed top-0 w-full z-50 cyber-glass border-b border-cyan-500/20 backdrop-blur-md safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,9 +36,9 @@ export default function PublicNav() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
-            <Link to="/" className="text-cyan-300 hover:text-neon-green transition-colors text-sm lg:text-base">Home</Link>
-            <Link to="/smart-contracts" className="text-cyan-300 hover:text-neon-green transition-colors text-sm lg:text-base">Smart Contract</Link>
-            <Link to="/what-is-defi" className="text-cyan-300 hover:text-neon-green transition-colors text-sm lg:text-base">What is DeFi?</Link>
+            <Link to="/" onClick={scrollToTop} className="text-cyan-300 hover:text-neon-green transition-colors text-sm lg:text-base">Home</Link>
+            <Link to="/smart-contracts" onClick={scrollToTop} className="text-cyan-300 hover:text-neon-green transition-colors text-sm lg:text-base">Smart Contract</Link>
+            <Link to="/what-is-defi" onClick={scrollToTop} className="text-cyan-300 hover:text-neon-green transition-colors text-sm lg:text-base">What is DeFi?</Link>
 
 
 
@@ -40,9 +57,9 @@ export default function PublicNav() {
                   <div className="border-t border-cyan-500/30 my-2"></div>
                   {/* <div className="px-4 py-2 text-xs font-bold text-neon-green uppercase tracking-wider">Ramestta Network</div> */}
                   {/* <Link to="/ramestta-blockchain" className="block px-4 py-2 text-cyan-300 hover:text-neon-green hover:bg-cyan-500/10 transition-colors text-sm">Ramestta Network</Link> */}
-                  <Link to="/ramestta-blockchain" className="block px-4 py-2 text-cyan-300 hover:text-neon-green hover:bg-cyan-500/10 transition-colors text-sm">Ramestta Blockchain</Link>
-                  <Link to="/rama-tokenomics" className="block px-4 py-2 text-cyan-300 hover:text-neon-green hover:bg-cyan-500/10 transition-colors text-sm">RAMA Tokenomics</Link>
-                  <Link to="/validator-security" className="block px-4 py-2 text-cyan-300 hover:text-neon-green hover:bg-cyan-500/10 transition-colors text-sm">Validator Security</Link>
+                  <Link to="/ramestta-blockchain" onClick={scrollToTop} className="block px-4 py-2 text-cyan-300 hover:text-neon-green hover:bg-cyan-500/10 transition-colors text-sm">Ramestta Blockchain</Link>
+                  <Link to="/rama-tokenomics" onClick={scrollToTop} className="block px-4 py-2 text-cyan-300 hover:text-neon-green hover:bg-cyan-500/10 transition-colors text-sm">RAMA Tokenomics</Link>
+                  <Link to="/validator-security" onClick={scrollToTop} className="block px-4 py-2 text-cyan-300 hover:text-neon-green hover:bg-cyan-500/10 transition-colors text-sm">Validator Security</Link>
 
                   <div className="border-t border-cyan-500/30 my-2"></div>
                   {/* <div className="px-4 py-2 text-xs font-bold text-neon-green uppercase tracking-wider">Ocean DeFi</div> */}
@@ -59,6 +76,7 @@ export default function PublicNav() {
             </button> */}
             <Link
               to="/login"
+              onClick={scrollToTop}
               className="px-4 lg:px-6 py-2 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-lg font-bold hover:shadow-neon-cyan transition-all text-sm lg:text-base"
             >
               Launch App
@@ -86,21 +104,21 @@ export default function PublicNav() {
             <div className="flex flex-col space-y-3">
               <Link
                 to="/"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleMobileNav()}
                 className="text-cyan-300 hover:text-neon-green transition-colors px-4 py-2"
               >
                 Home
               </Link>
               <Link
                 to="/smart-contracts"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleMobileNav()}
                 className="text-cyan-300 hover:text-neon-green transition-colors px-4 py-2"
               >
                 Smart Contract
               </Link>
               <Link
                 to="/what-is-defi"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleMobileNav()}
                 className="text-cyan-300 hover:text-neon-green transition-colors px-4 py-2"
               >
                 What is DeFi?
@@ -128,21 +146,21 @@ export default function PublicNav() {
 
                     <Link
                       to="/ramestta-blockchain"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={handleMobileNav()}
                       className="block text-cyan-300/80 hover:text-neon-green transition-colors px-4 py-2 text-sm"
                     >
                       Ramestta Blockchain
                     </Link>
                     <Link
                       to="/rama-tokenomics"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={handleMobileNav()}
                       className="block text-cyan-300/80 hover:text-neon-green transition-colors px-4 py-2 text-sm"
                     >
                       RAMA Tokenomics
                     </Link>
                     <Link
                       to="/validator-security"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={handleMobileNav()}
                       className="block text-cyan-300/80 hover:text-neon-green transition-colors px-4 py-2 text-sm"
                     >
                       Validator Security
@@ -192,7 +210,7 @@ export default function PublicNav() {
 
               <Link
                 to="/login"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleMobileNav()}
                 className="mx-4 px-6 py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-lg font-bold hover:shadow-neon-cyan transition-all text-center"
               >
                 Launch App

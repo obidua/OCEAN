@@ -1,8 +1,15 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Zap, TrendingUp, Users, Lock, DollarSign, ArrowRight } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 
 export default function AboutPublic() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-950 via-dark-900 to-dark-950">
       <PublicNav />
