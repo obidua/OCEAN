@@ -78,6 +78,7 @@ export default function SafeWallet() {
   const getSafeWalletSummary = useStore((s) => s.getSafeWalletSummary);
   const getTransactionHistory = useStore((s) => s.getTransactionHistory);
   const withdrawFromSafeWallet = useStore((s) => s.withdrawFromSafeWallet);
+  const getWithdrawalHistorySlice = useStore((s) => s.getWithdrawalHistorySlice);
   const userAddressFromStore = useStore((s) => s.userAddress);
   
   // Income source functions
@@ -106,6 +107,7 @@ export default function SafeWallet() {
   const [safeSummaryLoading, setSafeSummaryLoading] = useState(false);
   const [safeSummaryError, setSafeSummaryError] = useState('');
   const [historyEntries, setHistoryEntries] = useState([]);
+  const [withdrawalHistory, setWithdrawalHistory] = useState([]);
   const [historyTotals, setHistoryTotals] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
@@ -193,6 +195,7 @@ export default function SafeWallet() {
     const loadHistory = async () => {
       if (!userAddress || typeof getTransactionHistory !== 'function') {
         setHistoryEntries([]);
+        setWithdrawalHistory([]);
         setHistoryTotals(null);
         setHistoryError('');
         return;
@@ -216,11 +219,27 @@ export default function SafeWallet() {
               (Number(a?.timestamp ?? 0) || 0)
           );
         setHistoryEntries(sortedEntries);
+
+        if (typeof getWithdrawalHistorySlice === 'function') {
+          try {
+            const extras = await getWithdrawalHistorySlice(userAddress, 0, 200);
+            if (!cancelled) {
+              setWithdrawalHistory(Array.isArray(extras) ? extras : []);
+            }
+          } catch (extraErr) {
+            console.warn('Withdrawal history fetch failed:', extraErr);
+            if (!cancelled) setWithdrawalHistory([]);
+          }
+        } else {
+          setWithdrawalHistory([]);
+        }
+
         setCurrentPage(1);
       } catch (error) {
         if (cancelled) return;
         console.error('Safe wallet history load failed:', error);
         setHistoryEntries([]);
+        setWithdrawalHistory([]);
         setHistoryTotals(null);
         setHistoryError(error?.message || 'Unable to load history records.');
       } finally {
@@ -235,7 +254,7 @@ export default function SafeWallet() {
     return () => {
       cancelled = true;
     };
-  }, [userAddress, getTransactionHistory]);
+  }, [userAddress, getTransactionHistory, getWithdrawalHistorySlice]);
 
   // Load income sources data
   useEffect(() => {
@@ -581,14 +600,37 @@ export default function SafeWallet() {
       const fundSource = entry.isCredit ? 'Safe Wallet' : 'User Wallet';
       const fundSourceAddress = !entry.isCredit ? ledgerOwnerAddress : null;
 
+      let withdrawalDetails = null;
+      if (!entry.isCredit && type === 'withdrawal') {
+        const match = withdrawalHistory.find((item) =>
+          Number(item.timestamp) === Number(entry.timestamp)
+        );
+        if (match) {
+          withdrawalDetails = match;
+        }
+      }
+
+      let feeUsd = withdrawalDetails?.feeUsd ?? 0;
+      let netUsd = withdrawalDetails?.netUsd ?? grossUsd;
+      if (!entry.isCredit && type === 'withdrawal') {
+        const grossAbs = Math.abs(grossUsd);
+        if (!(feeUsd > 0)) {
+          feeUsd = Math.round(grossAbs * 0.05 * 100) / 100;
+        }
+        const computedNet = Math.max(grossAbs - feeUsd, 0);
+        if (!(withdrawalDetails?.netUsd > 0)) {
+          netUsd = computedNet;
+        }
+      }
+
       return {
         id: entry.id,
         activity,
         details,
         direction,
         grossUsd,
-        feeUsd: 0,
-        netUsd: grossUsd,
+        feeUsd,
+        netUsd,
         fundSource,
         fundSourceAddress,
         type,
@@ -597,7 +639,7 @@ export default function SafeWallet() {
         tokenAmount: grossRama,
       };
     },
-    [address, formatDate, toUsd, userAddress]
+    [address, formatDate, toUsd, userAddress, withdrawalHistory]
   );
 
   const historyRows = useMemo(() => {
