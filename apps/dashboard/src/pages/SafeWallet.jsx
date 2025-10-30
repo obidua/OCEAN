@@ -28,6 +28,18 @@ import { useWaitForTransactionReceipt } from 'wagmi';
 
 const HISTORY_PAGE_SIZE = 20;
 
+const formatRamaPrecise = (value) => {
+  const num = Number(value) || 0;
+  if (num === 0) return '0.00000';
+  if (Math.abs(num) < 0.00001) {
+    return num.toPrecision(5);
+  }
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 5,
+    maximumFractionDigits: 5,
+  }).format(num);
+};
+
 const SAFEWALLET_KINDS = {
   ROI: 0,
   GROWTH: 1,
@@ -56,7 +68,7 @@ const DEBIT_KIND_LABEL = {
   [SAFEWALLET_KINDS.STAKE_SPEND]: 'Portfolio Stake Spend',
   [SAFEWALLET_KINDS.PORTFOLIO_CREATE]: 'Portfolio Creation Debit',
   [SAFEWALLET_KINDS.PORTFOLIO_TOPUP]: 'Portfolio Top-up Debit',
-  [SAFEWALLET_KINDS.WITHDRAW]: 'Withdrawal to External Wallet',
+  [SAFEWALLET_KINDS.WITHDRAW]: 'Withdrawal to User Wallet',
 };
 
 export default function SafeWallet() {
@@ -71,6 +83,7 @@ export default function SafeWallet() {
   // Income source functions
   const getIncomeTotals = useStore((s) => s.getIncomeTotals);
   const getSpotIncomeSummary = useStore((s) => s.getSpotIncomeSummary);
+  const getROITotals = useStore((s) => s.getROITotals);
 
   // AppKit hooks
   const { address, isConnected } = useAppKitAccount();
@@ -107,9 +120,9 @@ export default function SafeWallet() {
   const [incomeData, setIncomeData] = useState({
     slab: { usd: 0, rama: 0 },
     spot: { usd: 0, rama: 0 },
+    accrued: { usd: 0, rama: 0, claimedUsd: 0, unclaimedUsd: 0, claimedRama: 0, unclaimedRama: 0 },
     royalty: { usd: 0, rama: 0 },
     rewards: { usd: 0, rama: 0 },
-    growth: { usd: 0, rama: 0 } // Portfolio growth claims
   });
   const [incomeLoading, setIncomeLoading] = useState(false);
   const [incomeError, setIncomeError] = useState('');
@@ -233,9 +246,9 @@ export default function SafeWallet() {
         setIncomeData({
           slab: { usd: 0, rama: 0 },
           spot: { usd: 0, rama: 0 },
+          accrued: { usd: 0, rama: 0, claimedUsd: 0, unclaimedUsd: 0, claimedRama: 0, unclaimedRama: 0 },
           royalty: { usd: 0, rama: 0 },
           rewards: { usd: 0, rama: 0 },
-          growth: { usd: 0, rama: 0 }
         });
         return;
       }
@@ -244,15 +257,36 @@ export default function SafeWallet() {
       setIncomeError('');
 
       try {
-        // Use ComprehensiveView getIncomeTotals for comprehensive data
-        const incomeTotals = await getIncomeTotals(userAddress).catch(() => null);
-        
-        // Get additional data for growth (portfolio ROI claims)
-        const spotData = await getSpotIncomeSummary(userAddress).catch(() => null);
+        const [incomeTotals, spotData, roiTotals] = await Promise.all([
+          getIncomeTotals(userAddress).catch(() => null),
+          getSpotIncomeSummary(userAddress).catch(() => null),
+          getROITotals(userAddress).catch(() => null),
+        ]);
 
         if (cancelled) return;
 
         // Extract and format the data from ComprehensiveView
+        const rawClaimedUsd = Number(roiTotals?.claimedUsd ?? 0);
+        const rawUnclaimedUsd = Number(roiTotals?.unclaimedUsd ?? 0);
+        const rawClaimedRama = Number(roiTotals?.claimedRama ?? 0);
+        const rawUnclaimedRama = Number(roiTotals?.unclaimedRama ?? 0);
+        const fallbackAccruedUsd = Number(
+          incomeTotals?.roi?.usd ?? incomeTotals?.totalRoiUsd ?? 0
+        ) || 0;
+        const fallbackAccruedRama = Number(
+          incomeTotals?.roi?.rama ?? incomeTotals?.totalRoiRama ?? 0
+        ) || 0;
+
+        const accruedUsdTotal = rawClaimedUsd + rawUnclaimedUsd;
+        const accruedRamaTotal = rawClaimedRama + rawUnclaimedRama;
+
+        const accruedUsd = accruedUsdTotal > 0 ? accruedUsdTotal : fallbackAccruedUsd;
+        const accruedRama = accruedRamaTotal > 0 ? accruedRamaTotal : fallbackAccruedRama;
+        const accruedClaimedUsd = rawClaimedUsd > 0 ? rawClaimedUsd : accruedUsd;
+        const accruedUnclaimedUsd = rawUnclaimedUsd > 0 ? rawUnclaimedUsd : Math.max(0, accruedUsd - accruedClaimedUsd);
+        const accruedClaimedRama = rawClaimedRama > 0 ? rawClaimedRama : accruedRama;
+        const accruedUnclaimedRama = rawUnclaimedRama > 0 ? rawUnclaimedRama : Math.max(0, accruedRama - accruedClaimedRama);
+
         const newIncomeData = {
           slab: {
             usd: incomeTotals?.slab?.usd || 0,
@@ -263,6 +297,14 @@ export default function SafeWallet() {
             usd: spotData?.lifetimeUsd || incomeTotals?.roi?.usd || 0,
             rama: spotData?.lifetimeRama || incomeTotals?.roi?.rama || 0
           },
+          accrued: {
+            usd: accruedUsd,
+            rama: accruedRama,
+            claimedUsd: accruedClaimedUsd,
+            unclaimedUsd: accruedUnclaimedUsd,
+            claimedRama: accruedClaimedRama,
+            unclaimedRama: accruedUnclaimedRama,
+          },
           royalty: {
             usd: incomeTotals?.royalty?.usd || 0,
             rama: incomeTotals?.royalty?.rama || 0
@@ -271,11 +313,6 @@ export default function SafeWallet() {
             usd: incomeTotals?.reward?.usd || 0,
             rama: incomeTotals?.reward?.rama || 0
           },
-          growth: {
-            // Portfolio growth (ROI) from ComprehensiveView
-            usd: incomeTotals?.roi?.usd || 0,
-            rama: incomeTotals?.roi?.rama || 0
-          }
         };
 
         setIncomeData(newIncomeData);
@@ -295,7 +332,7 @@ export default function SafeWallet() {
     return () => {
       cancelled = true;
     };
-  }, [userAddress, getIncomeTotals, getSpotIncomeSummary]);
+  }, [userAddress, getIncomeTotals, getSpotIncomeSummary, getROITotals]);
 
   const fallbackRamaBalance = 0;
   const summaryRama = safeSummary?.balance?.rama;
@@ -375,10 +412,10 @@ export default function SafeWallet() {
   const totalInflowsRama = inflowTotals.rama;
   const availableAfterFeeUsd = usdValue * 0.95;
   const availableAfterFeeRama = ramaBalance * 0.95;
-  const formattedRamaBalance = ramaBalance ;
+  const formattedRamaBalance = formatRamaPrecise(ramaBalance);
   const formattedUsdValue = formatUSD(usdValue);
   const formattedAvailableAfterFeeUsd = formatUSD(availableAfterFeeUsd);
-  const formattedAvailableAfterFeeRama = formatRAMA(availableAfterFeeRama);
+  const formattedAvailableAfterFeeRama = formatRamaPrecise(availableAfterFeeRama);
 
   const parsedInput = useMemo(() => {
     const raw = parseFloat(withdrawInput);
@@ -489,6 +526,9 @@ export default function SafeWallet() {
     if (source === 'Safe Wallet') {
       return 'text-neon-green border-neon-green/30 bg-neon-green/10';
     }
+    if (source === 'User Wallet') {
+      return 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
+    }
     if (source === 'External Wallet') {
       return 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
     }
@@ -537,7 +577,9 @@ export default function SafeWallet() {
       if (Math.abs(grossUsd) < 1e-6) {
         grossUsd = 0;
       }
-      const fundSource = entry.isCredit ? 'Safe Wallet' : 'External Wallet';
+      const ledgerOwnerAddress = userAddress || address || null;
+      const fundSource = entry.isCredit ? 'Safe Wallet' : 'User Wallet';
+      const fundSourceAddress = !entry.isCredit ? ledgerOwnerAddress : null;
 
       return {
         id: entry.id,
@@ -548,13 +590,14 @@ export default function SafeWallet() {
         feeUsd: 0,
         netUsd: grossUsd,
         fundSource,
+        fundSourceAddress,
         type,
         date: entry.timestamp ? formatDate(entry.timestamp) : '—',
         rawTimestamp: Number(entry.timestamp) || 0,
         tokenAmount: grossRama,
       };
     },
-    [formatDate, toUsd]
+    [address, formatDate, toUsd, userAddress]
   );
 
   const historyRows = useMemo(() => {
@@ -947,7 +990,7 @@ export default function SafeWallet() {
                     <p className="text-xs text-cyan-300/70">
                       ≈{' '}
                       {withdrawCurrency === 'USD'
-                        ? `${formatRAMA(amountRama)} RAMA`
+                        ? `${formatRamaPrecise(amountRama)} RAMA`
                         : formatUSD(amountUsd)}
                     </p>
                   )}
@@ -971,7 +1014,7 @@ export default function SafeWallet() {
                   <div className="flex items-center justify-between text-sm text-cyan-300/80">
                     <span>Gross Amount</span>
                     <span className="text-white font-semibold">
-                      {amountRama > 0 ? `${formatRAMA(amountRama)} RAMA` : '0 RAMA'}
+                      {amountRama > 0 ? `${formatRamaPrecise(amountRama)} RAMA` : '0.00000 RAMA'}
                     </span>
                   </div>
                   <p className="text-[11px] text-cyan-300/60 text-right">
@@ -980,7 +1023,7 @@ export default function SafeWallet() {
                   <div className="flex items-center justify-between text-sm text-cyan-300/80">
                     <span>Fee (5%)</span>
                     <span className="text-neon-orange font-semibold">
-                      {amountUsd > 0 ? `${formatRAMA(feeRama)} RAMA` : '0 RAMA'}
+                      {amountUsd > 0 ? `${formatRamaPrecise(feeRama)} RAMA` : '0.00000 RAMA'}
                     </span>
                   </div>
                   <p className="text-[11px] text-cyan-300/60 text-right">
@@ -988,7 +1031,7 @@ export default function SafeWallet() {
                   </p>
                   <div className="flex items-center justify-between text-sm font-semibold text-neon-green">
                     <span>Net to Wallet</span>
-                    <span>{amountUsd > 0 ? `${formatRAMA(netRama)} RAMA` : '0 RAMA'}</span>
+                    <span>{amountUsd > 0 ? `${formatRamaPrecise(netRama)} RAMA` : '0.00000 RAMA'}</span>
                   </div>
                   <p className="text-[11px] text-cyan-300/60 text-right">
                     ≈ {amountUsd > 0 ? formatUSD(netUsd) : '$0.00'}
@@ -1691,11 +1734,21 @@ export default function SafeWallet() {
                               </div>
                             </td>
                             <td className="py-4 px-3 text-center">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${sourceBadgeClass(tx.fundSource)}`}
-                              >
-                                {tx.fundSource}
-                              </span>
+                              <div className="flex flex-col items-center gap-1">
+                                <span
+                                  className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${sourceBadgeClass(tx.fundSource)}`}
+                                >
+                                  {tx.fundSource}
+                                </span>
+                                {tx.fundSourceAddress && (
+                                  <AddressWithCopy
+                                    address={tx.fundSourceAddress}
+                                    className="text-[10px]"
+                                    textClassName="text-cyan-300/70 font-mono"
+                                    copyLabel=""
+                                  />
+                                )}
+                              </div>
                             </td>
                             <td className="py-4 px-3 text-right">
                               <div className="text-xs text-cyan-300/70 space-y-1">
@@ -1750,7 +1803,7 @@ export default function SafeWallet() {
                               <span
                                 className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${sourceBadgeClass(tx.fundSource)}`}
                               >
-                                {tx.fundSource.slice(0, 8)}…
+                                {tx.fundSource}
                               </span>
                             </div>
                             <p className="text-xs font-semibold text-cyan-200 truncate">
@@ -1758,6 +1811,17 @@ export default function SafeWallet() {
                             </p>
                           </div>
                         </div>
+
+                        {tx.fundSourceAddress && (
+                          <div className="mb-2">
+                            <AddressWithCopy
+                              address={tx.fundSourceAddress}
+                              className="text-[10px]"
+                              textClassName="text-cyan-300/70 font-mono"
+                              copyLabel=""
+                            />
+                          </div>
+                        )}
 
                         {/* Details */}
                         <p className="text-[10px] text-cyan-300/70 mb-3 line-clamp-2">
@@ -1897,19 +1961,23 @@ export default function SafeWallet() {
                   </div>
                 </div>
 
-                {/* Growth Claims */}
+                {/* Accrued Growth */}
                 <div className="cyber-glass border border-neon-green/30 rounded-lg p-3 sm:p-4 hover:border-neon-green/50 transition-all">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 bg-neon-green rounded-full"></div>
-                    <span className="text-xs sm:text-sm font-medium text-neon-green">Growth Claims</span>
+                    <span className="text-xs sm:text-sm font-medium text-neon-green">Accrued Growth</span>
                   </div>
                   <div className="space-y-1">
                     <div className="text-sm sm:text-base font-bold text-neon-green">
-                      {formatRAMA(incomeData.growth.rama)}
+                      {formatRAMA(incomeData.accrued.rama)}
                     </div>
                     <div className="text-[10px] sm:text-xs text-neon-green/70">
-                      ≈ {formatUSD(incomeData.growth.usd)}
+                      ≈ {formatUSD(incomeData.accrued.usd)}
                     </div>
+                  </div>
+                  <div className="mt-2 text-[10px] sm:text-xs text-neon-green/60 space-y-1">
+                    <div>Claimed: {formatUSD(incomeData.accrued.claimedUsd)}</div>
+                    <div>Unclaimed: {formatUSD(incomeData.accrued.unclaimedUsd)}</div>
                   </div>
                 </div>
 
@@ -1960,7 +2028,7 @@ export default function SafeWallet() {
                       {formatRAMA(
                         incomeData.slab.rama + 
                         incomeData.spot.rama + 
-                        incomeData.growth.rama + 
+                        incomeData.accrued.rama + 
                         incomeData.royalty.rama + 
                         incomeData.rewards.rama
                       )}
@@ -1969,7 +2037,7 @@ export default function SafeWallet() {
                       ≈ {formatUSD(
                         incomeData.slab.usd + 
                         incomeData.spot.usd + 
-                        incomeData.growth.usd + 
+                        incomeData.accrued.usd + 
                         incomeData.royalty.usd + 
                         incomeData.rewards.usd
                       )}
@@ -2035,7 +2103,7 @@ export default function SafeWallet() {
         title="Safe Wallet Withdrawal"
         description="Withdrawing funds to your connected wallet"
         successMessage="Withdrawal completed successfully! Funds have been sent to your wallet."
-        amount={`${formatRAMA(amountRama)}`}
+        amount={`${formatRamaPrecise(amountRama)}`}
         amountLabel="Withdrawing"
         txHash={hash}
         onSuccess={handleWithdrawSuccess}

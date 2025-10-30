@@ -352,7 +352,7 @@ export default function RoyaltyProgram() {
 
   const unclaimedRoyaltyUsd = Number(royaltyIncomeUsd || 0);
   const unclaimedRoyaltyRama = Number(royaltyIncomeRama || 0);
-  const holdRoyaltyUsd = Number(currentTier?.monthlyUsd || 0);
+  const holdRoyaltyUsd = 0; // Placeholder: will reflect held royalty once 4x-cap hold logic is active
 
   // Calculate claimed royalty totals from actual transaction history
   const claimedRoyaltyTotals = useMemo(() => {
@@ -403,6 +403,42 @@ export default function RoyaltyProgram() {
     }
     return Array.isArray(royaltyLedger) ? royaltyLedger : [];
   }, [royaltyTransactions, royaltyLedger]);
+
+  const teamBreakdown = royaltyDetails?.teamBusinessBreakdown || {
+    l1Usd: 0,
+    l2Usd: 0,
+    lrestUsd: 0,
+    totalUsd: qualifiedVolumeUsd,
+  };
+  const pendingRoyalty = royaltyDetails?.pendingRoyalty || null;
+  const globalDistribution = royaltyDetails?.globalDistribution || null;
+  const nextThresholdUsd = royaltyDetails?.nextThresholdUsd ?? renewalTargetUsd ?? 0;
+  const neededUsd = royaltyDetails?.neededUsd ?? renewalRequiredUsd ?? 0;
+  const accumulatedTowardsNextTier = Math.max(0, nextThresholdUsd - neededUsd);
+  const nextTierProgressPct =
+    nextThresholdUsd > 0
+      ? Math.min(100, (accumulatedTowardsNextTier / nextThresholdUsd) * 100)
+      : 0;
+  const renewalProgressPct =
+    renewalTargetUsd > 0
+      ? Math.min(100, (renewalRecentUsd / renewalTargetUsd) * 100)
+      : 0;
+  const achievedStages = royaltyDetails?.achievedStages ?? [];
+  const achievedStageCount = achievedStages.length;
+  const lastDistributionAt = Number(globalDistribution?.lastDistributionAt ?? 0);
+  const lastDistributionMonth = Number(globalDistribution?.lastDistributionMonth ?? 0);
+  const lastDistributionLabel = formatLedgerTimestamp(lastDistributionAt);
+  const remainingToNextTierUsd = Math.max(0, neededUsd);
+  const nextMonthLabel = formatLedgerTimestamp(nextMonthEpoch);
+  const recentAchievedStages = achievedStages
+    .slice(-3)
+    .map((stage) => {
+      const idx = Number(stage);
+      return {
+        idx,
+        label: ROYALTY_TIER_NAMES[idx] ?? `Tier ${idx + 1}`,
+      };
+    });
 
   const handleClaimRoyalty = async () => {
     if (!connectedAddress || !canClaim) return;
@@ -539,15 +575,151 @@ export default function RoyaltyProgram() {
               <Award className="text-neon-orange" size={20} />
             </div>
             <span className="text-xs text-neon-orange uppercase tracking-wider">Next</span>
+        </div>
+        <p className="text-xs text-cyan-300/70 uppercase tracking-wide mb-1">Hold / Next Month</p>
+        <p className="text-2xl md:text-3xl font-bold text-neon-orange mb-1">{formatUSD(holdRoyaltyUsd)}</p>
+        <p className="text-xs text-cyan-300/70 mt-2">
+          Hold tally activates when rewards accrue after completing the 4x cap with inactive portfolios.
+        </p>
+      </div>
+    </div>
+
+      {/* Advanced Royalty Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="cyber-glass border border-cyan-500/30 rounded-xl p-5 space-y-3 hover:border-cyan-500/60 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={18} className="text-cyan-300" />
+              <span className="text-sm font-semibold text-cyan-200">Team Business</span>
+            </div>
+            <span className="text-[11px] text-cyan-300/70 uppercase tracking-wide">Qualified</span>
           </div>
-          <p className="text-xs text-cyan-300/70 uppercase tracking-wide mb-1">Hold / Next Month</p>
-          <p className="text-2xl md:text-3xl font-bold text-neon-orange mb-1">{formatUSD(holdRoyaltyUsd)}</p>
-          <p className="text-xs text-cyan-300/70 mt-2">
-            Royalty payouts are auto-credited to your Safe Wallet.
+          <p className="text-2xl font-bold text-cyan-100">{formatUSD(teamBreakdown.totalUsd)}</p>
+          <p className="text-xs text-cyan-300/60">
+            Total qualified volume contributing to royalty eligibility.
           </p>
+          <div className="grid grid-cols-3 gap-2 text-xs text-cyan-200">
+            <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 p-2 text-center">
+              <p className="font-semibold text-cyan-100">Level 1</p>
+              <p className="mt-1 text-cyan-300/80">{formatUSD(teamBreakdown.l1Usd)}</p>
+            </div>
+            <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 p-2 text-center">
+              <p className="font-semibold text-cyan-100">Level 2</p>
+              <p className="mt-1 text-cyan-300/80">{formatUSD(teamBreakdown.l2Usd)}</p>
+            </div>
+            <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 p-2 text-center">
+              <p className="font-semibold text-cyan-100">Beyond</p>
+              <p className="mt-1 text-cyan-300/80">{formatUSD(teamBreakdown.lrestUsd)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="cyber-glass border border-neon-green/30 rounded-xl p-5 space-y-3 hover:border-neon-green/60 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock size={18} className="text-neon-green" />
+              <span className="text-sm font-semibold text-neon-green">Renewal Progress</span>
+            </div>
+            <span className="text-[11px] text-neon-green/80 uppercase tracking-wide">{renewalProgressPct.toFixed(1)}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-neon-green/10 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-cyan-400 via-neon-green to-emerald-400"
+              style={{ width: `${renewalProgressPct}%` }}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs text-cyan-300/80">
+            <div>
+              <p className="font-semibold text-cyan-200">Last 60 Days</p>
+              <p className="mt-1">{formatUSD(renewalSnapshotUsd)}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-cyan-200">Current Window</p>
+              <p className="mt-1">{formatUSD(renewalRecentUsd)}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-cyan-200">Target</p>
+              <p className="mt-1">{formatUSD(renewalTargetUsd)}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-cyan-200">Remaining</p>
+              <p className="mt-1">{formatUSD(remainingToNextTierUsd)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="cyber-glass border border-neon-purple/40 rounded-xl p-5 space-y-3 hover:border-neon-purple/60 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle size={18} className="text-neon-purple" />
+              <span className="text-sm font-semibold text-neon-purple">Achievements</span>
+            </div>
+            <span className="text-[11px] text-neon-purple/80 uppercase tracking-wide">{achievedStageCount} stages</span>
+          </div>
+          <div className="rounded-lg bg-neon-purple/10 border border-neon-purple/30 p-3 text-xs text-neon-purple/80">
+            <p className="font-semibold text-neon-purple/90 mb-1">Next Tier Progress</p>
+            <div className="h-2 rounded-full bg-neon-purple/20 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-neon-purple via-neon-pink to-cyan-400"
+                style={{ width: `${nextTierProgressPct}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-[11px]">
+              <span>Reached</span>
+              <span>{nextTierProgressPct.toFixed(1)}%</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recentAchievedStages.length === 0 ? (
+              <span className="text-[11px] text-neon-purple/60">No achievements yet</span>
+            ) : (
+              recentAchievedStages.map(({ idx, label }) => (
+                <span
+                  key={idx}
+                  className="px-2 py-1 rounded-full border border-neon-purple/40 bg-neon-purple/10 text-[11px] text-neon-purple/80"
+                >
+                  {label}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="cyber-glass border border-cyan-500/40 rounded-xl p-5 space-y-3 hover:border-cyan-500/60 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History size={18} className="text-cyan-400" />
+              <span className="text-sm font-semibold text-cyan-200">Payout Pipeline</span>
+            </div>
+            <span className="text-[11px] text-cyan-300/70 uppercase tracking-wide">Timeline</span>
+          </div>
+          {pendingRoyalty?.exists ? (
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-3 text-xs text-cyan-200 space-y-1">
+              <p className="text-sm font-semibold text-cyan-100">Pending Royalty</p>
+              <p>Month ID: {pendingRoyalty.monthId}</p>
+              <p>Tier: {pendingRoyalty.tierIdx + 1}</p>
+              <p>Amount: {formatUSD(pendingRoyalty.amountUsd)} • {formatRAMA(pendingRoyalty.amountRama)} RAMA</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3 text-xs text-cyan-300/70">
+              No pending royalties detected.
+            </div>
+          )}
+          <div className="text-xs text-cyan-300/70 space-y-1">
+            <p>
+              Last distribution: <span className="text-cyan-100">{lastDistributionLabel}</span>
+            </p>
+            <p>
+              Distribution month: <span className="text-cyan-100">{lastDistributionMonth || '—'}</span>
+            </p>
+            <p>
+              Next payout window: <span className="text-cyan-100">{nextMonthEpoch ? nextMonthLabel : '—'}</span>
+            </p>
+          </div>
         </div>
       </div>
 
+      {/* Claimed History Table */}
       {/* Claimed History Table */}
       <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
         <div className="flex items-center justify-between mb-4">

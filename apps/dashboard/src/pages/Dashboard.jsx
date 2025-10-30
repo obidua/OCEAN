@@ -1792,18 +1792,16 @@ export default function Dashboard() {
             </p>
           </div>
           <NumberPopup
-            value={formatUSD(
-              (missedOverview?.held?.royaltyUsd ?? 0) +
-                (missedOverview?.held?.rewardsUsd ?? 0)
-            )}
+            value={formatUSD(0)}
             label="Total Hold"
             className="text-xl sm:text-2xl font-bold mb-2 text-yellow-400 relative z-10"
-            isLoading={missedLoading}
+            isLoading={false}
           />
           <div className="text-xs text-yellow-300/80 relative z-10 mb-1">
-            {missedOverview?.held?.canClaimNow
-              ? "Claimable Now"
-              : "Held Until Cap Unlocked"}
+            Hold rewards will surface here once post-cap earnings accrue while portfolios are inactive.
+          </div>
+          <div className="text-[10px] text-yellow-200/70 relative z-10 mb-2">
+            Royalty Hold: {formatUSD(0)} • One-Time Hold: {formatUSD(0)}
           </div>
           <div className="flex items-center gap-1 text-xs text-yellow-300/90 relative z-10">
             <span>View Details</span>

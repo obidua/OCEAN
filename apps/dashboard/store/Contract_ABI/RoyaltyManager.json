@@ -403,35 +403,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "offset",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "limit",
-        "type": "uint256"
-      }
-    ],
-    "name": "getGlobalRoyaltyAchieversWithStages",
-    "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "users_",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint8[][]",
-        "name": "stages_",
-        "type": "uint8[][]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -595,6 +566,122 @@
         "internalType": "uint256",
         "name": "ramaGrandTotalWei",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "monthUniverse",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "uint64",
+        "name": "nextClaimMonth",
+        "type": "uint64"
+      }
+    ],
+    "name": "getRoyaltyKPIs",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "totalEarnedUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalEarnedRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unclaimedCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64[]",
+            "name": "unclaimedMonths",
+            "type": "uint64[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "holdUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "holdRamaWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "currentLevel",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "payoutsReceived",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "nextClaimMonthId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "nextClaimRootPresent",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "nextClaimHasClaimed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "nextClaimHasPending",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "nextClaimPendingTierIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextClaimPendingUSD6",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextClaimPendingRamaWei",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct RoyaltyManager.RoyaltyKPIs",
+        "name": "kpi",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -901,35 +988,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint8",
-        "name": "stage",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint256",
-        "name": "offset",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "limit",
-        "type": "uint256"
-      }
-    ],
-    "name": "getRoyaltyStageAchievers",
-    "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "out",
-        "type": "address[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -1092,6 +1150,32 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "globalLastDistributionAt",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalLastDistributionMonth",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1102,6 +1186,25 @@
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "name": "monthLastDistributionAt",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

@@ -228,7 +228,7 @@ export default function OneTimeRewards() {
   const totalRewardUsd = fallbackTotals?.totalPotentialUsd ?? 
     milestones.reduce((sum, m) => sum + (m.rewardUsd || 0), 0);
   const unclaimedUsd = totalRewardUsd - totalEarnedUsd;
-  const holdRewardUsd = pendingRewardUsd;
+  const holdRewardUsd = 0; // Placeholder until hold logic (4x cap + inactive portfolio) is implemented
 
   const remainingUsd = overview?.remainingUsd ?? fallbackTotals?.totalPotentialUsd ?? 0;
   const canClaim = pendingRewardUsd > 0 && userAddress && connectedAddress;
@@ -379,7 +379,10 @@ export default function OneTimeRewards() {
           <p className="text-3xl font-bold text-yellow-400 relative z-10">
             {formatUSD(holdRewardUsd)}
           </p>
-          {canClaim && (
+          <p className="text-[10px] text-cyan-300/80 mt-2 relative z-10">
+            Hold rewards appear here once post-cap bonuses accrue while portfolios are inactive.
+          </p>
+          {holdRewardUsd > 0 && canClaim && (
             <button
               onClick={handleClaimReward}
               disabled={isClaiming || isTxPending}

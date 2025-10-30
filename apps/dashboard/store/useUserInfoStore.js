@@ -192,6 +192,49 @@ const toBigIntSafe = (input) => {
   return 0n;
 };
 
+const decimalToWei = (input, decimals = 18) => {
+  if (input == null) return 0n;
+  let valueStr =
+    typeof input === "string"
+      ? input.trim()
+      : Number.isFinite(input)
+        ? input.toString()
+        : "";
+
+  if (!valueStr) return 0n;
+
+  if (/e|E/.test(valueStr)) {
+    const num = Number(valueStr);
+    if (!Number.isFinite(num)) {
+      throw new Error("Invalid amount format");
+    }
+    valueStr = num.toFixed(decimals);
+  }
+
+  if (!/^[-+]?\d*(\.\d*)?$/.test(valueStr)) {
+    throw new Error("Invalid amount format");
+  }
+
+  const isNegative = valueStr.startsWith("-");
+  if (isNegative || valueStr.startsWith("+")) {
+    valueStr = valueStr.slice(1);
+  }
+
+  let [integerPart, fractionPart = ""] = valueStr.split(".");
+  if (!integerPart) integerPart = "0";
+
+  const scale = 10n ** BigInt(decimals);
+  const fractionNormalized = (fractionPart + "0".repeat(decimals)).slice(
+    0,
+    decimals
+  );
+
+  let wei =
+    BigInt(integerPart || "0") * scale + BigInt(fractionNormalized || "0");
+  if (isNegative) wei = -wei;
+  return wei;
+};
+
 // Bytes32 helpers for decoding kinds and reasons from CappingIncomeManager
 const bytes32ToString = (b) => {
   if (!b) return '';
@@ -3493,7 +3536,10 @@ export const useStore = create((set, get) => ({
       const renewalRecentUsd = fromMicroUSD(tNowCacheUSD6 || 0);
       
       // Calculate directs from team business (L1, L2, Lrest)
-      const directs = fromMicroUSD(L1_atLast || 0) + fromMicroUSD(L2_atLast || 0) + fromMicroUSD(Lrest_atLast || 0);
+      const l1Usd = fromMicroUSD(L1_atLast || 0);
+      const l2Usd = fromMicroUSD(L2_atLast || 0);
+      const lrestUsd = fromMicroUSD(Lrest_atLast || 0);
+      const directs = l1Usd + l2Usd + lrestUsd;
       
       // Calculate royalty income based on qualified volume
       const royaltyIncomeUsd = qualifiedVolumeUsd * 0.05; // 5% royalty rate
@@ -3537,6 +3583,41 @@ export const useStore = create((set, get) => ({
         }));
       }
 
+      // Pending royalty for upcoming month (if any)
+      let pendingRoyalty = null;
+      try {
+        const pendingMonthId = BigInt(lastPaidMonthEpoch || 0) + 1n;
+        const pendingRaw = await royaltyManager.methods
+          .pendingRoyalty(userAddress, pendingMonthId.toString())
+          .call();
+        if (pendingRaw?.exists) {
+          pendingRoyalty = {
+            monthId: Number(pendingRaw.monthId ?? pendingMonthId),
+            tierIdx: Number(pendingRaw.tierIdx ?? currentLevel),
+            amountUsd: fromMicroUSD(pendingRaw.amountUSD ?? 0),
+            amountRama: fromWeiToRama(pendingRaw.amountRama ?? 0),
+            exists: Boolean(pendingRaw.exists),
+          };
+        }
+      } catch (err) {
+        console.warn("Failed to load pending royalty:", err);
+      }
+
+      // Global distribution stats
+      let globalDistribution = null;
+      try {
+        const [lastAtRaw, lastMonthRaw] = await Promise.all([
+          royaltyManager.methods.globalLastDistributionAt().call(),
+          royaltyManager.methods.globalLastDistributionMonth().call(),
+        ]);
+        globalDistribution = {
+          lastDistributionAt: Number(lastAtRaw ?? 0),
+          lastDistributionMonth: Number(lastMonthRaw ?? 0),
+        };
+      } catch (err) {
+        console.warn("Failed to load global distribution stats:", err);
+      }
+
       return {
         slabAchiev,
         currentLevel,
@@ -3557,11 +3638,19 @@ export const useStore = create((set, get) => ({
         renewalTargetUsd,
         renewalRequiredUsd,
         tiers,
+        teamBusinessBreakdown: {
+          l1Usd,
+          l2Usd,
+          lrestUsd,
+          totalUsd: directs,
+        },
+        pendingRoyalty,
+        globalDistribution,
         // Additional data from getUserRoyaltyOverview
         achievedStages: achievedStages || [],
         achievedAt: achievedAt || [],
-        neededUSD6: fromMicroUSD(neededUSD6 || 0),
-        nextThresholdUSD6: fromMicroUSD(nextThresholdUSD6 || 0),
+        neededUsd: fromMicroUSD(neededUSD6 || 0),
+        nextThresholdUsd: fromMicroUSD(nextThresholdUSD6 || 0),
       };
     } catch (error) {
       console.error("getRoyaltyOverview error:", error);
@@ -3589,10 +3678,18 @@ export const useStore = create((set, get) => ({
           thresholdUsd: fromMicroUSD(level.requiredVolumeUSD),
           monthlyUsd: fromMicroUSD(level.monthlyRoyaltyUSD),
         })),
+        teamBusinessBreakdown: {
+          l1Usd: 0,
+          l2Usd: 0,
+          lrestUsd: 0,
+          totalUsd: 0,
+        },
+        pendingRoyalty: null,
+        globalDistribution: null,
         achievedStages: [],
         achievedAt: [],
-        neededUSD6: 0,
-        nextThresholdUSD6: 0,
+        neededUsd: 0,
+        nextThresholdUsd: 0,
       };
     }
   },
@@ -6936,17 +7033,19 @@ export const useStore = create((set, get) => ({
   withdrawFromSafeWallet: async (userAddress, ramaAmount) => {
     try {
       if (!userAddress) throw new Error('No connected wallet address found');
-      if (!ramaAmount || ramaAmount <= 0) throw new Error('Invalid withdrawal amount');
+      if (!ramaAmount || Number(ramaAmount) <= 0) throw new Error('Invalid withdrawal amount');
 
       const safeWallet = makeContract(SafeWalletABI, Contract.SafeWallet);
       if (!safeWallet) throw new Error('SafeWallet contract not available');
 
-      // Convert RAMA to wei
-      const ramaWei = toBigIntSafe(BigInt(Math.trunc(ramaAmount * RAMA_DECIMALS))).toString();
+      // Convert RAMA to wei with high precision
+      const ramaWeiBigInt = decimalToWei(ramaAmount, 18);
+      if (ramaWeiBigInt <= 0n) throw new Error('Invalid withdrawal amount');
+      const ramaWei = ramaWeiBigInt.toString();
       
       // Check if user has sufficient balance
       const balance = await safeWallet.methods.balanceOf(userAddress).call();
-      if (toBigIntSafe(ramaWei) > toBigIntSafe(balance)) {
+      if (ramaWeiBigInt > toBigIntSafe(balance)) {
         throw new Error('Insufficient Safe Wallet balance');
       }
 
