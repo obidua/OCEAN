@@ -595,7 +595,7 @@ export default function StakeInvest() {
       } else if (stakeType === 'self' && useWallet === 'safe') {
         response = await SafeSelfPort(address, stakeAmountNum);
       } else if (stakeType === 'other' && useWallet === 'safe') {
-        response = await SafeOtherPort(address, beneficiaryAddress, stakeAmountNum);
+        response = await SafeOtherPort(registrationSponsor, beneficiaryAddress, stakeAmountNum);
       }
 
       if (response) {

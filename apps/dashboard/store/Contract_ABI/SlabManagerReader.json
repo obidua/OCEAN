@@ -35,62 +35,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "components": [
-          {
-            "internalType": "bool",
-            "name": "full",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "legA",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "legB",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "legC",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "slab",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "royalty",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "rewards",
-            "type": "bool"
-          }
-        ],
-        "indexed": false,
-        "internalType": "struct AdminControl.Bypass",
-        "name": "bp",
-        "type": "tuple"
-      }
-    ],
-    "name": "BypassSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": false,
         "internalType": "uint8",
         "name": "version",
@@ -125,31 +69,6 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "enabled",
-        "type": "bool"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint8",
-        "name": "slab",
-        "type": "uint8"
-      }
-    ],
-    "name": "SuperUserSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
         "name": "implementation",
         "type": "address"
       }
@@ -158,62 +77,45 @@
     "type": "event"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "bypasses",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "full",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "legA",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "legB",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "legC",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "slab",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "royalty",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "rewards",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "cfg",
     "outputs": [
+      { "internalType": "contract ICoreConfig", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
       {
-        "internalType": "contract ICoreConfig",
-        "name": "",
-        "type": "address"
+        "internalType": "enum SlabManagerReader.AchKind",
+        "name": "kind",
+        "type": "uint8"
+      }
+    ],
+    "name": "getRemainingForNext",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "targetUSD", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "totalNeeded",
+            "type": "uint256"
+          },
+          { "internalType": "uint256", "name": "L1_needed", "type": "uint256" },
+          { "internalType": "uint256", "name": "L2_needed", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "Lrest_needed",
+            "type": "uint256"
+          },
+          { "internalType": "bool", "name": "isAchieved", "type": "bool" }
+        ],
+        "internalType": "struct SlabManagerReader.NextAchievementProgress",
+        "name": "p",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -221,11 +123,156 @@
   },
   {
     "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
+    "name": "getUserOverview",
+    "outputs": [
       {
-        "internalType": "address",
-        "name": "_cfg",
-        "type": "address"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "qualifiedBusinessUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "currentSlabIdx",
+            "type": "uint8"
+          },
+          { "internalType": "uint256", "name": "currentL1", "type": "uint256" },
+          { "internalType": "uint256", "name": "currentL2", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "currentLrest",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              { "internalType": "address", "name": "leg", "type": "address" },
+              { "internalType": "uint256", "name": "volume", "type": "uint256" }
+            ],
+            "internalType": "struct SlabManagerReader.LegBusiness[]",
+            "name": "allLegs",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint64",
+                "name": "achievedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL1",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL2",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedLrest",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "name": "achievedSlabs",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint64",
+                "name": "achievedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL1",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL2",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedLrest",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "name": "achievedRewards",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint64",
+                "name": "achievedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL1",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL2",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedLrest",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "name": "achievedRoyalties",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextSlabThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextRewardThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextRoyaltyThreshold",
+            "type": "uint256"
+          },
+          { "internalType": "bool", "name": "canClaimSlab", "type": "bool" },
+          { "internalType": "uint64", "name": "lastClaimAt", "type": "uint64" },
+          {
+            "internalType": "uint32",
+            "name": "new50DirectsSinceClaim",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct SlabManagerReader.UserOverview",
+        "name": "ov",
+        "type": "tuple"
       }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_cfg", "type": "address" }
     ],
     "name": "initialize",
     "outputs": [],
@@ -235,24 +282,25 @@
   {
     "inputs": [],
     "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proxiableUUID",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reg",
     "outputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "contract IRegistryMinimal",
         "name": "",
-        "type": "bytes32"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -266,128 +314,17 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "components": [
-          {
-            "internalType": "bool",
-            "name": "full",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "legA",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "legB",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "legC",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "slab",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "royalty",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "rewards",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct AdminControl.Bypass",
-        "name": "bp",
-        "type": "tuple"
-      }
-    ],
-    "name": "setBypass",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "enabled",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint8",
-        "name": "slab",
-        "type": "uint8"
-      }
-    ],
-    "name": "setSuperUser",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "superUser",
+    "inputs": [],
+    "name": "slab",
     "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
+      { "internalType": "contract ISlabLens", "name": "", "type": "address" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "superUserSlab",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "newOwner", "type": "address" }
     ],
     "name": "transferOwnership",
     "outputs": [],
@@ -414,11 +351,7 @@
         "name": "newImplementation",
         "type": "address"
       },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],

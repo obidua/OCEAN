@@ -41,7 +41,10 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
   
   // Get user address from store
   const userAddressFromStore = useStore((state) => state.userAddress);
-  const userAddress = userAddressFromStore || localStorage.getItem('userAddress');
+
+
+  const userAddress = localStorage.getItem("userAddress") || userAddressFromStore;
+
   
   const {
     error,
@@ -125,6 +128,35 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
       </div>
     );
   };
+
+
+
+
+ const [slabInfo,setSlabInfo]= useState([]);
+  const getUserSlabView = useStore((s) => s.getUserSlabView);
+
+
+  const fetchSlabInfo = async () => {
+    try {
+      if(!userAddress) return;
+
+      const response = await getUserSlabView(userAddress);
+      console.log("=====+Fetched slab info:", response.achievedSlabs);
+      setSlabInfo(response.achievedSlabs);
+    } catch (error) {
+      console.error("Error fetching slab info:", error);
+    }
+  };
+
+
+ useEffect(()=>{
+
+  if(userAddress){
+    fetchSlabInfo();
+  }
+ },[userAddress,currentSlabInfo.displayLevel])
+
+
   return (
     <div className="space-y-6">
 
@@ -157,7 +189,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
             </div>
           </div>
           <p className="text-5xl font-bold mb-2 text-neon-green relative z-10">
-            {currentSlabInfo.isValid ? currentSlabInfo.displayLevel : "—"}
+            {slabInfo ? slabInfo.length : "—"}
           </p>
           <p className="text-lg text-cyan-300 relative z-10">
             {currentSlabInfo.isValid && currentSlabInfo.slabData

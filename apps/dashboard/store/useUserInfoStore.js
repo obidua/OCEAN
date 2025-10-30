@@ -24,6 +24,8 @@ import {
   ONE_TIME_REWARDS as ONE_TIME_REWARDS_FALLBACK,
 } from "../src/utils/contractData";
 
+import SlabManagerReader from './Contract_ABI/SlabManagerReader.json';
+
 // Cache manager for handling contract changes
 // let cacheManager = null;
 // try {
@@ -95,6 +97,7 @@ const Contract = {
   Oceanicview: resolveAddress("OCEANICVIEW", "0x938616ab14763506F7111Cdf06EF5A3B4C586dE6"),
   ComprehensiveView: resolveAddress("COMPREHENSIVEVIEW", "0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0"),
   OceanQueryUpgradeable: resolveAddress("OCEANQUERYUPGRADEABLE", "0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db"),
+  SlabReader: resolveAddress("SLABMANAGERREADER", "0x0EDbE6D0e490b4a5e741e98696495fb8F6A0545d")
 };
 
 // Validate environment configuration on module load
@@ -7830,6 +7833,26 @@ export const useStore = create((set, get) => ({
       loading: false,
       error: null
     }));
+  },
+
+
+  getUserSlabView: async (userAddress) => {
+    try {
+      console.log("this is Slab View of user,",userAddress);
+      if (!userAddress) throw new Error("Missing user address");
+
+      console.log('[Store] Fetching detailed getUserSlabView for:-->', userAddress);
+
+      const SlabManagerReaderCont = makeDualContracts(SlabManagerReader, Contract["SlabReader"]);
+      
+
+      const slabInfo = await SlabManagerReaderCont[0].methods.getUserOverview(userAddress).call();
+
+      return slabInfo;
+
+    } catch (error) {
+      console.error('[Store] Error fetching user slab view:', error);
+    }
   }
 
 }));
@@ -7989,5 +8012,12 @@ const calculateVolumeNeeded = (cappedVolumes = { L1: 0, L2: 0, Lrest: 0 }, direc
     },
   };
 };
+
+
+
+
+
+
+
 
 export default useStore;
