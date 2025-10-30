@@ -27,6 +27,33 @@ const ROYALTY_TIER_NAMES = [
   'Ocean Supreme',
 ];
 
+const TIER_STATUS_META = {
+  achieved: {
+    card: 'border-neon-green/60 bg-neon-green/5 shadow-[0_0_25px_rgba(16,185,129,0.15)]',
+    badge: 'border border-neon-green/40 bg-neon-green/15 text-neon-green',
+    progress: 'bg-gradient-to-r from-neon-green via-cyan-400 to-cyan-500',
+    number: 'bg-neon-green/20 border border-neon-green/40 text-neon-green',
+    amount: 'text-neon-green',
+    label: 'Achieved',
+  },
+  current: {
+    card: 'border-neon-orange/60 bg-neon-orange/10 shadow-[0_0_25px_rgba(249,115,22,0.15)]',
+    badge: 'border border-neon-orange/40 bg-neon-orange/15 text-neon-orange',
+    progress: 'bg-gradient-to-r from-neon-orange via-cyan-400 to-neon-green',
+    number: 'bg-neon-orange/20 border border-neon-orange/40 text-neon-orange',
+    amount: 'text-neon-orange',
+    label: 'In Progress',
+  },
+  locked: {
+    card: 'border-cyan-500/30 bg-cyan-500/5',
+    badge: 'border border-cyan-500/30 bg-cyan-500/10 text-cyan-300/80',
+    progress: 'bg-cyan-500/30',
+    number: 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300',
+    amount: 'text-cyan-300/80',
+    label: 'Locked',
+  },
+};
+
 const SAFEWALLET_KINDS = {
   ROYALTY: 2,
 };
@@ -300,8 +327,15 @@ export default function RoyaltyProgram() {
     }));
   }, [royaltyDetails]);
 
-  const currentLevel = Number(royaltyDetails?.currentLevel) || 0;
-  const currentTier = currentLevel > 0 ? tiers[currentLevel - 1] : null;
+  const rawCurrentLevel = Number(royaltyDetails?.currentLevel);
+  const hasTiers = Array.isArray(tiers) && tiers.length > 0;
+  const normalizedTierIndex = hasTiers
+    ? Math.min(Math.max(Number.isFinite(rawCurrentLevel) ? Math.floor(rawCurrentLevel) : 0, 0), tiers.length - 1)
+    : Math.max(Number.isFinite(rawCurrentLevel) ? Math.floor(rawCurrentLevel) : 0, 0);
+  const displayCurrentLevel = Math.max(1, normalizedTierIndex + 1);
+  const currentTier = hasTiers ? tiers[normalizedTierIndex] : null;
+  const currentTierName =
+    ROYALTY_TIER_NAMES[normalizedTierIndex] ?? `Tier ${displayCurrentLevel}`;
   const payoutsReceived = royaltyDetails?.paidMonths ?? 0;
   const canClaim = royaltyDetails?.canClaim ?? false;
   const paused = royaltyDetails?.paused ?? false;
@@ -384,7 +418,7 @@ export default function RoyaltyProgram() {
       
       // Extract claim parameters from royaltyDetails
       const monthId = royaltyDetails?.nextMonthEpoch || 0;
-      const tierIdx = (royaltyDetails?.currentLevel || 1) - 1; // 0-indexed
+      const tierIdx = normalizedTierIndex;
       const amountRama = royaltyDetails?.royaltyIncomeRama || 0;
       const amountInUSD = royaltyDetails?.royaltyIncomeUsd || 0;
       const proof = []; // Placeholder: replace with actual Merkle proof from backend
@@ -487,9 +521,12 @@ export default function RoyaltyProgram() {
               </p>
             </div>
           </div>
-          <p className="text-4xl font-bold text-white mb-2">{currentLevel}</p>
+          <p className="text-4xl font-bold text-white mb-1">{displayCurrentLevel}</p>
+          <p className="text-sm text-cyan-200/80 mb-1">
+            {currentTierName}
+          </p>
           {currentTier && (
-            <p className="text-sm text-cyan-200/80">
+            <p className="text-sm text-cyan-200/70">
               {formatUSD(currentTier.monthlyUsd)} / month
             </p>
           )}
@@ -621,83 +658,101 @@ export default function RoyaltyProgram() {
         </div>
       </div>
 
-      <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30">
-        <h2 className="text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-3">
+      <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+        <h2 className="text-lg font-semibold text-cyan-300 mb-6 uppercase tracking-wide flex items-center gap-3">
           Royalty Tiers
           <TrendingUp className="text-cyan-400" size={20} />
         </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tiers?.map((tier, idx) => {
-            const levelNum = idx + 1;
-            const isAchieved = levelNum <= currentLevel;
-            const isCurrent = levelNum === currentLevel;
-            const thresholdUsd = Number(tier.thresholdUsd) || 0;
-            const monthlyUsd = Number(tier.monthlyUsd) || 0;
+        <p className="text-sm text-cyan-300/80 mb-5">
+          Qualified volume: {formatUSD(qualifiedVolumeUsd)}
+        </p>
+        <div className="space-y-4">
+          {tiers && tiers.length > 0 ? (
+            tiers.map((tier, idx) => {
+              const thresholdUsd = Number(tier.thresholdUsd) || 0;
+              const monthlyUsd = Number(tier.monthlyUsd) || 0;
+              const tierName =
+                ROYALTY_TIER_NAMES[idx] ?? `Tier ${idx + 1}`;
+              const progressRaw =
+                thresholdUsd > 0
+                  ? (Number(qualifiedVolumeUsd) / thresholdUsd) * 100
+                  : 0;
+              const progressPct = Math.max(0, Math.min(100, progressRaw));
+              const hasCleared =
+                thresholdUsd > 0 && Number(qualifiedVolumeUsd) >= thresholdUsd;
 
-            return (
-              <div
-                key={idx}
-                className={`p-5 rounded-xl border-2 transition-all ${
-                  isCurrent
-                    ? 'border-neon-orange cyber-glass shadow-neon-green'
-                    : isAchieved
-                    ? 'border-neon-green cyber-glass '
-                    : 'border-cyan-500 cyber-glass'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex flex-col">
-                    <span
-                      className={`text-lg font-bold ${
-                        isCurrent
-                          ? 'text-neon-orange'
-                          : isAchieved
-                          ? 'text-neon-green'
-                          : 'text-cyan-300/90'
-                      }`}
-                    >
-                      {ROYALTY_TIER_NAMES[idx]}
-                    </span>
-                    <span className="text-xs text-cyan-300/60">
-                      Tier #{levelNum}
-                    </span>
+              let status = 'locked';
+              if (hasCleared || idx < normalizedTierIndex) {
+                status = 'achieved';
+              } else if (idx === normalizedTierIndex) {
+                status = 'current';
+              }
+
+              const meta = TIER_STATUS_META[status] ?? TIER_STATUS_META.locked;
+              const cardClass = `cyber-glass rounded-xl border p-4 sm:p-5 transition-all ${meta.card}`;
+              const numberClass = `w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold ${meta.number}`;
+              const badgeClass = `inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${meta.badge}`;
+              const amountClass = `text-lg sm:text-xl font-bold ${meta.amount}`;
+              const progressFillClass = `h-full rounded-full transition-all ${meta.progress}`;
+              const statusIcon =
+                status === 'achieved' ? (
+                  <CheckCircle size={14} />
+                ) : status === 'current' ? (
+                  <Clock size={14} />
+                ) : (
+                  <Lock size={14} />
+                );
+
+              return (
+                <div key={`${tierName}-${idx}`} className={cardClass}>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={numberClass}>{idx + 1}</div>
+                      <div>
+                        <p className="text-sm font-semibold text-cyan-200 uppercase tracking-wide">
+                          {tierName}
+                        </p>
+                        <p className="text-xs text-cyan-300/70">
+                          Required Volume: {formatUSD(thresholdUsd)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-cyan-300/70">
+                        Monthly Payout
+                      </p>
+                      <p className={amountClass}>{formatUSD(monthlyUsd)}</p>
+                      <span className={badgeClass}>
+                        {statusIcon}
+                        {meta.label}
+                      </span>
+                    </div>
                   </div>
-                  {isAchieved && (
-                    <Trophy
-                      className={isCurrent ? 'text-amber-500' : 'text-emerald-500'}
-                      size={20}
-                    />
-                  )}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[11px] text-cyan-300/80 mb-1">
+                      <span>Progress</span>
+                      <span>{progressPct.toFixed(1)}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-cyan-500/10 overflow-hidden">
+                      <div
+                        className={progressFillClass}
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-cyan-300/70 mt-2">
+                      Qualified volume: {formatUSD(qualifiedVolumeUsd)} /{' '}
+                      {formatUSD(thresholdUsd)}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-cyan-300/90 mb-2">Required Volume</p>
-                <p className="text-lg font-semibold text-cyan-300 mb-3">
-                  {formatUSD(thresholdUsd)}
-                </p>
-                <div
-                  className={`p-3 rounded-lg ${
-                    isCurrent
-                      ? 'bg-amber-500/20'
-                      : isAchieved
-                      ? 'bg-emerald-500/20'
-                      : 'bg-slate-700'
-                  }`}
-                >
-                  <p className="text-xs text-cyan-300/90 mb-1">Monthly Payout</p>
-                  <p
-                    className={`text-xl font-bold ${
-                      isCurrent
-                        ? 'text-neon-orange/80'
-                        : isAchieved
-                        ? 'text-neon-green/80'
-                        : 'text-cyan-400'
-                    }`}
-                  >
-                    {formatUSD(monthlyUsd)}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="text-sm text-cyan-300/70">
+              Royalty tier data is not available right now.
+            </div>
+          )}
         </div>
       </div>
 

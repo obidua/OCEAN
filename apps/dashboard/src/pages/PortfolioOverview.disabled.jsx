@@ -570,7 +570,7 @@ export default function PortfolioOverview() {
                 Qualified Volume
               </p>
               <Tooltip
-                content="Volume calculated using 40:30:30 formula - 40% from strongest leg, 30% from second, 30% from remaining legs."
+                content="Volume calculated using adaptive caps—up to 40% from the strongest leg and up to 30% from every additional leg."
                 position="bottom"
               >
                 <Info size={12} className="text-cyan-400/70 flex-shrink-0" />
@@ -582,7 +582,7 @@ export default function PortfolioOverview() {
             label="Qualified Volume"
             className="text-lg sm:text-xl font-bold text-cyan-300"
           />
-          <p className="text-xs text-cyan-300/90 mt-1">40:30:30 Formula</p>
+          <p className="text-xs text-cyan-300/90 mt-1">Adaptive Volume Caps</p>
         </div>
 
         <div className="cyber-glass rounded-xl p-4 sm:p-5 border border-neon-green/30 hover:border-neon-green/80 relative overflow-hidden transition-all">

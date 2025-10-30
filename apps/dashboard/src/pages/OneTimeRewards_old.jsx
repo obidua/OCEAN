@@ -577,7 +577,7 @@ export default function OneTimeRewards() {
                   Build Qualified Volume
                 </p>
                 <p className="text-xs text-cyan-300/90">
-                  Grow your team using the 40:30:30 calculation for business volume.
+                  Grow your team using adaptive caps—strongest leg up to 40%, each additional leg up to 30% until targets are satisfied.
                 </p>
               </div>
             </div>
@@ -614,7 +614,7 @@ export default function OneTimeRewards() {
             Tips for Faster Progress
           </h3>
           <ul className="space-y-3 text-xs text-cyan-300/90">
-            <li>• Maintain consistent team volume in all legs to meet 40:30:30 requirements.</li>
+            <li>• Maintain consistent team volume so no leg hits the 40% / 30% caps too early.</li>
             <li>• Track qualified volume in the dashboard to see which milestones are approaching.</li>
             <li>• Encourage your directs to reach slab levels faster to unlock higher milestones.</li>
             <li>• Reinvest pending rewards or claim to Safe Wallet for 0% fee restaking.</li>
@@ -1001,7 +1001,7 @@ export default function OneTimeRewards() {
                   Build Qualified Volume
                 </p>
                 <p className="text-xs text-cyan-300/90">
-                  Grow your team using the 40:30:30 calculation for business volume.
+                  Grow your team using adaptive caps—strongest leg up to 40%, each additional leg up to 30% until targets are satisfied.
                 </p>
               </div>
             </div>
@@ -1038,7 +1038,7 @@ export default function OneTimeRewards() {
             Tips for Faster Progress
           </h3>
           <ul className="space-y-3 text-xs text-cyan-300/90">
-            <li>• Maintain consistent team volume in all legs to meet 40:30:30 requirements.</li>
+            <li>• Maintain consistent team volume so no leg hits the 40% / 30% caps too early.</li>
             <li>• Track qualified volume in the dashboard to see which milestones are approaching.</li>
             <li>• Encourage your directs to reach slab levels faster to unlock higher milestones.</li>
             <li>• Reinvest pending rewards or claim to Safe Wallet for 0% fee restaking.</li>

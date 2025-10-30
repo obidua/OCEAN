@@ -66,13 +66,18 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
     slabPercents,
     rewardMilestones,
     royaltyTiers,
-    nextAchievements
+    nextAchievements,
+    contractSlabIndex,
+    achievedSlabCount
   } = SlabIncomeData;
 
   // Debug log for slab level (can be removed after testing)
+  const effectiveContractIndex = Number.isFinite(contractSlabIndex)
+    ? Number(contractSlabIndex)
+    : Math.max(0, (Number(slabLevel) || 1) - 1);
   console.log('🎯 SlabIncomeScreen Debug:', {
-    slabLevel,
-    message: `Contract index should be ${slabLevel - 1}, Display level should be ${slabLevel}`
+    displayLevel: slabLevel,
+    contractIndex: effectiveContractIndex,
   });
 
   // Helper function to get slab info safely
@@ -162,7 +167,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
           </p>
           {currentSlabInfo.isValid && (
             <p className="text-xs text-cyan-400/70 mt-2 relative z-10">
-              Slab Level {currentSlabInfo.displayLevel} (Contract Index: {currentSlabInfo.arrayIndex})
+              Slab Level {currentSlabInfo.displayLevel} (Contract Index: {effectiveContractIndex})
             </p>
           )}
         </div>
@@ -280,9 +285,15 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
             </h3>
             <ul className="space-y-2 text-sm text-cyan-300/90">
               <li>
-                • Required qualified volume builds using the 40:30:30 leg
-                balancing rule.
+                • Qualified volume now uses adaptive caps: strongest leg counts
+                up to 40%, every additional leg up to 30% until targets are
+                filled (matches 40:30:30 when you have 3 directs).
               </li>
+              {achievedSlabCount > 0 && (
+                <li>
+                  • Achieved slabs so far: {achievedSlabCount}
+                </li>
+              )}
               <li>
                 • You need a minimum number of direct referrals at each slab
                 tier.
@@ -312,6 +323,13 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                 const slabNum = idx + 1;
                 const isCurrent = slabNum === slabLevel;
                 const isAchieved = slabNum < slabLevel;
+                const requiredVolume = Number(slab.requiredVolumeUSD) || 0;
+                const rawProgress =
+                  requiredVolume > 0
+                    ? (Number(qualifiedVolumeUsd || 0) / requiredVolume) * 100
+                    : 0;
+                const clampedProgress = Math.max(0, Math.min(100, rawProgress));
+                const progressPct = isAchieved ? 100 : clampedProgress;
                 return (
                   <tr
                     key={slabNum}
@@ -351,6 +369,20 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                     </td>
                     <td className="py-3 px-4 text-sm text-cyan-300">
                       {formatUSD(slab.requiredVolumeUSD)}
+                      <div className="mt-2 h-1.5 w-full rounded-full bg-cyan-500/10 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            isCurrent
+                              ? "bg-gradient-to-r from-neon-green to-cyan-500"
+                              : isAchieved
+                              ? "bg-gradient-to-r from-emerald-500 to-green-500"
+                              : "bg-gradient-to-r from-cyan-500/70 to-cyan-400/70"
+                          }`}
+                          style={{
+                            width: `${progressPct}%`,
+                          }}
+                        />
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <span

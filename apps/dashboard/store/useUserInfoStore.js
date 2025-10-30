@@ -75,13 +75,16 @@ const resolveAddress = (key, fallback) => {
 
 // Load contract addresses from environment variables
 // Fallback to hardcoded addresses only if env vars are not available
+const resolvedSlabManagerAddress = resolveAddress("SLABMANAGER", "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9");
+
 const Contract = {
   UserRegistry: resolveAddress("USERREGISTRY", "0x246c7317F4093065B96c2b0DC65A63De395444ed"),
   CoreConfig: resolveAddress("CORECONFIG", "0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d"),
   RoiDistribution: resolveAddress("ROIDISTRIBUTOR", "0x7951bf0faABE00c451F1d92008297a7bd85d4678"),
   PortFolioManager: resolveAddress("PORTFOLIOMANAGER", "0xC73f964eA7bC04a2c7455CAf6107238147c88365"),
   RoyaltyManager: resolveAddress("ROYALTYMANAGER", "0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5"),
-  SlabManager: resolveAddress("SLABMANAGER", "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9"),
+  SlabManager: resolvedSlabManagerAddress,
+  SlabManagerReader: resolveAddress("SLABMANAGERREADER", resolvedSlabManagerAddress),
   IncomeDistributor: resolveAddress("INCOMEDISTRIBUTOR", "0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626"),
   FreezePolicy: resolveAddress("FREEZEPOLICY", "0x6541987258B73bd8128d23e8678a00258226ad3C"),
   RewardVault: resolveAddress("REWARDVAULT", "0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d"),
@@ -157,6 +160,14 @@ const hasAddress = (addr) =>
 // Create contract instance with primary web3 (backward compatibility)
 const makeContract = (abi, address) =>
   hasAddress(address) ? new web3.eth.Contract(abi, address) : null;
+
+const getSlabManagerReaderContract = () =>
+  makeContract(
+    SlabManagerABI,
+    hasAddress(Contract["SlabManagerReader"]) ? Contract["SlabManagerReader"] : Contract["SlabManager"]
+  );
+
+const getSlabManagerContract = () => makeContract(SlabManagerABI, Contract["SlabManager"]);
 
 // Create multiple contract instances for dual RPC calls
 const makeDualContracts = (abi, address) => 
@@ -1079,6 +1090,7 @@ export const useStore = create((set, get) => ({
   PortFolioManagerAddress: Contract["PortFolioManager"],
   RoyaltyManagerAddress: Contract["RoyaltyManager"],
   SlabManagerAddress: Contract["SlabManager"],
+  SlabManagerReaderAddress: Contract["SlabManagerReader"],
   IncomeDistributorAddress: Contract["IncomeDistributor"],
   FreezePolicyAddress: Contract["FreezePolicy"],
   RewardVaultAddress: Contract["RewardVault"],
@@ -3670,11 +3682,12 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       
       if (!slabManager) {
-        console.warn("SlabManager contract not available, using fallback data");
+        console.warn("SlabManager reader contract not available, using fallback data");
         return {
+          contractSlabIndex: 0,
           slabLevel: 0,
           qualifiedVolumeUsd: 0,
           directs: 0,
@@ -3693,21 +3706,24 @@ export const useStore = create((set, get) => ({
           sameSlabPartners: { firstWave: [], secondWave: [], thirdWave: [] },
           legsDetailed: [],
           legBreakdown: { L1: 0, L2: 0, Lrest: 0, total: 0 },
-          achievementsData: { slabs: [], rewards: [], royalties: [] },
-          progressData: {
-            currentSlab: 0,
-            nextSlabThreshold: 0,
-            nextRewardThreshold: 0,
-            nextRoyaltyThreshold: 0,
-            progressToNextSlab: 0,
-            progressToNextReward: 0,
-            progressToNextRoyalty: 0
-          }
+        achievementsData: { slabs: [], rewards: [], royalties: [] },
+        progressData: {
+          currentSlab: 0,
+          nextSlabThreshold: 0,
+          nextRewardThreshold: 0,
+          nextRoyaltyThreshold: 0,
+          progressToNextSlab: 0,
+          progressToNextReward: 0,
+          progressToNextRoyalty: 0
+        },
+        achievedSlabCount: 0,
+        achievedRewardCount: 0,
+        achievedRoyaltyCount: 0,
         };
       }
 
       console.log("🔗 Fetching SlabManager data for:", userAddress);
-      console.log("📍 SlabManager contract address:", Contract["SlabManager"]);
+      console.log("📍 SlabManager contract address:", Contract["SlabManagerReader"] || Contract["SlabManager"]);
 
       // Get comprehensive user overview from SlabManager with error handling
       let userOverview;
@@ -3957,6 +3973,7 @@ export const useStore = create((set, get) => ({
       const result = {
         // Basic info
         slabLevel,
+        contractSlabIndex,
         qualifiedVolumeUsd,
         directs,
         canClaim,
@@ -3982,11 +3999,15 @@ export const useStore = create((set, get) => ({
         // Achievement data
         achievementsData,
         progressData,
+        achievedSlabCount: Array.isArray(achievementsData.slabs) ? achievementsData.slabs.length : 0,
+        achievedRewardCount: Array.isArray(achievementsData.rewards) ? achievementsData.rewards.length : 0,
+        achievedRoyaltyCount: Array.isArray(achievementsData.royalties) ? achievementsData.royalties.length : 0,
         
         // Raw data for backward compatibility
         slabAchiev: achievementsData,
         summary: {
           slabLevel,
+          contractSlabIndex,
           qualifiedVolumeUsd,
           directRefs: directs,
           canClaim,
@@ -4008,6 +4029,7 @@ export const useStore = create((set, get) => ({
       console.warn("🔄 Returning fallback slab data due to error");
       return {
         slabLevel: 0,
+        contractSlabIndex: 0,
         qualifiedVolumeUsd: 0,
         directs: 0,
         canClaim: false,
@@ -4038,6 +4060,7 @@ export const useStore = create((set, get) => ({
         slabAchiev: { slabs: [], rewards: [], royalties: [] },
         summary: {
           slabLevel: 0,
+          contractSlabIndex: 0,
           qualifiedVolumeUsd: 0,
           directRefs: 0,
           canClaim: false,
@@ -4057,7 +4080,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       
       if (!slabManager) {
         console.warn("SlabManager contract not available for details, using fallback");
@@ -4156,7 +4179,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       
       if (!slabManager) {
         throw new Error("SlabManager contract not available");
@@ -4251,7 +4274,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       
       if (!slabManager) {
         throw new Error("SlabManager contract not available");
@@ -4260,68 +4283,72 @@ export const useStore = create((set, get) => ({
       // Get multiple volume-related data points in parallel
       const [
         legsDetailed,
-        legsTop2AndRest,
-        top3AndSum,
         qualifiedBusinessUSD,
         slabIndex
       ] = await Promise.all([
         slabManager.methods.getLegsDetailed(userAddress).call(),
-        slabManager.methods.getLegsTop2AndRest(userAddress).call(),
-        slabManager.methods.getTop3AndSum(userAddress).call(),
         slabManager.methods.getQualifiedBusinessUSD(userAddress).call(),
         slabManager.methods.getSlabIndex(userAddress).call()
       ]);
 
       // Process detailed legs
-      const processedLegs = (legsDetailed || []).map((leg, index) => ({
-        address: leg.leg,
-        volume: fromMicroUSD(leg.volume || 0),
-        volumeRAMA: fromMicroUSD(leg.volume || 0) / 0.1,
-        rank: index + 1
-      })).sort((a, b) => b.volume - a.volume);
+      const processedLegs = (legsDetailed || []).map((leg, index) => {
+        const volume = fromMicroUSD(leg.volume || 0);
+        return {
+          address: leg.leg,
+          rawVolume: leg.volume || 0,
+          volume,
+          volumeRAMA: volume / 0.1,
+          rank: index + 1
+        };
+      }).sort((a, b) => b.volume - a.volume);
 
       // Calculate total volume for percentage calculations
       const totalVolume = processedLegs.reduce((sum, leg) => sum + leg.volume, 0);
+      const activeLegs = processedLegs.filter((leg) => leg.volume > 0).length;
       
       // Add percentage to each leg
       processedLegs.forEach(leg => {
         leg.percentage = totalVolume > 0 ? (leg.volume / totalVolume) * 100 : 0;
       });
 
-      // Process capped volumes (used for slab calculations)
-      const cappedVolumes = {
-        L1: fromMicroUSD(legsTop2AndRest.L1 || legsTop2AndRest[0] || 0),
-        L2: fromMicroUSD(legsTop2AndRest.L2 || legsTop2AndRest[1] || 0),
-        Lrest: fromMicroUSD(legsTop2AndRest.Lrest || legsTop2AndRest[2] || 0)
-      };
-
       // Process uncapped volumes (actual business volumes)
       const uncappedVolumes = {
-        L1: fromMicroUSD(top3AndSum.L1 || top3AndSum[0] || 0),
-        L2: fromMicroUSD(top3AndSum.L2 || top3AndSum[1] || 0),
-        L3: fromMicroUSD(top3AndSum.L3 || top3AndSum[2] || 0),
-        Lrest: fromMicroUSD(top3AndSum.Lrest || top3AndSum[3] || 0),
-        total: fromMicroUSD(top3AndSum.sumAll || top3AndSum[4] || 0)
+        L1: processedLegs[0]?.volume || 0,
+        L2: processedLegs[1]?.volume || 0,
+        L3: processedLegs[2]?.volume || 0,
+        Lrest: processedLegs.slice(2).reduce((sum, leg) => sum + leg.volume, 0),
+        total: totalVolume
       };
 
       // Calculate volume metrics
-      const totalQualified = fromMicroUSD(qualifiedBusinessUSD || 0);
+      const qualifiedVolumeContract = fromMicroUSD(qualifiedBusinessUSD || 0);
       // Convert 0-based contract index to 1-based display level
       // Contract index 0 = Display Level 1, Contract index 1 = Display Level 2, etc.
       const contractSlabIndex = parseInt(slabIndex || 0);
       const currentSlabIndex = contractSlabIndex + 1; // Always add 1 to convert to display level
+
+      const capBreakdown = computeBusinessCapBreakdown(processedLegs, qualifiedVolumeContract);
+      const cappedVolumes = {
+        L1: capBreakdown.breakdown.L1,
+        L2: capBreakdown.breakdown.L2,
+        Lrest: capBreakdown.breakdown.Lrest
+      };
+      const totalQualified = qualifiedVolumeContract > 0 ? qualifiedVolumeContract : capBreakdown.countedTotal;
 
       // Volume performance analysis
       const volumePerformance = {
         cappingEfficiency: {
           L1: uncappedVolumes.L1 > 0 ? (cappedVolumes.L1 / uncappedVolumes.L1) * 100 : 0,
           L2: uncappedVolumes.L2 > 0 ? (cappedVolumes.L2 / uncappedVolumes.L2) * 100 : 0,
-          totalLoss: (uncappedVolumes.total - totalQualified)
+          totalLoss: Math.max(0, uncappedVolumes.total - totalQualified),
+          contributions: capBreakdown.contributions
         },
         balance: {
           isBalanced: Math.abs(cappedVolumes.L1 - cappedVolumes.L2) / Math.max(cappedVolumes.L1, cappedVolumes.L2, 1) < 0.2,
           ratio: cappedVolumes.L2 > 0 ? cappedVolumes.L1 / cappedVolumes.L2 : 0,
-          recommendation: cappedVolumes.L1 > cappedVolumes.L2 ? 'Focus on L2 growth' : 'Focus on L1 growth'
+          recommendation: cappedVolumes.L1 > cappedVolumes.L2 ? 'Focus on L2 growth' : 'Focus on L1 growth',
+          directCount: capBreakdown.directCount
         }
       };
 
@@ -4340,9 +4367,10 @@ export const useStore = create((set, get) => ({
           },
           growthPotential: {
             nextSlabRequirement: calculateNextSlabRequirement(currentSlabIndex, totalQualified),
-            volumeNeeded: calculateVolumeNeeded(cappedVolumes)
+            volumeNeeded: calculateVolumeNeeded(cappedVolumes, capBreakdown.directCount, capBreakdown.targetVolume)
           }
         },
+        capBreakdown,
         lastUpdated: Date.now()
       };
 
@@ -4434,7 +4462,7 @@ export const useStore = create((set, get) => ({
 
       console.log('🔍 Getting comprehensive slab user overview for:', userAddress);
       
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       if (!slabManager) {
         throw new Error('SlabManager contract not available');
       }
@@ -4537,7 +4565,7 @@ export const useStore = create((set, get) => ({
 
       console.log('🎯 Getting detailed achievement progress for:', userAddress, 'kind:', achievementKind);
       
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       if (!slabManager) {
         throw new Error('SlabManager contract not available');
       }
@@ -4594,7 +4622,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       
       if (!slabManager) {
         console.warn("SlabManager contract not available for achievement progress, using fallback");
@@ -4727,7 +4755,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!hasAddress(userAddress)) throw new Error('Invalid user address');
 
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
 
 
       let ramaPerUsdWei = null;
@@ -4852,7 +4880,7 @@ export const useStore = create((set, get) => ({
   getSlabAchievementsWithTimes: async (userAddress) => {
     try {
       if (!hasAddress(userAddress)) throw new Error('Invalid user address');
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       if (!slabManager) throw new Error('SlabManager contract unavailable');
 
       const [idxs, times, L1s, L2s, Lrests] = await slabManager.methods
@@ -4883,7 +4911,7 @@ export const useStore = create((set, get) => ({
   getSlabClaimEvents: async (userAddress, options = {}) => {
     try {
       if (!hasAddress(userAddress)) throw new Error('Invalid user address');
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       if (!slabManager) throw new Error('SlabManager contract unavailable');
 
       const { fromBlock, toBlock, max = 100 } = options;
@@ -5004,37 +5032,45 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) return { leg1: 40, leg2: 30, leg3: 30 };
 
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
       if (!slabManager) return { leg1: 40, leg2: 30, leg3: 30 };
 
-      // getLegsTop2AndRest returns (L1, L2, Lrest) volumes with caps applied
-      const legsData = await slabManager.methods.getLegsTop2AndRest(userAddress).call();
-      
-      const l1 = toNumber(legsData.L1 || legsData[0] || 0);
-      const l2 = toNumber(legsData.L2 || legsData[1] || 0);
-      const lrest = toNumber(legsData.Lrest || legsData[2] || 0);
-      
-      const total = l1 + l2 + lrest;
-      
-      // Calculate percentages from actual volumes
+      const [legsDetailed, qualifiedBusinessUSD] = await Promise.all([
+        slabManager.methods.getLegsDetailed(userAddress).call(),
+        slabManager.methods.getQualifiedBusinessUSD(userAddress).call()
+      ]);
+
+      const processedLegs = (legsDetailed || []).map((leg) => {
+        const volume = fromMicroUSD(leg.volume || 0);
+        return {
+          address: leg.leg,
+          volume
+        };
+      }).sort((a, b) => b.volume - a.volume);
+
+      const qualifiedVolume = fromMicroUSD(qualifiedBusinessUSD || 0);
+      const breakdown = computeBusinessCapBreakdown(processedLegs, qualifiedVolume);
+      const total = breakdown.countedTotal;
+
       if (total === 0) {
-        return { leg1: 40, leg2: 30, leg3: 30 }; // Default fallback
+        return { leg1: 40, leg2: 30, leg3: 30 };
       }
-      
-      const leg1Percent = Math.round((l1 / total) * 100);
-      const leg2Percent = Math.round((l2 / total) * 100);
-      const leg3Percent = Math.round((lrest / total) * 100);
-      
+
+      const leg1Percent = Math.round((breakdown.breakdown.L1 / total) * 100);
+      const leg2Percent = Math.round((breakdown.breakdown.L2 / total) * 100);
+      const leg3Percent = Math.round((breakdown.breakdown.Lrest / total) * 100);
+
       return {
         leg1: leg1Percent,
         leg2: leg2Percent,
         leg3: leg3Percent,
         volumes: {
-          leg1: fromMicroUSD(l1),
-          leg2: fromMicroUSD(l2),
-          leg3: fromMicroUSD(lrest),
-          total: fromMicroUSD(total),
-        }
+          leg1: breakdown.breakdown.L1,
+          leg2: breakdown.breakdown.L2,
+          leg3: breakdown.breakdown.Lrest,
+          total
+        },
+        directCount: breakdown.directCount
       };
     } catch (error) {
       console.error("getLegCapPercentages error:", error);
@@ -5734,7 +5770,7 @@ export const useStore = create((set, get) => ({
   getGlobalOneTimeMilestones: async () => {
     try {
       const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabManager = getSlabManagerReaderContract();
 
       const [allMilestonesRaw, rewardMilestonesRaw] = await Promise.all([
         rewardVault
@@ -5855,10 +5891,7 @@ export const useStore = create((set, get) => ({
         PortFolioManagerABI,
         Contract["PortFolioManager"]
       );
-      const slabManager = makeContract(
-        SlabManagerABI,
-        Contract["SlabManager"]
-      );
+      const slabManager = getSlabManagerReaderContract();
 
       let summary = null;
       if (oceanViewV2) {
@@ -6159,7 +6192,7 @@ export const useStore = create((set, get) => ({
       );
       const slabManag = new web3.eth.Contract(
         SlabManagerABI,
-        Contract["SlabManager"]
+        Contract["SlabManagerReader"] || Contract["SlabManager"]
       );
 
       const rewardClaimed = await oceanQuery.methods.getTotalRewardsClaimed(userAddress).call();
@@ -7817,6 +7850,76 @@ export const useStore = create((set, get) => ({
 }));
 
 // Helper functions for volume analytics
+const computeBusinessCapBreakdown = (legs = [], targetVolume = 0) => {
+  const sortedLegs = Array.isArray(legs)
+    ? legs
+        .map((leg) => ({
+          ...leg,
+          volume: Number(leg?.volume ?? 0),
+        }))
+        .filter((leg) => leg.volume > 0)
+        .sort((a, b) => b.volume - a.volume)
+    : [];
+
+  const directCount = sortedLegs.length;
+  const sanitizedTarget = Number.isFinite(targetVolume) ? Math.max(0, targetVolume) : 0;
+
+  if (directCount === 0 || sanitizedTarget <= 0) {
+    return {
+      breakdown: { L1: 0, L2: 0, Lrest: 0 },
+      contributions: sortedLegs.map((leg, idx) => ({
+        ...leg,
+        counted: 0,
+        cap: idx === 0 ? 0.4 * sanitizedTarget : 0.3 * sanitizedTarget,
+      })),
+      countedTotal: 0,
+      targetVolume: sanitizedTarget,
+      directCount,
+      remaining: sanitizedTarget,
+    };
+  }
+
+  const primaryCap = sanitizedTarget * 0.4;
+  const otherCap = sanitizedTarget * 0.3;
+
+  let remaining = sanitizedTarget;
+  const contributions = sortedLegs.map((leg, index) => {
+    if (remaining <= 0) {
+      return {
+        ...leg,
+        counted: 0,
+        cap: index === 0 ? primaryCap : otherCap,
+      };
+    }
+
+    const capForLeg = index === 0 ? primaryCap : otherCap;
+    const counted = Math.min(leg.volume, capForLeg, remaining);
+    remaining -= counted;
+
+    return {
+      ...leg,
+      counted,
+      cap: capForLeg,
+    };
+  });
+
+  const countedTotal = contributions.reduce((sum, leg) => sum + leg.counted, 0);
+  const breakdown = {
+    L1: contributions[0]?.counted ?? 0,
+    L2: contributions[1]?.counted ?? 0,
+    Lrest: contributions.slice(2).reduce((sum, leg) => sum + leg.counted, 0),
+  };
+
+  return {
+    breakdown,
+    contributions,
+    countedTotal,
+    targetVolume: sanitizedTarget,
+    directCount,
+    remaining: Math.max(0, remaining),
+  };
+};
+
 const calculateNextSlabRequirement = (currentSlabIndex, currentVolume) => {
   // Slab thresholds in USD (these should match your contract)
   const slabThresholds = [
@@ -7847,22 +7950,58 @@ const calculateNextSlabRequirement = (currentSlabIndex, currentVolume) => {
   };
 };
 
-const calculateVolumeNeeded = (cappedVolumes) => {
-  // 40:30:30 rule optimization
-  const total = cappedVolumes.L1 + cappedVolumes.L2 + cappedVolumes.Lrest;
-  const optimal = {
-    L1: total * 0.4,
-    L2: total * 0.3,
-    Lrest: total * 0.3
-  };
+const calculateVolumeNeeded = (cappedVolumes = { L1: 0, L2: 0, Lrest: 0 }, directCount = 0, targetVolumeOverride) => {
+  const currentTotal =
+    (cappedVolumes?.L1 || 0) + (cappedVolumes?.L2 || 0) + (cappedVolumes?.Lrest || 0);
+  const targetVolume =
+    Number.isFinite(targetVolumeOverride) && targetVolumeOverride > 0
+      ? targetVolumeOverride
+      : currentTotal;
+
+  if (targetVolume <= 0) {
+    return {
+      L1_needed: 0,
+      L2_needed: 0,
+      Lrest_needed: 0,
+      total_optimization_potential: 0,
+      caps: {
+        primary: 0,
+        perOther: 0,
+        otherAggregate: 0,
+      },
+    };
+  }
+
+  const primaryCap = targetVolume * 0.4;
+  const perOtherCap = targetVolume * 0.3;
+  const otherLegCount = Math.max(0, (directCount || 0) - 1);
+  const otherAggregateCap = Math.min(
+    targetVolume - Math.min(primaryCap, targetVolume),
+    otherLegCount * perOtherCap
+  );
+
+  const currentL1 = cappedVolumes?.L1 || 0;
+  const currentL2 = cappedVolumes?.L2 || 0;
+  const currentLrest = cappedVolumes?.Lrest || 0;
+  const currentOthers = currentL2 + currentLrest;
+
+  const expectedL2Cap = otherLegCount >= 1 ? Math.min(perOtherCap, otherAggregateCap) : 0;
+  const expectedRemainingCap = Math.max(0, otherAggregateCap - expectedL2Cap);
+
+  const L1_needed = Math.max(0, primaryCap - currentL1);
+  const L2_needed = Math.max(0, expectedL2Cap - currentL2);
+  const Lrest_needed = Math.max(0, expectedRemainingCap - currentLrest);
 
   return {
-    L1_needed: Math.max(0, optimal.L1 - cappedVolumes.L1),
-    L2_needed: Math.max(0, optimal.L2 - cappedVolumes.L2),
-    Lrest_needed: Math.max(0, optimal.Lrest - cappedVolumes.Lrest),
-    total_optimization_potential: Math.abs(optimal.L1 - cappedVolumes.L1) + 
-                                 Math.abs(optimal.L2 - cappedVolumes.L2) + 
-                                 Math.abs(optimal.Lrest - cappedVolumes.Lrest)
+    L1_needed,
+    L2_needed,
+    Lrest_needed,
+    total_optimization_potential: L1_needed + L2_needed + Lrest_needed,
+    caps: {
+      primary: primaryCap,
+      perOther: perOtherCap,
+      otherAggregate: otherAggregateCap,
+    },
   };
 };
 

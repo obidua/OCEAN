@@ -490,7 +490,7 @@ export default function OceanDefiGuide() {
                   <div className="space-y-2 text-sm text-cyan-300/90">
                     <div className="flex items-start gap-2">
                       <CheckCircle className="text-neon-green mt-0.5 flex-shrink-0" size={16} />
-                      <span>Build qualified team volume using 40:30:30 calculation</span>
+                      <span>Build qualified team volume using adaptive caps (40% max from strongest leg, 30% per additional leg)</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="text-neon-green mt-0.5 flex-shrink-0" size={16} />

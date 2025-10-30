@@ -312,8 +312,9 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
             </h3>
             <ul className="space-y-2 text-sm text-cyan-300/90">
               <li>
-                • Required qualified volume builds using the 40:30:30 leg
-                balancing rule.
+                • Qualified volume now uses adaptive caps (40% max from the
+                strongest leg and 30% per additional leg; identical to 40:30:30
+                when you only have three directs).
               </li>
               <li>
                 • You need a minimum number of direct referrals at each slab

@@ -81,7 +81,9 @@ export default function HowItWorks() {
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="text-neon-green mt-1 flex-shrink-0" size={16} />
-                      <span className="text-cyan-300/80 text-sm">Qualified volume calculated using 40:30:30 formula</span>
+                      <span className="text-cyan-300/80 text-sm">
+                        Qualified volume uses adaptive caps (40% max from strongest leg, 30% per additional leg; matches 40:30:30 with 3 directs)
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -233,9 +235,9 @@ export default function HowItWorks() {
                 <div className="flex items-start gap-4">
                   <Award className="text-neon-orange flex-shrink-0 mt-1" size={24} />
                   <div>
-                    <h3 className="text-lg font-bold text-neon-orange mb-2">40:30:30 Formula</h3>
+                    <h3 className="text-lg font-bold text-neon-orange mb-2">Adaptive Volume Caps</h3>
                     <p className="text-cyan-300/80 text-sm">
-                      Qualified volume calculated using balanced formula: 40% from strongest leg, 30% and 30% from other legs.
+                      Qualified volume counts up to 40% from your strongest leg and up to 30% from every additional leg—perfect balance whether you have 3 directs or 10.
                     </p>
                   </div>
                 </div>

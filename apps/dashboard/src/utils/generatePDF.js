@@ -59,7 +59,7 @@ leaders based on their slab qualifications.
 
 QUALIFICATION CRITERIA:
 • Build qualified team volume
-• 3 legs = 40:30:30 ratio OR 4+ legs = 100% counts
+• Strongest leg counts up to 40%; every additional leg counts up to 30% until targets are met (same as 40:30:30 when you have 3 directs)
 • Reach volume thresholds to unlock higher slabs
 
 11 SLAB LEVELS & DISTRIBUTION:
@@ -188,7 +188,7 @@ STEP 3: START EARNING
 • Main Wallet Withdrawal: 5% fee
 • Principal Withdrawal: 20% fee + 72-hour freeze
 • Minimum Claim: $10
-• Business Counting: 40:30:30 (3 legs) or 100% (4+ legs)
+• Business Counting: Adaptive caps (40% max from strongest leg, 30% per additional leg; reaches 100% with well-balanced teams)
 
 ═══════════════════════════════════════════════════════════════════
 🛡️ SECURITY FEATURES
@@ -207,7 +207,7 @@ PLATFORM SUSTAINABILITY:
 ✓ 4x maximum return cap
 ✓ Balanced distribution model
 ✓ Team building focus
-✓ 40:30:30 rule prevents single-leg dependency
+✓ Adaptive capping prevents single-leg dependency
 ✓ Validator-backed yield generation
 
 ═══════════════════════════════════════════════════════════════════

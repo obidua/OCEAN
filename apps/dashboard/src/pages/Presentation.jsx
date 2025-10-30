@@ -812,7 +812,7 @@ function Presentation() {
                     <div className="w-5 h-5 rounded-full bg-neon-green/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="text-xs font-bold text-neon-green">1</span>
                     </div>
-                    <span><strong>Reach Volume Threshold:</strong> Build qualified team volume (40:30:30 from top 3 legs or 100% with 4+ legs)</span>
+                    <span><strong>Reach Volume Threshold:</strong> Build qualified team volume using adaptive caps (strongest leg up to 40%, each additional leg up to 30%)</span>
                   </div>
                   <div className="flex items-start gap-2 animate-slide-in-left" style={{animationDelay: '0.2s', animationFillMode: 'both'}}>
                     <div className="w-5 h-5 rounded-full bg-neon-green/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1334,7 +1334,7 @@ function Presentation() {
                 <li>✓ Min stake: $50</li>
                 <li>✓ Slab claim: 1 new $50 direct</li>
                 <li>✓ Booster: 5 directs in 10 days</li>
-                <li>✓ Qualified volume: 40:30:30</li>
+                <li>✓ Qualified volume: 40% strongest leg, 30% per additional leg</li>
               </ul>
             </div>
           </div>

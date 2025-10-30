@@ -451,7 +451,7 @@ export default function Settings() {
               {[
                 { title: 'Rule 1: Minimum Stake', desc: '$50 minimum for ID activation' },
                 { title: 'Rule 2: Slab Claim Requirement', desc: 'Requires 1 new $50 direct before slab claim' },
-                { title: 'Rule 3: Qualified Volume', desc: '40:30:30 calculation for 3 legs, 100% for 4+ legs' },
+                { title: 'Rule 3: Qualified Volume', desc: 'Adaptive caps — strongest leg max 40%, each additional leg max 30% (same as 40:30:30 when you have 3 directs)' },
                 { title: 'Rule 4: Withdrawal Fee', desc: '5% fee on external wallet claims' },
                 { title: 'Rule 5: Safe Wallet', desc: 'Fee-free internal balance for passive income' },
                 { title: 'Rule 6: Royalty Renewal', desc: '10% growth required every 2 months, LifeTime' },

@@ -174,8 +174,11 @@ export default function Features() {
                       <p className="text-cyan-300/80 text-sm">Earn 10%, 5%, 5% from L1, L2, L3 members at your level</p>
                     </div>
                     <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4">
-                      <p className="text-lg font-semibold text-cyan-300 mb-2">40:30:30 Formula</p>
-                      <p className="text-cyan-300/80 text-sm">Balanced volume calculation encourages strategic growth</p>
+                      <p className="text-lg font-semibold text-cyan-300 mb-2">Adaptive Volume Caps</p>
+                      <p className="text-cyan-300/80 text-sm">
+                        Strongest leg counts up to 40%, every additional leg up to 30%—
+                        delivering balanced growth even with 4+ directs
+                      </p>
                     </div>
                     <div className="cyber-glass border border-neon-green/30 rounded-xl p-4">
                       <p className="text-lg font-semibold text-neon-green mb-2">Unlimited Depth</p>

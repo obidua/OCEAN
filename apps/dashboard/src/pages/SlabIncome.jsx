@@ -115,7 +115,20 @@ const SlabIncome = () => {
   }, [userAddress, getIncomeTotals]);
 
   // Process data for UI components
-  const slabLevel = Number(slabDetails?.slabLevel ?? 0);
+  const fallbackSlabIndex = Number.isFinite(Number(slabDetails?.slabLevel))
+    ? Math.max(0, Math.floor(Number(slabDetails.slabLevel) - 1))
+    : 0;
+  const derivedContractIndex = Number.isFinite(Number(slabDetails?.contractSlabIndex))
+    ? Number(slabDetails.contractSlabIndex)
+    : fallbackSlabIndex;
+  const contractSlabIndex = Number.isFinite(derivedContractIndex) && derivedContractIndex >= 0
+    ? derivedContractIndex
+    : 0;
+  const displayedSlabLevel = contractSlabIndex + 1;
+  const achievedSlabCount = Array.isArray(slabDetails?.achievementsData?.slabs)
+    ? slabDetails.achievementsData.slabs.length
+    : 0;
+  const normalizedSlabLevel = Math.max(displayedSlabLevel, achievedSlabCount || 0);
   const qualifiedVolumeUsd = parseFloat(slabDetails?.qualifiedVolumeUsd ?? 0);
   const directs = parseFloat(slabDetails?.directs ?? 0);
   const canClaim = slabDetails?.canClaim ?? false;
@@ -184,7 +197,9 @@ const SlabIncome = () => {
   const SlabIncomeData = {
     error,
     loading,
-    slabLevel,
+    slabLevel: normalizedSlabLevel,
+    achievedSlabCount,
+    contractSlabIndex,
     qualifiedVolumeUsd,
     directs,
     slabStatusLabel,
@@ -242,7 +257,7 @@ const SlabIncome = () => {
             <div className="flex flex-wrap gap-4 mt-3 text-sm">
               <div className="flex items-center gap-1 text-cyan-400">
                 <Award size={16} />
-                <span>Slab {slabLevel}</span>
+                <span>Slab {displayedSlabLevel}</span>
               </div>
               <div className="flex items-center gap-1 text-green-400">
                 <Users size={16} />
