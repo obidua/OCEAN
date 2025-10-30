@@ -587,15 +587,26 @@ export default function StakeInvest() {
 
     try {
       let response;
+
+      console.log("registrationSponsor");
       
       if (stakeType === 'self' && useWallet === 'external') {
+        console.log("self external----->",address, stakeAmountNum);
         response = await CreateSelfPort(address, stakeAmountNum);
+
       } else if (stakeType === 'other' && useWallet === 'external') {
+        console.log("other external----->",address, beneficiaryAddress, stakeAmountNum,registrationSponsor);
         response = await CreateOtherfPort(address,beneficiaryAddress, stakeAmountNum,registrationSponsor);
+
       } else if (stakeType === 'self' && useWallet === 'safe') {
+        console.log("self safe----->",address, stakeAmountNum);
         response = await SafeSelfPort(address, stakeAmountNum);
+
       } else if (stakeType === 'other' && useWallet === 'safe') {
-        response = await SafeOtherPort(registrationSponsor, beneficiaryAddress, stakeAmountNum);
+        console.log("other safe--->" ,registrationSponsor, beneficiaryAddress,stakeAmountNum);
+
+
+        response = await SafeOtherPort(address,registrationSponsor, beneficiaryAddress, stakeAmountNum);
       }
 
       if (response) {
@@ -651,15 +662,25 @@ export default function StakeInvest() {
 
     try {
       let response;
+
+      console.log("stakeType,useWallet");
+
       if (stakeType === 'self' && useWallet === 'external') {
+        console.log("self external----->",address, stakeAmountNum);
+
         response = await CreateSelfPort(address, stakeAmountNum);
       } else if (stakeType === 'other' && useWallet === 'external') {
-        // For already registered users, use the connected user as referrer
+        console.log("other external----->",address, beneficiaryAddress, stakeAmountNum, address);
+
         response = await CreateOtherfPort(address, beneficiaryAddress, stakeAmountNum, address);
       } else if (stakeType === 'self' && useWallet === 'safe') {
+        console.log("self safe----->",address, stakeAmountNum);
+
         response = await SafeSelfPort(address, stakeAmountNum);
       } else if (stakeType === 'other' && useWallet === 'safe') {
-        response = await SafeOtherPort(address, beneficiaryAddress, stakeAmountNum);
+        console.log("other safe--->", address, beneficiaryAddress, stakeAmountNum);
+
+        response = await SafeOtherPort(address,address, beneficiaryAddress, stakeAmountNum);
       }
 
       if (response) {

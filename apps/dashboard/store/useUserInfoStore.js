@@ -6722,8 +6722,8 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  SafeOtherPort: async (userAddress, beneficiary, Amt) => {
-    console.log('SafeOtherPort args:', userAddress, Amt);
+  SafeOtherPort: async (userAddress,sponserAddress, beneficiary, Amt) => {
+    console.log('SafeOtherPort args:', userAddress, beneficiary, Amt);
     try {
 
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
@@ -6742,8 +6742,10 @@ export const useStore = create((set, get) => ({
 
       console.log(valueToSend.toString(), valueToSend)
 
+      console.log("========>",beneficiary, valueToSend, sponserAddress)
+
       const data = safeWallCont.methods
-        .sponsorCreatePortfolioFor(beneficiary, valueToSend, userAddress)
+        .sponsorCreatePortfolioFor(beneficiary, valueToSend, sponserAddress)
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
