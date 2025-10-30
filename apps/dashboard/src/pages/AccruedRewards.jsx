@@ -96,67 +96,141 @@ const ClaimHistoryModal = ({ isOpen, onClose, history, loading }) => {
 const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
   if (!isOpen) return null;
 
+  const entries = debugInfo?.periods ?? [];
+  const formatCapPercent = (value) => {
+    if (value == null) return '—';
+    const asNumber = Number(value);
+    if (!Number.isFinite(asNumber)) return '—';
+    return `${asNumber.toFixed(2)}%`;
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="cyber-glass rounded-xl border border-cyan-500/30 p-6 w-full max-w-4xl max-h-[80vh] overflow-auto space-y-4">
-        <div className="flex items-center justify-between sticky top-0 bg-dark-900/95 backdrop-blur-sm pb-4 border-b border-cyan-500/20">
-          <h2 className="text-xl font-bold text-cyan-300">Portfolio Debug Info</h2>
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/80 backdrop-blur-sm pt-10 pb-10 sm:pt-0 sm:pb-0">
+      <div className="cyber-glass rounded-xl border border-cyan-500/30 w-full max-w-4xl max-h-[calc(100vh-80px)] mx-4 my-4 sm:my-6 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 sm:px-6 border-b border-cyan-500/20 bg-dark-900/90 sticky top-0 z-10">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-cyan-300">Unclaimed Accrued Reward Logs</h2>
+            {debugInfo && (
+              <p className="text-xs text-cyan-300/60 mt-1">Portfolio #{debugInfo.pid}</p>
+            )}
+          </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-cyan-500/10">
-            <X size={20} className="text-cyan-300" />
+            <X size={18} className="text-cyan-300" />
           </button>
         </div>
-        <div>
+
+        <div className="px-5 py-4 sm:px-6 sm:py-5 overflow-y-auto max-h-[calc(100vh-112px)]">
           {loading ? (
-            <div className="flex justify-center items-center p-8">
+            <div className="flex justify-center items-center py-10">
               <Loader2 className="animate-spin text-cyan-400" size={32} />
             </div>
           ) : !debugInfo ? (
-            <p className="text-center text-cyan-300/70 p-8">No debug info available.</p>
+            <p className="text-center text-cyan-300/70 py-12">No unclaimed log data available.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
-                <h3 className="text-sm font-semibold text-cyan-300 mb-3">Portfolio Info</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-cyan-300/70">PID:</span><span className="text-cyan-100 font-mono">#{debugInfo.pid}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Period ID:</span><span className="text-cyan-100">{debugInfo.periodId}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Owner:</span><span className="text-cyan-100 font-mono text-xs">{debugInfo.owner?.slice(0,6)}...{debugInfo.owner?.slice(-4)}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Created:</span><span className="text-cyan-100">{new Date(debugInfo.createdAt * 1000).toLocaleString()}</span></div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
+                  <h3 className="text-sm font-semibold text-cyan-300 mb-3">Unclaimed Totals</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">USD:</span>
+                      <span className="text-emerald-300 font-semibold">{formatUSD(debugInfo.usdTotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">RAMA:</span>
+                      <span className="text-cyan-100 font-mono">{formatRAMAPrecise(debugInfo.ramaTotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">Epochs Count:</span>
+                      <span className="text-cyan-100">{debugInfo.epochsCount}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
+                  <h3 className="text-sm font-semibold text-cyan-300 mb-3">Period Range</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">From → To:</span>
+                      <span className="text-cyan-100 font-mono">{debugInfo.fromPeriod} → {debugInfo.toPeriod}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">Page Window:</span>
+                      <span className="text-cyan-100 font-mono">{debugInfo.pageStartPeriod} → {debugInfo.pageEndPeriod}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">Total Epochs:</span>
+                      <span className="text-cyan-100">{debugInfo.totalEpochs}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
+                  <h3 className="text-sm font-semibold text-cyan-300 mb-3">Principal & Cap</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">Principal:</span>
+                      <span className="text-cyan-100">{formatUSD(debugInfo.principalUsd)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">Cap %:</span>
+                      <span className="text-cyan-100">{formatCapPercent(debugInfo.capPct)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
+                  <h3 className="text-sm font-semibold text-cyan-300 mb-3">Remaining Caps</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">PID Cap (Before → After):</span>
+                      <span className="text-cyan-100 text-right">
+                        {formatUSD(debugInfo.remainingPidCapBefore)} → {formatUSD(debugInfo.remainingPidCapAfter)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyan-300/70">User 4x Cap (Before → After):</span>
+                      <span className="text-cyan-100 text-right">
+                        {formatUSD(debugInfo.remainingUser4xBefore)} → {formatUSD(debugInfo.remainingUser4xAfter)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
-                <h3 className="text-sm font-semibold text-cyan-300 mb-3">Status</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Closed:</span><span className={debugInfo.isClosed ? 'text-red-300' : 'text-emerald-300'}>{debugInfo.isClosed ? 'Yes' : 'No'}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Capped:</span><span className={debugInfo.isCapped ? 'text-yellow-300' : 'text-cyan-100'}>{debugInfo.isCapped ? 'Yes' : 'No'}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Frozen:</span><span className={debugInfo.isFrozen ? 'text-blue-300' : 'text-cyan-100'}>{debugInfo.isFrozen ? 'Yes' : 'No'}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Booster:</span><span className={debugInfo.booster ? 'text-purple-300' : 'text-cyan-100'}>{debugInfo.booster ? 'Yes' : 'No'}</span></div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-cyan-300">Unclaimed Period Logs</h3>
+                  <span className="text-[11px] text-cyan-300/60">{entries.length} records</span>
                 </div>
-              </div>
-              <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
-                <h3 className="text-sm font-semibold text-cyan-300 mb-3">Principal & Cap</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Principal:</span><span className="text-cyan-100">{formatUSD(debugInfo.principalUsd)}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Cap USD:</span><span className="text-cyan-100">{formatUSD(debugInfo.capUsd)}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Cap %:</span><span className="text-cyan-100">{debugInfo.capPct}%</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Tier:</span><span className="text-cyan-100">T{debugInfo.tier}</span></div>
-                </div>
-              </div>
-              <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
-                <h3 className="text-sm font-semibold text-cyan-300 mb-3">Earnings Tracking</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Paid So Far:</span><span className="text-emerald-300">{formatUSD(debugInfo.paidUsdSoFar)}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Remaining Cap:</span><span className="text-cyan-100">{formatUSD(debugInfo.remainingCapUsd)}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Rate (WAD):</span><span className="text-cyan-100 font-mono text-xs">{debugInfo.rateWad?.toString().slice(0,8)}...</span></div>
-                </div>
-              </div>
-              <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4 md:col-span-2">
-                <h3 className="text-sm font-semibold text-cyan-300 mb-3">Period Window</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Period Start:</span><span className="text-cyan-100">{new Date(debugInfo.periodStartTs * 1000).toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Period End:</span><span className="text-cyan-100">{new Date(debugInfo.periodEndTs * 1000).toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">Exists by End:</span><span className={debugInfo.existsByEndOfEpoch ? 'text-emerald-300' : 'text-red-300'}>{debugInfo.existsByEndOfEpoch ? 'Yes' : 'No'}</span></div>
-                  <div className="flex justify-between"><span className="text-cyan-300/70">After Cutoff:</span><span className={debugInfo.afterCutoff ? 'text-yellow-300' : 'text-cyan-100'}>{debugInfo.afterCutoff ? 'Yes' : 'No'}</span></div>
-                </div>
+                {entries.length === 0 ? (
+                  <p className="text-xs text-cyan-300/70">No unclaimed periods returned for this portfolio.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <div className="max-h-[55vh] sm:max-h-[65vh] overflow-y-auto pr-1 pb-1">
+                      <table className="min-w-full text-xs sm:text-sm text-cyan-100">
+                        <thead className="sticky top-0 bg-dark-900/90">
+                          <tr className="text-cyan-300/70">
+                            <th className="py-2 pl-2 pr-3 text-left font-medium">#</th>
+                            <th className="py-2 px-3 text-left font-medium">Period</th>
+                            <th className="py-2 px-3 text-right font-medium">USD</th>
+                            <th className="py-2 px-3 text-right font-medium">RAMA</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-cyan-500/20">
+                          {entries.map((item, idx) => (
+                            <tr key={`${item.periodId}-${idx}`} className="hover:bg-cyan-500/10 transition-colors">
+                              <td className="py-2 pl-2 pr-3 text-cyan-300/80 font-mono">{idx + 1}</td>
+                              <td className="py-2 px-3 font-mono text-cyan-200">{item.periodId}</td>
+                              <td className="py-2 px-3 text-right text-emerald-300">{formatUSD(item.usd)}</td>
+                              <td className="py-2 px-3 text-right text-cyan-200">{formatRAMAPrecise(item.rama)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -216,7 +290,7 @@ export default function AccruedRewards() {
   const getRoiPreviewPerPortfolio = useStore((s) => s.getRoiPreviewPerPortfolio);
   const getTotalsClaimedFromDistributor = useStore((s) => s.getTotalsClaimedFromDistributor);
   const getPidClaimsSlice = useStore((s) => s.getPidClaimsSlice);
-  const debugPortfolioUsdForPeriod = useStore((s) => s.debugPortfolioUsdForPeriod);
+  const previewUnclaimedForPortfolio = useStore((s) => s.previewUnclaimedForPortfolioUsingCapMgr);
   
   // New enhanced ROI functions
   const getPerDayROIBreakdown = useStore((s) => s.getPerDayROIBreakdown);
@@ -669,12 +743,12 @@ export default function AccruedRewards() {
     }
   };
 
-  const handleViewPortfolioDebug = async (pid, periodId) => {
+  const handleViewPortfolioDebug = async (pid) => {
     setExpandedPortfolio(pid);
     setDebugLoading(true);
     setPortfolioDebugInfo(null);
     try {
-      const info = await debugPortfolioUsdForPeriod(pid, periodId);
+      const info = await previewUnclaimedForPortfolio(pid, 1, 1000);
       setPortfolioDebugInfo(info);
     } catch (err) {
       console.error('Failed to load debug info:', err);
@@ -1134,7 +1208,7 @@ export default function AccruedRewards() {
                         <td className="py-3 px-4 text-right text-cyan-200 text-[12px] md:text-[14px] lg:text-[16px] xl:text-[18px]">{portfolio?._derived?.portfolioType}</td>
                         <td className="py-3 px-4 text-center">
                           <button
-                            onClick={() => handleViewPortfolioDebug(portfolio.portfolioId, prev.last || 0)}
+                            onClick={() => handleViewPortfolioDebug(portfolio.portfolioId)}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10 transition-colors text-xs"
                             title="View debug info for this portfolio"
                           >

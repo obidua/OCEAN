@@ -93,6 +93,7 @@ export default function SafeWallet() {
   const [safeSummaryLoading, setSafeSummaryLoading] = useState(false);
   const [safeSummaryError, setSafeSummaryError] = useState('');
   const [historyEntries, setHistoryEntries] = useState([]);
+  const [historyTotals, setHistoryTotals] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
 
@@ -179,6 +180,7 @@ export default function SafeWallet() {
     const loadHistory = async () => {
       if (!userAddress || typeof getTransactionHistory !== 'function') {
         setHistoryEntries([]);
+        setHistoryTotals(null);
         setHistoryError('');
         return;
       }
@@ -192,6 +194,7 @@ export default function SafeWallet() {
         });
         if (cancelled) return;
         const rawEntries = Array.isArray(data?.entries) ? data.entries : [];
+        setHistoryTotals(data?.totalsByKind ?? null);
         const sortedEntries = rawEntries
           .slice()
           .sort(
@@ -205,6 +208,7 @@ export default function SafeWallet() {
         if (cancelled) return;
         console.error('Safe wallet history load failed:', error);
         setHistoryEntries([]);
+        setHistoryTotals(null);
         setHistoryError(error?.message || 'Unable to load history records.');
       } finally {
         if (!cancelled) {
@@ -325,10 +329,48 @@ export default function SafeWallet() {
     );
   }, [historyEntries]);
   const totalInflows = inflowTotals.usd;
-  const toUsd = (valueRama) =>
-    Number.isFinite(valueRama) && safePrice > 0 ? valueRama * safePrice : 0;
-  const toRama = (valueUsd) =>
-    Number.isFinite(valueUsd) && safePrice > 0 ? valueUsd / safePrice : 0;
+  const fallbackPricePerRama = useMemo(() => {
+    for (const entry of historyEntries) {
+      const usd = Number(entry?.usd ?? 0);
+      const rama = Number(entry?.rama ?? 0);
+      if (usd > 0 && rama > 0) {
+        const implied = usd / rama;
+        if (Number.isFinite(implied) && implied > 0) {
+          return implied;
+        }
+      }
+    }
+
+    const candidatePairs = [
+      [Number(historyTotals?.withdraw?.usd ?? 0), Number(historyTotals?.withdraw?.rama ?? 0)],
+      [Number(historyTotals?.portfolioCreate?.usd ?? 0), Number(historyTotals?.portfolioCreate?.rama ?? 0)],
+      [Number(safeSummary?.totals?.debitsUsd ?? 0), Number(safeSummary?.totals?.debitsRama ?? 0)],
+      [Number(safeSummary?.totals?.creditsUsd ?? 0), Number(safeSummary?.totals?.creditsRama ?? 0)],
+    ];
+
+    for (const [usdSum, ramaSum] of candidatePairs) {
+      if (usdSum > 0 && ramaSum > 0) {
+        const ratio = usdSum / ramaSum;
+        if (Number.isFinite(ratio) && ratio > 0) {
+          return ratio;
+        }
+      }
+    }
+
+    return 0;
+  }, [historyEntries, historyTotals, safeSummary]);
+  const pricePerRama =
+    safePrice > 0 ? safePrice : fallbackPricePerRama;
+  const toUsd = useCallback(
+    (valueRama) =>
+      Number.isFinite(valueRama) && pricePerRama > 0 ? valueRama * pricePerRama : 0,
+    [pricePerRama]
+  );
+  const toRama = useCallback(
+    (valueUsd) =>
+      Number.isFinite(valueUsd) && pricePerRama > 0 ? valueUsd / pricePerRama : 0,
+    [pricePerRama]
+  );
 
   const totalInflowsRama = inflowTotals.rama;
   const availableAfterFeeUsd = usdValue * 0.95;
@@ -346,9 +388,9 @@ export default function SafeWallet() {
   const amountRama = useMemo(() => {
     if (parsedInput <= 0) return 0;
     return withdrawCurrency === 'RAMA' ? parsedInput : toRama(parsedInput);
-  }, [parsedInput, withdrawCurrency]);
+  }, [parsedInput, withdrawCurrency, toRama]);
 
-  const amountUsd = useMemo(() => toUsd(amountRama), [amountRama]);
+  const amountUsd = useMemo(() => toUsd(amountRama), [amountRama, toUsd]);
   const feeUsd = amountUsd * 0.05;
   const netUsd = Math.max(amountUsd - feeUsd, 0);
   const feeRama = toRama(feeUsd);
@@ -484,8 +526,17 @@ export default function SafeWallet() {
       }
       const details = detailsPieces.join(' • ') || '—';
 
-      const grossUsd = Number(entry.usd ?? 0);
       const grossRama = Number(entry.rama ?? 0);
+      let grossUsd = Number(entry.usd ?? 0);
+      if (grossUsd <= 0 && grossRama > 0) {
+        const estimatedUsd = toUsd(grossRama);
+        if (estimatedUsd > 0) {
+          grossUsd = estimatedUsd;
+        }
+      }
+      if (Math.abs(grossUsd) < 1e-6) {
+        grossUsd = 0;
+      }
       const fundSource = entry.isCredit ? 'Safe Wallet' : 'External Wallet';
 
       return {
@@ -503,7 +554,7 @@ export default function SafeWallet() {
         tokenAmount: grossRama,
       };
     },
-    [formatDate]
+    [formatDate, toUsd]
   );
 
   const historyRows = useMemo(() => {

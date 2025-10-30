@@ -755,6 +755,51 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  previewUnclaimedForPortfolioUsingCapMgr: async (pid, offset = 0, value = 1000) => {
+    try {
+      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
+      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
+
+      const preview = await roiDistributor.methods
+        .previewUnclaimedForPortfolio_UsingCapMgr(
+          String(pid),
+          String(offset),
+          String(value)
+        )
+        .call();
+
+      const periods = Array.isArray(preview.periodIds)
+        ? preview.periodIds.map((periodId, idx) => ({
+            periodId: toNumber(periodId),
+            usd: fromMicroUSD(preview.usdPerPeriod?.[idx] ?? 0),
+            rama: fromWeiToRama(preview.ramaPerPeriod?.[idx] ?? 0),
+          }))
+        : [];
+
+      return {
+        pid: toNumber(pid),
+        fromPeriod: toNumber(preview.fromPeriod),
+        toPeriod: toNumber(preview.toPeriod),
+        pageStartPeriod: toNumber(preview.pageStartPeriod),
+        pageEndPeriod: toNumber(preview.pageEndPeriod),
+        totalEpochs: toNumber(preview.totalEpochs),
+        epochsCount: toNumber(preview.epochsCount),
+        usdTotal: fromMicroUSD(preview.usdTotal ?? 0),
+        ramaTotal: fromWeiToRama(preview.ramaTotal ?? 0),
+        principalUsd: fromMicroUSD(preview.principalUsd6 ?? 0),
+        capPct: toNumber(preview.capPct),
+        remainingPidCapBefore: fromMicroUSD(preview.remPidCapBeforeUSD6 ?? 0),
+        remainingPidCapAfter: fromMicroUSD(preview.remPidCapAfterUSD6 ?? 0),
+        remainingUser4xBefore: fromMicroUSD(preview.remUser4xBeforeUSD6 ?? 0),
+        remainingUser4xAfter: fromMicroUSD(preview.remUser4xAfterUSD6 ?? 0),
+        periods,
+      };
+    } catch (error) {
+      console.error("Error previewing unclaimed ROI via CapMgr:", error);
+      throw error;
+    }
+  },
+
 
   getAccruedRewardsPaged: async (address, offset = 0, limit = 50) => {
     try {
