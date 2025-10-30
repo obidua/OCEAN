@@ -636,7 +636,7 @@ export default function Dashboard() {
         
         if (autoWindow && autoWindow.success && autoWindow.canClaim && autoWindow.totalPeriods > 0) {
           const firstClaim = autoWindow.claimingPlan?.[0];
-          const maxPerTransaction = 90; // claimROI() can claim max 90 days per transaction
+          const maxPerTransaction = 50; // claimROI() can claim max 50 days per transaction
           const claimingThisTime = Math.min(autoWindow.totalPeriods, maxPerTransaction);
           const remainingAfterThis = Math.max(0, autoWindow.totalPeriods - maxPerTransaction);
           const needsMultiple = autoWindow.totalPeriods > maxPerTransaction;
@@ -973,11 +973,35 @@ export default function Dashboard() {
     : portfolioCapUsd;
 
   // Use CappingIncomeManager data when available, otherwise fallback to comprehensive status or accrued rewards
-  const totalIncomeEarnedUsd =
+  const usedCapRoiUnclaimedUsd = roiTotals?.unclaimedUsd ?? 0;
+  const baseClaimedIncomeUsd =
     cappingIncomeData?.totalEarnedUSD ??
     (comprehensiveCapStatus
       ? formatCapUsd(comprehensiveCapStatus.totalIncomeEarnedUSD6)
       : totalAccruedRewardUsd);
+  const claimedIncomeUsd =
+    cappingIncomeData?.totalEarnedUSD != null || comprehensiveCapStatus
+      ? baseClaimedIncomeUsd
+      : Math.max(0, baseClaimedIncomeUsd - usedCapRoiUnclaimedUsd);
+  const usedCapDirectIncomeUsd = cappingIncomeData?.breakdown?.direct ?? 0;
+  const usedCapSlabIncomeUsd = cappingIncomeData?.breakdown?.slab ?? 0;
+  const usedCapOverrideIncomeUsd =
+    cappingIncomeData?.breakdown?.slabOverride ?? 0;
+  const usedCapRoiClaimedUsd =
+    cappingIncomeData?.breakdown?.roi ??
+    Math.max(
+      0,
+      claimedIncomeUsd -
+        (usedCapDirectIncomeUsd +
+          usedCapSlabIncomeUsd +
+          usedCapOverrideIncomeUsd)
+    );
+  const totalIncomeEarnedUsd =
+    usedCapRoiUnclaimedUsd +
+    usedCapRoiClaimedUsd +
+    usedCapDirectIncomeUsd +
+    usedCapSlabIncomeUsd +
+    usedCapOverrideIncomeUsd;
 
   const remainingCapUsd = comprehensiveCapStatus
     ? formatCapUsd(comprehensiveCapStatus.remainingCapUSD6)
@@ -1812,12 +1836,9 @@ export default function Dashboard() {
             {hasCapStatus ? (
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between items-center mb-2 gap-2">
+                  <div className="flex items-center mb-2 gap-2">
                     <span className="text-xs sm:text-sm font-medium text-cyan-400 uppercase tracking-wider">
                       Cap Progress
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-neon-green">
-                      {capProgressDisplay}%
                     </span>
                   </div>
                   <div className="h-3 bg-dark-900 rounded-full overflow-hidden border border-cyan-500/30 relative">
@@ -1864,40 +1885,30 @@ export default function Dashboard() {
                       {formatUSD(totalIncomeEarnedUsd)}
                     </p>
                     <p className="text-[11px] text-neon-green/70 mt-1">
-                      {cappingIncomeData
-                        ? "All earnings (Accrued, direct, slab, override)"
-                        : "Earned from Accrued & slabs"}
+                      All earnings (Accrued, direct, slab, override)
                     </p>
-                    {cappingIncomeData && cappingIncomeData.breakdown && (
-                      <div className="text-[9px] text-neon-green/50 mt-1 space-y-0.5">
-                        <div className="flex justify-between">
-                          <span>Accrued:</span>
-                          <span>
-                            {formatUSD(cappingIncomeData.breakdown.roi)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Direct:</span>
-                          <span>
-                            {formatUSD(cappingIncomeData.breakdown.direct)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Slab:</span>
-                          <span>
-                            {formatUSD(cappingIncomeData.breakdown.slab)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Override:</span>
-                          <span>
-                            {formatUSD(
-                              cappingIncomeData.breakdown.slabOverride
-                            )}
-                          </span>
-                        </div>
+                    <div className="text-[9px] text-neon-green/50 mt-1 space-y-0.5">
+                      <div className="flex justify-between">
+                        <span>Accrued (Unclaimed):</span>
+                        <span>{formatUSD(usedCapRoiUnclaimedUsd)}</span>
                       </div>
-                    )}
+                      <div className="flex justify-between">
+                        <span>Accrued (Claimed):</span>
+                        <span>{formatUSD(usedCapRoiClaimedUsd)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Direct:</span>
+                        <span>{formatUSD(usedCapDirectIncomeUsd)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Slab:</span>
+                        <span>{formatUSD(usedCapSlabIncomeUsd)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Override:</span>
+                        <span>{formatUSD(usedCapOverrideIncomeUsd)}</span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Temporary Debug Button for CappingIncomeManager - Remove in production */}
@@ -2970,7 +2981,7 @@ export default function Dashboard() {
                     <div className="flex items-start gap-2">
                       <AlertCircle size={16} className="text-orange-400 mt-0.5 flex-shrink-0" />
                       <div className="text-orange-200 text-sm">
-                        <p className="font-semibold mb-1">90-Day Transaction Limit</p>
+                        <p className="font-semibold mb-1">50-Day Transaction Limit</p>
                         <p>This transaction will claim {claimConfirmData.claimingDays} days. The remaining {claimConfirmData.remainingDays} days can be claimed in a separate transaction later.</p>
                       </div>
                     </div>
@@ -3013,8 +3024,8 @@ export default function Dashboard() {
         title="Claim Daily Accrued Reward"
         description={
           autoWindowInfo && autoWindowInfo.success && autoWindowInfo.totalPeriods > 0
-            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 90)} days of accrued rewards${autoWindowInfo.totalPeriods > 90 ? ` (${autoWindowInfo.totalPeriods - 90} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
-            : "Claiming up to 90 days of your portfolio growth rewards in this transaction"
+            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 50)} days of accrued rewards${autoWindowInfo.totalPeriods > 50 ? ` (${autoWindowInfo.totalPeriods - 50} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
+            : "Claiming up to 50 days of your portfolio growth rewards in this transaction"
         }
         successMessage="Your Daily Accrued Reward has been claimed successfully!"
         onSuccess={handleClaimSuccess}
