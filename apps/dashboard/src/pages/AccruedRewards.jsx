@@ -127,7 +127,7 @@ const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
           ) : !debugInfo ? (
             <p className="text-center text-cyan-300/70 py-12">No unclaimed log data available.</p>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 pb-20 mb-10">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
                   <h3 className="text-sm font-semibold text-cyan-300 mb-3">Unclaimed Totals</h3>
@@ -198,7 +198,7 @@ const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
                 </div>
               </div>
 
-              <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
+              <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4 ">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-cyan-300">Unclaimed Period Logs</h3>
                   <span className="text-[11px] text-cyan-300/60">{entries.length} records</span>

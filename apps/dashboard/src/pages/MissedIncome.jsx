@@ -246,10 +246,13 @@ export default function MissedIncome() {
                 Held Balances (USD)
               </p>
               <NumberPopup
-                value={formatUSD((overview?.held?.royaltyUsd || 0) + (overview?.held?.rewardsUsd || 0))}
+                value={formatUSD(0)}
                 label="Royalty + Rewards"
                 className="text-2xl sm:text-3xl font-bold text-cyan-300"
               />
+              <p className="text-[11px] text-cyan-200/70 mt-2">
+                Hold amounts will surface here once post-cap rewards accrue while portfolios are inactive.
+              </p>
             </div>
           </div>
         </div>

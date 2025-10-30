@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TrendingUp, Users, DollarSign, Award, Activity, BarChart3, Wallet, Target, RefreshCw, AlertCircle } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import { TrendingUp, Users, DollarSign, Award, Activity, BarChart3, Wallet, Target, RefreshCw, AlertCircle, Coins, Pause, ShieldCheck } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
 import { useStore } from '../../store/useUserInfoStore';
 
 export default function Analytics() {
@@ -13,6 +13,9 @@ export default function Analytics() {
   const getSlabIncomeOverview = useStore((s) => s.getSlabIncomeOverview);
   const getRoyaltyOverview = useStore((s) => s.getRoyaltyOverview);
   const getSpotIncomeSummary = useStore((s) => s.getSpotIncomeSummary);
+  const getSafeWalletSummary = useStore((s) => s.getSafeWalletSummary);
+  const getMissedIncomeOverview = useStore((s) => s.getMissedIncomeOverview);
+  const getROITotals = useStore((s) => s.getROITotals);
 
   // User address resolution
   const userAddress = 
@@ -28,6 +31,9 @@ export default function Analytics() {
     slabData: null,
     royaltyData: null,
     spotIncomeData: null,
+    safeWallet: null,
+    missedOverview: null,
+    roiTotals: null,
     loading: true,
     error: null,
     lastUpdated: null
@@ -41,7 +47,10 @@ export default function Analytics() {
       setAnalyticsData(prev => ({ 
         ...prev, 
         loading: false, 
-        error: 'User address not available' 
+        error: 'User address not available',
+        safeWallet: null,
+        missedOverview: null,
+        roiTotals: null,
       }));
       return;
     }
@@ -57,7 +66,10 @@ export default function Analytics() {
         portfolioRewards,
         slabOverview,
         royaltyOverview,
-        spotIncome
+        spotIncome,
+        safeWalletSummary,
+        missedIncomeOverview,
+        roiTotals
       ] = await Promise.allSettled([
         getIncomeTotals(userAddress).catch(err => {
           console.warn('Income totals failed:', err);
@@ -86,6 +98,18 @@ export default function Analytics() {
         getSpotIncomeSummary(userAddress, { limit: 50 }).catch(err => {
           console.warn('Spot income failed:', err);
           return null;
+        }),
+        getSafeWalletSummary(userAddress).catch(err => {
+          console.warn('Safe wallet summary failed:', err);
+          return null;
+        }),
+        getMissedIncomeOverview(userAddress).catch(err => {
+          console.warn('Missed income overview failed:', err);
+          return null;
+        }),
+        getROITotals(userAddress).catch(err => {
+          console.warn('ROI totals failed:', err);
+          return null;
         })
       ]);
 
@@ -101,6 +125,9 @@ export default function Analytics() {
         slabData: processResult(slabOverview),
         royaltyData: processResult(royaltyOverview),
         spotIncomeData: processResult(spotIncome),
+        safeWallet: processResult(safeWalletSummary),
+        missedOverview: processResult(missedIncomeOverview),
+        roiTotals: processResult(roiTotals),
         loading: false,
         error: null,
         lastUpdated: new Date()
@@ -115,7 +142,8 @@ export default function Analytics() {
       }));
     }
   }, [userAddress, getIncomeTotals, get7DayEarningTrend, getTeamSummary, 
-      getPortfolioRewards, getSlabIncomeOverview, getRoyaltyOverview, getSpotIncomeSummary]);
+      getPortfolioRewards, getSlabIncomeOverview, getRoyaltyOverview, getSpotIncomeSummary,
+      getSafeWalletSummary, getMissedIncomeOverview, getROITotals]);
 
   // Manual refresh function
   const handleRefresh = async () => {
@@ -133,9 +161,13 @@ export default function Analytics() {
   const getTotalEarned = () => {
     const { totalStats } = analyticsData;
     if (!totalStats) return 0;
-    return totalStats.allIncomesUsd || 
-           (totalStats.totalRoiUsd + totalStats.directIncomeUsd + 
-            totalStats.slabIncomeUsd + totalStats.royaltyUsd + totalStats.rewardUsd);
+    if (typeof totalStats.total?.usd === 'number') return totalStats.total.usd;
+    const roi = totalStats.roi?.usd ?? totalStats.totalRoiUsd ?? 0;
+    const direct = totalStats.direct?.usd ?? totalStats.directIncomeUsd ?? 0;
+    const slab = totalStats.slab?.usd ?? totalStats.slabIncomeUsd ?? 0;
+    const royalty = totalStats.royalty?.usd ?? totalStats.royaltyUsd ?? 0;
+    const reward = totalStats.reward?.usd ?? totalStats.rewardUsd ?? 0;
+    return roi + direct + slab + royalty + reward;
   };
 
   const getAvgDailyEarnings = () => {
@@ -147,13 +179,50 @@ export default function Analytics() {
 
   const getTeamSize = () => {
     const { teamData } = analyticsData;
-    return teamData?.totalMembers || 0;
+    if (!teamData) return 0;
+    return (
+      teamData.totalTeamSize ??
+      teamData.totalMembers ??
+      teamData.totalDirects ??
+      0
+    );
   };
 
   const getTotalRewards = () => {
     const { totalStats } = analyticsData;
     if (!totalStats) return 0;
-    return totalStats.rewardUsd || 0;
+    return totalStats.reward?.usd ?? totalStats.rewardUsd ?? 0;
+  };
+
+  const getSafeWalletBalance = () => {
+    const { safeWallet } = analyticsData;
+    return Number(safeWallet?.balance?.usd ?? 0);
+  };
+
+  const getSafeWalletRama = () => {
+    const { safeWallet } = analyticsData;
+    return Number(safeWallet?.balance?.rama ?? 0);
+  };
+
+  const getMissedIncomeTotal = () => {
+    const { missedOverview } = analyticsData;
+    return Number(missedOverview?.totalMissedUsd ?? 0);
+  };
+
+  const getHoldSummary = () => ({
+    totalUsd: 0,
+    royaltyUsd: 0,
+    rewardsUsd: 0,
+  });
+
+  const getUnclaimedRoiUsd = () => {
+    const { roiTotals } = analyticsData;
+    return roiTotals?.unclaimedUsd ?? 0;
+  };
+
+  const getUnclaimedRoiRama = () => {
+    const { roiTotals } = analyticsData;
+    return roiTotals?.unclaimedRama ?? 0;
   };
 
   // Chart data processing
@@ -167,93 +236,170 @@ export default function Analytics() {
 
   const getTeamGrowthData = () => {
     const { teamData } = analyticsData;
-    if (!teamData?.recentMembers) {
-      // Fallback to mock data for demonstration
+    if (Array.isArray(teamData?.recentMembers) && teamData.recentMembers.length) {
+      const monthlyData = new Map();
+      teamData.recentMembers.forEach((member) => {
+        const date = new Date(Number(member.joinDate) * 1000 || Date.now());
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+        monthlyData.set(monthKey, (monthlyData.get(monthKey) || 0) + 1);
+      });
+      const entries = Array.from(monthlyData.entries()).map(([month, members]) => ({
+        month,
+        members,
+      }));
+      return entries.length ? entries : [{ month: 'Current', members: getTeamSize() }];
+    }
+
+    const size = getTeamSize();
+    if (size <= 0) {
       return [
-        { month: 'Jul', members: 2 },
-        { month: 'Aug', members: 5 },
-        { month: 'Sep', members: 12 },
-        { month: 'Oct', members: getTeamSize() },
+        { month: 'Jul', members: 0 },
+        { month: 'Aug', members: 0 },
+        { month: 'Sep', members: 0 },
+        { month: 'Oct', members: 0 },
       ];
     }
-    
-    // Process recent members into monthly growth data
-    const monthlyData = {};
-    teamData.recentMembers.forEach(member => {
-      const date = new Date(member.joinDate || Date.now());
-      const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
-      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
-    });
 
-    return Object.entries(monthlyData).map(([month, members]) => ({
-      month,
-      members
-    }));
+    const baseline = Math.max(1, Math.floor(size * 0.25));
+    return [
+      { month: 'Jul', members: Math.round(baseline * 0.6) },
+      { month: 'Aug', members: Math.round(baseline * 0.9) },
+      { month: 'Sep', members: Math.round(baseline * 1.2) },
+      { month: 'Oct', members: size },
+    ];
   };
 
   const getIncomeBreakdownData = () => {
     const { totalStats } = analyticsData;
     if (!totalStats) return [];
 
-    return [
+    const breakdown = [
       {
         name: 'Portfolio Growth',
-        value: totalStats.totalRoiUsd || 0,
+        value: totalStats.roi?.usd ?? totalStats.totalRoiUsd ?? 0,
         color: '#00f0ff'
       },
       {
         name: 'Slab Income',
-        value: totalStats.slabIncomeUsd || 0,
+        value: totalStats.slab?.usd ?? totalStats.slabIncomeUsd ?? 0,
         color: '#39ff14'
       },
       {
         name: 'Direct Income',
-        value: totalStats.directIncomeUsd || 0,
+        value: totalStats.direct?.usd ?? totalStats.directIncomeUsd ?? 0,
         color: '#ff6b35'
       },
       {
         name: 'Royalties',
-        value: totalStats.royaltyUsd || 0,
+        value: totalStats.royalty?.usd ?? totalStats.royaltyUsd ?? 0,
         color: '#ff3d71'
       },
       {
         name: 'Rewards',
-        value: totalStats.rewardUsd || 0,
+        value: totalStats.reward?.usd ?? totalStats.rewardUsd ?? 0,
         color: '#a855f7'
       }
-    ].filter(item => item.value > 0);
+    ];
+    return breakdown.filter(item => item.value > 0);
   };
 
   const getPortfolioProgress = () => {
-    const { portfolioData } = analyticsData;
-    if (!portfolioData?.summary) return 30; // Default fallback
-    
-    // Calculate progress based on portfolio value vs target
-    const current = portfolioData.summary.totalValue || 0;
-    const target = portfolioData.summary.targetValue || 1000; // Default target
-    return Math.min((current / target) * 100, 100);
+    const { roiTotals } = analyticsData;
+    if (!roiTotals) return 0;
+    const claimed = roiTotals.claimedUsd ?? 0;
+    const unclaimed = roiTotals.unclaimedUsd ?? 0;
+    const total = claimed + unclaimed;
+    if (total <= 0) return 0;
+    return Math.min((claimed / total) * 100, 100);
   };
 
   const getDaysActive = () => {
-    const { spotIncomeData } = analyticsData;
-    if (!spotIncomeData?.transactions?.length) return 79; // Default fallback
-    
-    const oldestTransaction = spotIncomeData.transactions.reduce((oldest, tx) => 
-      (tx.timestamp < oldest.timestamp) ? tx : oldest
-    );
-    
-    const daysDiff = Math.floor((Date.now()/1000 - oldestTransaction.timestamp) / 86400);
-    return daysDiff;
+    const { spotIncomeData, portfolioData } = analyticsData;
+    let oldestTs = null;
+
+    const pushTs = (ts) => {
+      if (!Number.isFinite(ts) || ts <= 0) return;
+      if (oldestTs === null || ts < oldestTs) {
+        oldestTs = ts;
+      }
+    };
+
+    if (Array.isArray(spotIncomeData?.transactions)) {
+      spotIncomeData.transactions.forEach((tx) => pushTs(Number(tx.timestamp)));
+    }
+
+    if (Array.isArray(portfolioData?.history)) {
+      portfolioData.history.forEach((entry) => pushTs(Number(entry.claimedAt)));
+    }
+
+    if (oldestTs === null) return 0;
+    const daysDiff = Math.floor((Date.now() / 1000 - oldestTs) / 86400);
+    return Math.max(0, daysDiff);
   };
 
   const getClaimsMade = () => {
-    const { slabData, royaltyData } = analyticsData;
-    return (slabData?.totalClaims || 0) + (royaltyData?.totalClaims || 0) || 12; // Fallback
+    const { portfolioData, royaltyData } = analyticsData;
+    const portfolioClaims = Array.isArray(portfolioData?.history)
+      ? portfolioData.history.length
+      : 0;
+    const royaltyClaims = royaltyData?.paidMonths ?? 0;
+    return portfolioClaims + royaltyClaims;
   };
 
   const getAvgTeamDepth = () => {
     const { teamData } = analyticsData;
-    return teamData?.averageDepth || 3.2; // Fallback
+    if (!teamData) return 0;
+    if (typeof teamData.averageDepth === 'number') return teamData.averageDepth;
+    const directs = teamData.totalDirects ?? 0;
+    const teamSize = teamData.totalTeamSize ?? 0;
+    if (directs <= 0) return teamSize > 0 ? 1 : 0;
+    return teamSize / directs;
+  };
+
+  const getRoyaltySnapshot = () => {
+    const data = analyticsData.royaltyData;
+    if (!data) {
+      return {
+        level: 0,
+        qualifiedVolumeUsd: 0,
+        royaltyIncomeUsd: 0,
+        canClaim: false,
+        paused: false,
+        paidMonths: 0,
+      };
+    }
+    return {
+      level: Number(data.currentLevel ?? 0),
+      qualifiedVolumeUsd: Number(data.qualifiedVolumeUsd ?? 0),
+      royaltyIncomeUsd: Number(data.royaltyIncomeUsd ?? 0),
+      canClaim: Boolean(data.canClaim),
+      paused: Boolean(data.paused),
+      paidMonths: Number(data.paidMonths ?? data.lastPaidTier ?? 0),
+    };
+  };
+
+  const getSlabSnapshot = () => {
+    const data = analyticsData.slabData;
+    if (!data) {
+      return {
+        slabLevel: 0,
+        qualifiedBusinessUsd: 0,
+        slabIncomeUsd: 0,
+        slabIncomeAvailableUsd: 0,
+        overrideIncomeUsd: 0,
+        progressToNextSlab: 0,
+        canClaim: false,
+      };
+    }
+    return {
+      slabLevel: Number(data.slabLevel ?? data.currentSlabIndex ?? 0),
+      qualifiedBusinessUsd: Number(data.qualifiedVolumeUsd ?? data.qualifiedBusinessUsd ?? 0),
+      slabIncomeUsd: Number(data.slabIncomeUsd ?? 0),
+      slabIncomeAvailableUsd: Number(data.slabIncomeAvailableUsd ?? 0),
+      overrideIncomeUsd: Number(data.overrideIncomeUsd ?? 0),
+      progressToNextSlab: Number(data.progressData?.progressToNextSlab ?? 0),
+      canClaim: Boolean(data.canClaim),
+    };
   };
 
   // Loading state
@@ -314,6 +460,10 @@ export default function Analytics() {
       </div>
     );
   }
+
+  const holdSummary = getHoldSummary();
+  const royaltySnapshot = getRoyaltySnapshot();
+  const slabSnapshot = getSlabSnapshot();
 
   // Main render
   return (
@@ -393,6 +543,59 @@ export default function Analytics() {
         </div>
       </div>
 
+      {/* Balance & Risk Overview */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 cyber-glass border border-cyan-500/30 rounded-lg">
+              <Wallet className="text-cyan-400" size={20} />
+            </div>
+            <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Safe Wallet</p>
+          </div>
+          <p className="text-2xl font-bold text-cyan-300">${getSafeWalletBalance().toFixed(2)}</p>
+          <p className="text-xs text-cyan-300/80 mt-1">{getSafeWalletRama().toFixed(4)} RAMA</p>
+        </div>
+
+        <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 cyber-glass border border-neon-green/30 rounded-lg">
+              <Coins className="text-neon-green" size={20} />
+            </div>
+            <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Unclaimed ROI</p>
+          </div>
+          <p className="text-2xl font-bold text-cyan-300">${getUnclaimedRoiUsd().toFixed(2)}</p>
+          <p className="text-xs text-cyan-300/80 mt-1">{getUnclaimedRoiRama().toFixed(4)} RAMA waiting</p>
+        </div>
+
+        <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 cyber-glass border border-yellow-400/40 rounded-lg">
+              <Pause className="text-yellow-400" size={20} />
+            </div>
+            <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Hold Balances</p>
+          </div>
+          <p className="text-2xl font-bold text-cyan-300">${holdSummary.totalUsd.toFixed(2)}</p>
+          <p className="text-xs text-cyan-300/80 mt-1">
+            Royalty: ${holdSummary.royaltyUsd.toFixed(2)} • Rewards: ${holdSummary.rewardsUsd.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="cyber-glass rounded-xl p-5 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 cyber-glass border border-red-500/30 rounded-lg">
+              <ShieldCheck className="text-red-300" size={20} />
+            </div>
+            <p className="text-sm font-medium text-cyan-400 uppercase tracking-wide">Missed Income</p>
+          </div>
+          <p className="text-2xl font-bold text-cyan-300">${getMissedIncomeTotal().toFixed(2)}</p>
+          <p className="text-xs text-cyan-300/80 mt-1">Recoverable once new portfolios activate</p>
+        </div>
+      </div>
+
       {/* Charts Section */}
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
@@ -461,6 +664,73 @@ export default function Analytics() {
               </defs>
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Snapshot Section */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+          <h3 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide flex items-center gap-2">
+            <Award className="w-5 h-5" />
+            Royalty Snapshot
+          </h3>
+          <div className="space-y-4 text-sm text-cyan-200/90">
+            <div className="flex items-center justify-between">
+              <span>Current Level</span>
+              <span className="text-lg font-bold text-cyan-100">{royaltySnapshot.level}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Qualified Volume</span>
+              <span className="text-cyan-100">${royaltySnapshot.qualifiedVolumeUsd.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Monthly Royalty In Hold</span>
+              <span className="text-cyan-100">${royaltySnapshot.royaltyIncomeUsd.toFixed(2)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2">
+                <p className="text-cyan-200/70">Paid Cycles</p>
+                <p className="text-cyan-200 font-semibold mt-1">{royaltySnapshot.paidMonths}</p>
+              </div>
+              <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2">
+                <p className="text-cyan-200/70">Claim Status</p>
+                <p className={`font-semibold ${royaltySnapshot.canClaim ? 'text-neon-green' : 'text-cyan-200/80'}`}>
+                  {royaltySnapshot.canClaim ? 'Ready' : royaltySnapshot.paused ? 'Paused' : 'Pending'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+          <h3 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Slab Snapshot
+          </h3>
+          <div className="space-y-4 text-sm text-cyan-200/90">
+            <div className="flex items-center justify-between">
+              <span>Current Slab</span>
+              <span className="text-lg font-bold text-cyan-100">{slabSnapshot.slabLevel}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Qualified Business</span>
+              <span className="text-cyan-100">${slabSnapshot.qualifiedBusinessUsd.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Available Slab Income</span>
+              <span className="text-cyan-100">${slabSnapshot.slabIncomeAvailableUsd.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Progress to Next Slab</span>
+              <span className="text-neon-green font-semibold">{slabSnapshot.progressToNextSlab.toFixed(1)}%</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span>Override Earnings (USD)</span>
+              <span className="text-cyan-200">${slabSnapshot.overrideIncomeUsd.toFixed(2)}</span>
+            </div>
+          </div>
         </div>
       </div>
 
