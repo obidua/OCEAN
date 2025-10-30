@@ -75,16 +75,13 @@ const resolveAddress = (key, fallback) => {
 
 // Load contract addresses from environment variables
 // Fallback to hardcoded addresses only if env vars are not available
-const resolvedSlabManagerAddress = resolveAddress("SLABMANAGER", "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9");
-
 const Contract = {
   UserRegistry: resolveAddress("USERREGISTRY", "0x246c7317F4093065B96c2b0DC65A63De395444ed"),
   CoreConfig: resolveAddress("CORECONFIG", "0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d"),
   RoiDistribution: resolveAddress("ROIDISTRIBUTOR", "0x7951bf0faABE00c451F1d92008297a7bd85d4678"),
   PortFolioManager: resolveAddress("PORTFOLIOMANAGER", "0xC73f964eA7bC04a2c7455CAf6107238147c88365"),
   RoyaltyManager: resolveAddress("ROYALTYMANAGER", "0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5"),
-  SlabManager: resolvedSlabManagerAddress,
-  SlabManagerReader: resolveAddress("SLABMANAGERREADER", resolvedSlabManagerAddress),
+  SlabManager: resolveAddress("SLABMANAGER", "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9"),
   IncomeDistributor: resolveAddress("INCOMEDISTRIBUTOR", "0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626"),
   FreezePolicy: resolveAddress("FREEZEPOLICY", "0x6541987258B73bd8128d23e8678a00258226ad3C"),
   RewardVault: resolveAddress("REWARDVAULT", "0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d"),
@@ -160,14 +157,6 @@ const hasAddress = (addr) =>
 // Create contract instance with primary web3 (backward compatibility)
 const makeContract = (abi, address) =>
   hasAddress(address) ? new web3.eth.Contract(abi, address) : null;
-
-const getSlabManagerReaderContract = () =>
-  makeContract(
-    SlabManagerABI,
-    hasAddress(Contract["SlabManagerReader"]) ? Contract["SlabManagerReader"] : Contract["SlabManager"]
-  );
-
-const getSlabManagerContract = () => makeContract(SlabManagerABI, Contract["SlabManager"]);
 
 // Create multiple contract instances for dual RPC calls
 const makeDualContracts = (abi, address) => 
@@ -1090,7 +1079,6 @@ export const useStore = create((set, get) => ({
   PortFolioManagerAddress: Contract["PortFolioManager"],
   RoyaltyManagerAddress: Contract["RoyaltyManager"],
   SlabManagerAddress: Contract["SlabManager"],
-  SlabManagerReaderAddress: Contract["SlabManagerReader"],
   IncomeDistributorAddress: Contract["IncomeDistributor"],
   FreezePolicyAddress: Contract["FreezePolicy"],
   RewardVaultAddress: Contract["RewardVault"],
@@ -3682,10 +3670,10 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
-        console.warn("SlabManager reader contract not available, using fallback data");
+        console.warn("SlabManager contract not available, using fallback data");
         return {
           contractSlabIndex: 0,
           slabLevel: 0,
@@ -3706,24 +3694,21 @@ export const useStore = create((set, get) => ({
           sameSlabPartners: { firstWave: [], secondWave: [], thirdWave: [] },
           legsDetailed: [],
           legBreakdown: { L1: 0, L2: 0, Lrest: 0, total: 0 },
-        achievementsData: { slabs: [], rewards: [], royalties: [] },
-        progressData: {
-          currentSlab: 0,
-          nextSlabThreshold: 0,
-          nextRewardThreshold: 0,
-          nextRoyaltyThreshold: 0,
-          progressToNextSlab: 0,
-          progressToNextReward: 0,
-          progressToNextRoyalty: 0
-        },
-        achievedSlabCount: 0,
-        achievedRewardCount: 0,
-        achievedRoyaltyCount: 0,
+          achievementsData: { slabs: [], rewards: [], royalties: [] },
+          progressData: {
+            currentSlab: 0,
+            nextSlabThreshold: 0,
+            nextRewardThreshold: 0,
+            nextRoyaltyThreshold: 0,
+            progressToNextSlab: 0,
+            progressToNextReward: 0,
+            progressToNextRoyalty: 0
+          }
         };
       }
 
       console.log("🔗 Fetching SlabManager data for:", userAddress);
-      console.log("📍 SlabManager contract address:", Contract["SlabManagerReader"] || Contract["SlabManager"]);
+      console.log("📍 SlabManager contract address:", Contract["SlabManager"]);
 
       // Get comprehensive user overview from SlabManager with error handling
       let userOverview;
@@ -3999,9 +3984,6 @@ export const useStore = create((set, get) => ({
         // Achievement data
         achievementsData,
         progressData,
-        achievedSlabCount: Array.isArray(achievementsData.slabs) ? achievementsData.slabs.length : 0,
-        achievedRewardCount: Array.isArray(achievementsData.rewards) ? achievementsData.rewards.length : 0,
-        achievedRoyaltyCount: Array.isArray(achievementsData.royalties) ? achievementsData.royalties.length : 0,
         
         // Raw data for backward compatibility
         slabAchiev: achievementsData,
@@ -4080,7 +4062,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
         console.warn("SlabManager contract not available for details, using fallback");
@@ -4179,7 +4161,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
         throw new Error("SlabManager contract not available");
@@ -4274,7 +4256,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
         throw new Error("SlabManager contract not available");
@@ -4462,7 +4444,7 @@ export const useStore = create((set, get) => ({
 
       console.log('🔍 Getting comprehensive slab user overview for:', userAddress);
       
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) {
         throw new Error('SlabManager contract not available');
       }
@@ -4565,7 +4547,7 @@ export const useStore = create((set, get) => ({
 
       console.log('🎯 Getting detailed achievement progress for:', userAddress, 'kind:', achievementKind);
       
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) {
         throw new Error('SlabManager contract not available');
       }
@@ -4622,7 +4604,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       
       if (!slabManager) {
         console.warn("SlabManager contract not available for achievement progress, using fallback");
@@ -4755,7 +4737,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!hasAddress(userAddress)) throw new Error('Invalid user address');
 
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
 
 
       let ramaPerUsdWei = null;
@@ -4880,7 +4862,7 @@ export const useStore = create((set, get) => ({
   getSlabAchievementsWithTimes: async (userAddress) => {
     try {
       if (!hasAddress(userAddress)) throw new Error('Invalid user address');
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) throw new Error('SlabManager contract unavailable');
 
       const [idxs, times, L1s, L2s, Lrests] = await slabManager.methods
@@ -4911,7 +4893,7 @@ export const useStore = create((set, get) => ({
   getSlabClaimEvents: async (userAddress, options = {}) => {
     try {
       if (!hasAddress(userAddress)) throw new Error('Invalid user address');
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) throw new Error('SlabManager contract unavailable');
 
       const { fromBlock, toBlock, max = 100 } = options;
@@ -5032,7 +5014,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) return { leg1: 40, leg2: 30, leg3: 30 };
 
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) return { leg1: 40, leg2: 30, leg3: 30 };
 
       const [legsDetailed, qualifiedBusinessUSD] = await Promise.all([
@@ -5770,7 +5752,7 @@ export const useStore = create((set, get) => ({
   getGlobalOneTimeMilestones: async () => {
     try {
       const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
 
       const [allMilestonesRaw, rewardMilestonesRaw] = await Promise.all([
         rewardVault
@@ -5891,7 +5873,10 @@ export const useStore = create((set, get) => ({
         PortFolioManagerABI,
         Contract["PortFolioManager"]
       );
-      const slabManager = getSlabManagerReaderContract();
+      const slabManager = makeContract(
+        SlabManagerABI,
+        Contract["SlabManager"]
+      );
 
       let summary = null;
       if (oceanViewV2) {
@@ -6192,7 +6177,7 @@ export const useStore = create((set, get) => ({
       );
       const slabManag = new web3.eth.Contract(
         SlabManagerABI,
-        Contract["SlabManagerReader"] || Contract["SlabManager"]
+        Contract["SlabManager"]
       );
 
       const rewardClaimed = await oceanQuery.methods.getTotalRewardsClaimed(userAddress).call();

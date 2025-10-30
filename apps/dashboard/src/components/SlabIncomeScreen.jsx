@@ -67,8 +67,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
     rewardMilestones,
     royaltyTiers,
     nextAchievements,
-    contractSlabIndex,
-    achievedSlabCount
+    contractSlabIndex
   } = SlabIncomeData;
 
   // Debug log for slab level (can be removed after testing)
@@ -289,11 +288,6 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                 up to 40%, every additional leg up to 30% until targets are
                 filled (matches 40:30:30 when you have 3 directs).
               </li>
-              {achievedSlabCount > 0 && (
-                <li>
-                  • Achieved slabs so far: {achievedSlabCount}
-                </li>
-              )}
               <li>
                 • You need a minimum number of direct referrals at each slab
                 tier.

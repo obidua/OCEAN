@@ -125,10 +125,6 @@ const SlabIncome = () => {
     ? derivedContractIndex
     : 0;
   const displayedSlabLevel = contractSlabIndex + 1;
-  const achievedSlabCount = Array.isArray(slabDetails?.achievementsData?.slabs)
-    ? slabDetails.achievementsData.slabs.length
-    : 0;
-  const normalizedSlabLevel = Math.max(displayedSlabLevel, achievedSlabCount || 0);
   const qualifiedVolumeUsd = parseFloat(slabDetails?.qualifiedVolumeUsd ?? 0);
   const directs = parseFloat(slabDetails?.directs ?? 0);
   const canClaim = slabDetails?.canClaim ?? false;
@@ -197,8 +193,7 @@ const SlabIncome = () => {
   const SlabIncomeData = {
     error,
     loading,
-    slabLevel: normalizedSlabLevel,
-    achievedSlabCount,
+    slabLevel: displayedSlabLevel,
     contractSlabIndex,
     qualifiedVolumeUsd,
     directs,
