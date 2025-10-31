@@ -2845,6 +2845,8 @@ export const useStore = create((set, get) => ({
       );
       if (!cappingIncomeManager) throw new Error('CappingIncomeManager unavailable');
 
+      const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
+
       const [
         totalsByKindRaw,
         missedCountRaw,
@@ -2854,6 +2856,7 @@ export const useStore = create((set, get) => ({
         royaltyOverview,
         oneTimeOverview,
         capStatus,
+        heldFundsRaw,
       ] = await Promise.all([
         cappingIncomeManager.methods.getTotalsByKind(userAddress).call(),
         cappingIncomeManager.methods.getMissedIncomeCount(userAddress).call(),
@@ -2864,6 +2867,15 @@ export const useStore = create((set, get) => ({
         get().getRoyaltyOverview(userAddress).catch(() => null),
         get().getOneTimeRewardsOverview(userAddress).catch(() => null),
         get().getComprehensiveCapStatus(userAddress).catch(() => null),
+        rewardVault
+          ? rewardVault.methods
+              .getHeldFundsDueToCap(userAddress)
+              .call()
+              .catch((err) => {
+                console.warn("RewardVault.getHeldFundsDueToCap failed:", err);
+                return null;
+              })
+          : null,
       ]);
 
       const pickTotals = (rec, key, index) => {
@@ -2907,11 +2919,34 @@ export const useStore = create((set, get) => ({
       const openNotCapped = Array.isArray(openNotCappedPids) ? openNotCappedPids : [];
       const capLocked = !hasOpenPortfolio || openNotCapped.length === 0;
 
+      const heldTotalUsdVault =
+        heldFundsRaw != null
+          ? fromMicroUSD(
+              heldFundsRaw?.usdTotal ?? heldFundsRaw?.[0] ?? 0
+            )
+          : null;
+      const heldTotalRamaVault =
+        heldFundsRaw != null
+          ? fromWeiToRama(
+              heldFundsRaw?.ramaTotal ?? heldFundsRaw?.[1] ?? 0
+            )
+          : null;
+
+      const royaltyHeldUsd = royaltyOverview?.royaltyIncomeUsd ?? 0;
+      const rewardsHeldUsd = oneTimeOverview?.pendingRewardUsd ?? 0;
+
       const held = {
-        royaltyUsd: royaltyOverview?.royaltyIncomeUsd ?? 0,
-        rewardsUsd: oneTimeOverview?.pendingRewardUsd ?? 0,
+        totalUsd:
+          heldTotalUsdVault != null
+            ? heldTotalUsdVault
+            : royaltyHeldUsd + rewardsHeldUsd,
+        totalRama: heldTotalRamaVault ?? 0,
+        royaltyUsd: royaltyHeldUsd,
+        oneTimeUsd: rewardsHeldUsd,
       };
-      const canClaimHeldNow = !capLocked && ((held.royaltyUsd ?? 0) > 0 || (held.rewardsUsd ?? 0) > 0);
+      const canClaimHeldNow =
+        !capLocked &&
+        ((held.royaltyUsd ?? 0) > 0 || (held.oneTimeUsd ?? 0) > 0);
 
       return {
         capLocked,
@@ -2969,6 +3004,10 @@ export const useStore = create((set, get) => ({
           kind: kindKey,
           pid,
           reason,
+          reasonHex:
+            typeof reasonRaw === 'string' && reasonRaw.startsWith('0x')
+              ? reasonRaw
+              : stringToBytes32(reason),
         };
       });
 

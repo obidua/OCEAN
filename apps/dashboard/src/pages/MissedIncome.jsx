@@ -209,7 +209,15 @@ export default function MissedIncome() {
     (earnedTotals.slabUsd || 0) +
     (earnedTotals.slabOverrideUsd || 0);
   const heldTotals = overview?.held || {};
-  const heldTotalUsd = (heldTotals.royaltyUsd || 0) + (heldTotals.rewardsUsd || 0);
+  const heldRoyaltyUsd = heldTotals.royaltyUsd || 0;
+  const heldOneTimeUsd =
+    heldTotals.oneTimeUsd != null
+      ? heldTotals.oneTimeUsd
+      : heldTotals.rewardsUsd || 0;
+  const heldTotalUsd =
+    heldTotals.totalUsd != null
+      ? heldTotals.totalUsd
+      : heldRoyaltyUsd + heldOneTimeUsd;
 
   const kindBreakdown = useMemo(() => {
     const buckets = new Map();
@@ -342,9 +350,10 @@ export default function MissedIncome() {
                 label="Royalty + Rewards"
                 className="text-2xl sm:text-3xl font-bold text-cyan-300"
               />
-              <p className="text-[11px] text-cyan-200/70 mt-2">
-                Royalty and one-time rewards poised to release when a new portfolio activates.
-              </p>
+              <div className="text-[11px] text-cyan-200/70 mt-2 space-y-1">
+                <p>Royalty Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldRoyaltyUsd)}</span></p>
+                <p>One-Time Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldOneTimeUsd)}</span></p>
+              </div>
             </div>
             <div className="cyber-glass border border-emerald-400/40 rounded-xl p-4 text-center sm:col-span-2">
               <p className="text-xs uppercase tracking-wider text-emerald-200/80 mb-2">

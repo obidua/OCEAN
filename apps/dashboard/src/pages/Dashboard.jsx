@@ -1108,6 +1108,19 @@ export default function Dashboard() {
     DashBoardDetail?.slabPanel?.directMembers ??
     DashBoardDetail?.userStatus?.directs ??
     0;
+  const holdTotals = missedOverview?.held ?? {};
+  const holdTotalUsd =
+    holdTotals?.totalUsd != null
+      ? holdTotals.totalUsd
+      : (holdTotals.royaltyUsd || 0) +
+        (holdTotals.oneTimeUsd != null
+          ? holdTotals.oneTimeUsd
+          : holdTotals.rewardsUsd || 0);
+  const holdRoyaltyUsd = holdTotals.royaltyUsd || 0;
+  const holdOneTimeUsd =
+    holdTotals.oneTimeUsd != null
+      ? holdTotals.oneTimeUsd
+      : holdTotals.rewardsUsd || 0;
   const slabLevel =
     teamMemberDetails?.slabLevel ??
     DashBoardDetail?.slabPanel?.slabIndex ??
@@ -1792,16 +1805,16 @@ export default function Dashboard() {
             </p>
           </div>
           <NumberPopup
-            value={formatUSD(0)}
+            value={formatUSD(holdTotalUsd || 0)}
             label="Total Hold"
             className="text-xl sm:text-2xl font-bold mb-2 text-yellow-400 relative z-10"
-            isLoading={false}
+            isLoading={missedLoading}
           />
           <div className="text-xs text-yellow-300/80 relative z-10 mb-1">
-            Hold rewards will surface here once post-cap earnings accrue while portfolios are inactive.
+            Post-cap rewards waiting in RewardVault until a new portfolio activates.
           </div>
           <div className="text-[10px] text-yellow-200/70 relative z-10 mb-2">
-            Royalty Hold: {formatUSD(0)} • One-Time Hold: {formatUSD(0)}
+            Royalty Hold: {formatUSD(holdRoyaltyUsd || 0)} • One-Time Hold: {formatUSD(holdOneTimeUsd || 0)}
           </div>
           <div className="flex items-center gap-1 text-xs text-yellow-300/90 relative z-10">
             <span>View Details</span>
