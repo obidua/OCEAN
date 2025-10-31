@@ -62,6 +62,37 @@ const SAFEWALLET_KINDS = {
 const USD_DIVISOR = 1e8;   // For legacy ledger data  
 const USD_MICRO_FACTOR = 1e6; // Same as TransactionHistory for transaction data
 const RAMA_DIVISOR = 1e18; // Same as TransactionHistory RAMA_DECIMALS
+const MIN_VALID_ROYALTY_TS = 946684800;
+
+const formatRoyaltyMonthId = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  if (numeric >= MIN_VALID_ROYALTY_TS) {
+    try {
+      return new Date(numeric * 1000).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+      });
+    } catch {
+      return null;
+    }
+  }
+  if (numeric >= 100000) {
+    const month = numeric % 100;
+    const year = Math.floor(numeric / 100);
+    if (month >= 1 && month <= 12) {
+      try {
+        return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+        });
+      } catch {
+        return `${String(month).padStart(2, '0')}/${year}`;
+      }
+    }
+  }
+  return null;
+};
 
 const toNumberSafe = (value) => {
   if (value == null) return 0;
@@ -147,6 +178,7 @@ const transformRoyaltyLedgerEntry = (entry) => {
 const formatLedgerTimestamp = (value) => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return '—';
+  if (numeric < MIN_VALID_ROYALTY_TS) return '—';
   try {
     return new Date(numeric * 1000).toLocaleString();
   } catch {
@@ -174,10 +206,12 @@ export default function RoyaltyProgram() {
   const [transactionsError, setTransactionsError] = useState(null);
 
   const getRoyaltyOverview = useStore((s) => s.getRoyaltyOverview);
+  const getVolumeAnalytics = useStore((s) => s.getVolumeAnalytics);
   const getIncomeTransaction = useStore((s) => s.getIncomeTransaction);
   const claimRoyaltyReward = useStore((s) => s.claimRoyaltyReward);
   const [claimTransaction, setClaimTransaction] = useState(null);
   const { data: txHash, sendTransaction } = useSendTransaction();
+  const [volumeAnalytics, setVolumeAnalytics] = useState(null);
 
   // Transform transaction entry to match TransactionHistory format
   const transformTransactionEntry = useCallback((entry) => {
@@ -229,6 +263,33 @@ export default function RoyaltyProgram() {
       cancelled = true;
     };
   }, [userAddress, getRoyaltyOverview]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadVolumeAnalytics = async () => {
+      if (!userAddress || typeof getVolumeAnalytics !== 'function') {
+        setVolumeAnalytics(null);
+        return;
+      }
+      try {
+        const data = await getVolumeAnalytics(userAddress);
+        if (!cancelled) {
+          setVolumeAnalytics(data ?? null);
+        }
+      } catch (err) {
+        console.warn('RoyaltyProgram volume analytics load failed:', err);
+        if (!cancelled) {
+          setVolumeAnalytics(null);
+        }
+      }
+    };
+
+    loadVolumeAnalytics();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getVolumeAnalytics]);
 
   const fetchRoyaltyLedger = useCallback(async () => {
     if (!userAddress || typeof getIncomeTransaction !== 'function') {
@@ -341,15 +402,94 @@ export default function RoyaltyProgram() {
   const canClaim = royaltyDetails?.canClaim ?? false;
   const paused = royaltyDetails?.paused ?? false;
 
-  const royaltyIncomeUsd = royaltyDetails?.royaltyIncomeUsd ?? 0;
-  const royaltyIncomeRama = royaltyDetails?.royaltyIncomeRama ?? 0;
-  const qualifiedVolumeUsd = royaltyDetails?.qualifiedVolumeUsd ?? 0;
-  const renewalSnapshotUsd = royaltyDetails?.renewalSnapshotUsd ?? 0;
-  const renewalRecentUsd = royaltyDetails?.renewalRecentUsd ?? 0;
-  const renewalRequiredUsd = royaltyDetails?.renewalRequiredUsd ?? 0;
-  const renewalTargetUsd = royaltyDetails?.renewalTargetUsd ?? 0;
+  const analyticsTeamBreakdown = useMemo(() => {
+    if (!volumeAnalytics) return null;
+    const uncapped = volumeAnalytics?.uncappedVolumes ?? {};
+    const l1 = Number(uncapped?.L1 ?? uncapped?.l1 ?? 0);
+    const l2 = Number(uncapped?.L2 ?? uncapped?.l2 ?? 0);
+    const lrest = Number(uncapped?.Lrest ?? uncapped?.lrest ?? 0);
+    const totalUncapped = Number(uncapped?.total ?? 0);
+    const totalQualified = Number(volumeAnalytics?.totalQualified ?? 0);
+    const totalUsd =
+      totalUncapped > 0
+        ? totalUncapped
+        : totalQualified > 0
+        ? totalQualified
+        : l1 + l2 + lrest;
+    return {
+      l1Usd: l1,
+      l2Usd: l2,
+      lrestUsd: lrest,
+      totalUsd,
+    };
+  }, [volumeAnalytics]);
+
+  const analyticsUsdToRamaRatio = useMemo(() => {
+    if (!volumeAnalytics) return null;
+    const totalUsd = Number(volumeAnalytics?.uncappedVolumes?.total ?? 0);
+    const totalRama = Number(volumeAnalytics?.totalVolumeRAMA ?? 0);
+    if (totalUsd > 0 && totalRama > 0) {
+      return totalRama / totalUsd;
+    }
+    return null;
+  }, [volumeAnalytics]);
+
+  const qualifiedVolumeUsd =
+    Number(royaltyDetails?.qualifiedVolumeUsd) > 0
+      ? Number(royaltyDetails?.qualifiedVolumeUsd)
+      : Number(volumeAnalytics?.totalQualified) > 0
+      ? Number(volumeAnalytics?.totalQualified)
+      : analyticsTeamBreakdown?.totalUsd ?? 0;
+
+  const fallbackRoyaltyIncomeUsd =
+    qualifiedVolumeUsd > 0 ? qualifiedVolumeUsd * 0.05 : 0;
+
+  const royaltyIncomeUsd =
+    Number(royaltyDetails?.royaltyIncomeUsd) > 0
+      ? Number(royaltyDetails?.royaltyIncomeUsd)
+      : fallbackRoyaltyIncomeUsd;
+
+  const royaltyIncomeRama =
+    Number(royaltyDetails?.royaltyIncomeRama) > 0
+      ? Number(royaltyDetails?.royaltyIncomeRama)
+      : royaltyIncomeUsd > 0
+      ? (analyticsUsdToRamaRatio && analyticsUsdToRamaRatio > 0
+          ? royaltyIncomeUsd * analyticsUsdToRamaRatio
+          : royaltyIncomeUsd / 0.1)
+      : 0;
+
+  const renewalSnapshotUsd =
+    Number(royaltyDetails?.renewalSnapshotUsd) > 0
+      ? Number(royaltyDetails?.renewalSnapshotUsd)
+      : analyticsTeamBreakdown?.totalUsd ?? 0;
+
+  const renewalRecentUsd =
+    Number(royaltyDetails?.renewalRecentUsd) > 0
+      ? Number(royaltyDetails?.renewalRecentUsd)
+      : analyticsTeamBreakdown?.totalUsd ?? 0;
+
+  const renewalTargetUsd =
+    Number(royaltyDetails?.renewalTargetUsd) > 0
+      ? Number(royaltyDetails?.renewalTargetUsd)
+      : Number(royaltyDetails?.nextThresholdUsd) > 0
+      ? Number(royaltyDetails?.nextThresholdUsd)
+      : volumeAnalytics?.capBreakdown?.targetVolume > 0
+      ? Number(volumeAnalytics.capBreakdown.targetVolume)
+      : analyticsTeamBreakdown?.totalUsd ?? 0;
+
+  const renewalRequiredUsd =
+    Number(royaltyDetails?.renewalRequiredUsd) > 0
+      ? Number(royaltyDetails?.renewalRequiredUsd)
+      : Math.max(
+          0,
+          (renewalTargetUsd || 0) - (analyticsTeamBreakdown?.totalUsd ?? qualifiedVolumeUsd ?? 0)
+        );
 
   const nextMonthEpoch = royaltyDetails?.nextMonthEpoch ?? 0;
+  const nextMonthLabelFromStore = royaltyDetails?.nextMonthLabel ?? null;
+  const lastPaidMonthLabel = royaltyDetails?.lastPaidMonthLabel ?? null;
+  const lastPaidMonthEpoch = royaltyDetails?.lastPaidMonthEpoch ?? 0;
+  const lastPaidMonthRaw = royaltyDetails?.lastPaidMonthRaw ?? 0;
 
   const unclaimedRoyaltyUsd = Number(royaltyIncomeUsd || 0);
   const unclaimedRoyaltyRama = Number(royaltyIncomeRama || 0);
@@ -405,16 +545,47 @@ export default function RoyaltyProgram() {
     return Array.isArray(royaltyLedger) ? royaltyLedger : [];
   }, [royaltyTransactions, royaltyLedger]);
 
-  const teamBreakdown = royaltyDetails?.teamBusinessBreakdown || {
-    l1Usd: 0,
-    l2Usd: 0,
-    lrestUsd: 0,
-    totalUsd: qualifiedVolumeUsd,
-  };
+  const teamBreakdown = useMemo(() => {
+    const raw = royaltyDetails?.teamBusinessBreakdown;
+    if (raw) {
+      const normalized = {
+        l1Usd: Number(raw.l1Usd) || 0,
+        l2Usd: Number(raw.l2Usd) || 0,
+        lrestUsd: Number(raw.lrestUsd) || 0,
+        totalUsd:
+          Number(raw.totalUsd) ||
+          (Number(raw.l1Usd) || 0) +
+            (Number(raw.l2Usd) || 0) +
+            (Number(raw.lrestUsd) || 0),
+      };
+      const hasVolume =
+        normalized.l1Usd > 0 ||
+        normalized.l2Usd > 0 ||
+        normalized.lrestUsd > 0;
+      if (hasVolume) {
+        return normalized;
+      }
+    }
+    if (analyticsTeamBreakdown) {
+      return analyticsTeamBreakdown;
+    }
+    return {
+      l1Usd: 0,
+      l2Usd: 0,
+      lrestUsd: 0,
+      totalUsd: qualifiedVolumeUsd,
+    };
+  }, [royaltyDetails?.teamBusinessBreakdown, analyticsTeamBreakdown, qualifiedVolumeUsd]);
   const pendingRoyalty = royaltyDetails?.pendingRoyalty || null;
   const globalDistribution = royaltyDetails?.globalDistribution || null;
-  const nextThresholdUsd = royaltyDetails?.nextThresholdUsd ?? renewalTargetUsd ?? 0;
-  const neededUsd = royaltyDetails?.neededUsd ?? renewalRequiredUsd ?? 0;
+  const nextThresholdUsd =
+    Number(royaltyDetails?.nextThresholdUsd) > 0
+      ? Number(royaltyDetails?.nextThresholdUsd)
+      : renewalTargetUsd ?? 0;
+  const neededUsd =
+    Number(royaltyDetails?.neededUsd) > 0
+      ? Number(royaltyDetails?.neededUsd)
+      : renewalRequiredUsd ?? 0;
   const accumulatedTowardsNextTier = Math.max(0, nextThresholdUsd - neededUsd);
   const nextTierProgressPct =
     nextThresholdUsd > 0
@@ -424,22 +595,116 @@ export default function RoyaltyProgram() {
     renewalTargetUsd > 0
       ? Math.min(100, (renewalRecentUsd / renewalTargetUsd) * 100)
       : 0;
-  const achievedStages = royaltyDetails?.achievedStages ?? [];
-  const achievedStageCount = achievedStages.length;
-  const lastDistributionAt = Number(globalDistribution?.lastDistributionAt ?? 0);
-  const lastDistributionMonth = Number(globalDistribution?.lastDistributionMonth ?? 0);
-  const lastDistributionLabel = formatLedgerTimestamp(lastDistributionAt);
-  const remainingToNextTierUsd = Math.max(0, neededUsd);
-  const nextMonthLabel = formatLedgerTimestamp(nextMonthEpoch);
-  const recentAchievedStages = achievedStages
-    .slice(-3)
-    .map((stage) => {
-      const idx = Number(stage);
+  const achievedStageIds = useMemo(() => {
+    const fromContract = Array.isArray(royaltyDetails?.achievedStages)
+      ? royaltyDetails.achievedStages
+      : [];
+    if (fromContract.length) return fromContract;
+    const alt = royaltyDetails?.slabAchiev?.stages;
+    return Array.isArray(alt) ? alt : [];
+  }, [royaltyDetails]);
+
+  const achievedTimestamps = useMemo(() => {
+    const map = new Map();
+    const stages = Array.isArray(achievedStageIds) ? achievedStageIds : [];
+    const times = Array.isArray(royaltyDetails?.achievedAt)
+      ? royaltyDetails.achievedAt
+      : Array.isArray(royaltyDetails?.slabAchiev?.achievedAt)
+      ? royaltyDetails.slabAchiev.achievedAt
+      : [];
+    stages.forEach((stageId, idx) => {
+      const numericStage = Number(stageId);
+      if (!Number.isFinite(numericStage) || numericStage < 0) return;
+      const ts = Number(times[idx]);
+      if (Number.isFinite(ts) && ts > 0) {
+        map.set(numericStage, ts);
+      }
+    });
+    return map;
+  }, [achievedStageIds, royaltyDetails]);
+
+  const achievementStages = useMemo(() => {
+    if (!Array.isArray(tiers) || tiers.length === 0) return [];
+    const achievedSet = new Set(
+      (Array.isArray(achievedStageIds) ? achievedStageIds : [])
+        .map((v) => Number(v))
+        .filter((v) => Number.isFinite(v) && v >= 0)
+    );
+
+    return tiers.map((tier, idx) => {
+      const achieved = achievedSet.has(idx);
+      const status = achieved
+        ? 'achieved'
+        : idx === normalizedTierIndex
+        ? 'current'
+        : 'locked';
+      const achievedTs = achievedTimestamps.get(idx) ?? null;
+      const achievedLabel =
+        achievedTs && achievedTs > MIN_VALID_ROYALTY_TS
+          ? new Date(achievedTs * 1000).toLocaleDateString()
+          : null;
       return {
         idx,
         label: ROYALTY_TIER_NAMES[idx] ?? `Tier ${idx + 1}`,
+        status,
+        achievedTs,
+        achievedLabel,
+        thresholdUsd: tier.thresholdUsd ?? 0,
       };
     });
+  }, [tiers, achievedStageIds, achievedTimestamps, normalizedTierIndex]);
+
+  const achievedStageCount = achievementStages.filter(
+    (stage) => stage.status === 'achieved'
+  ).length;
+
+  const lastDistributionAt = Number(globalDistribution?.lastDistributionAt ?? 0);
+  const latestRoyaltyHistoryTs = royaltyHistory.reduce((max, entry) => {
+    const ts = Number(entry?.rawTimestamp ?? 0);
+    if (Number.isFinite(ts) && ts > max) {
+      return ts;
+    }
+    return max;
+  }, 0);
+  const fallbackLastDistributionTs =
+    lastDistributionAt > MIN_VALID_ROYALTY_TS
+      ? lastDistributionAt
+      : latestRoyaltyHistoryTs > MIN_VALID_ROYALTY_TS
+      ? latestRoyaltyHistoryTs
+      : lastPaidMonthEpoch;
+  const lastDistributionLabel = formatLedgerTimestamp(fallbackLastDistributionTs);
+  const distributionMonthLabel =
+    globalDistribution?.lastDistributionMonthLabel ??
+    formatRoyaltyMonthId(globalDistribution?.lastDistributionMonth) ??
+    lastPaidMonthLabel ??
+    formatRoyaltyMonthId(lastPaidMonthRaw) ??
+    null;
+
+  const remainingToNextTierUsd = Math.max(0, neededUsd);
+  const nextPayoutCandidates = [
+    Number(pendingRoyalty?.monthStartTs) || 0,
+    nextMonthEpoch || 0,
+    fallbackLastDistributionTs > MIN_VALID_ROYALTY_TS
+      ? fallbackLastDistributionTs + 30 * 24 * 60 * 60
+      : 0,
+  ];
+  const nextPayoutTimestamp =
+    nextPayoutCandidates.find((ts) => ts >= MIN_VALID_ROYALTY_TS) ?? 0;
+  let nextPayoutLabel = formatLedgerTimestamp(nextPayoutTimestamp);
+  if (nextPayoutLabel === '—') {
+    nextPayoutLabel =
+      pendingRoyalty?.monthLabel ??
+      nextMonthLabelFromStore ??
+      (nextPayoutTimestamp >= MIN_VALID_ROYALTY_TS
+        ? new Date(nextPayoutTimestamp * 1000).toLocaleDateString()
+        : null) ??
+      '—';
+  }
+
+  const recentAchievedStages = achievementStages.filter(
+    (stage) => stage.status === 'achieved'
+  );
+  const upcomingStage = achievementStages.find((stage) => stage.status !== 'achieved');
 
   const handleClaimRoyalty = async () => {
     if (!connectedAddress || !canClaim) return;
@@ -698,14 +963,20 @@ export default function RoyaltyProgram() {
             {recentAchievedStages.length === 0 ? (
               <span className="text-[11px] text-neon-purple/60">No achievements yet</span>
             ) : (
-              recentAchievedStages.map(({ idx, label }) => (
+              recentAchievedStages.map(({ idx, label, achievedLabel }) => (
                 <span
                   key={idx}
                   className="px-2 py-1 rounded-full border border-neon-purple/40 bg-neon-purple/10 text-[11px] text-neon-purple/80"
                 >
                   {label}
+                  {achievedLabel ? ` • ${achievedLabel}` : ''}
                 </span>
               ))
+            )}
+            {upcomingStage && (
+              <span className="px-2 py-1 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-[11px] text-cyan-200/80">
+                Next: {upcomingStage.label}
+              </span>
             )}
           </div>
         </div>
@@ -721,7 +992,10 @@ export default function RoyaltyProgram() {
           {pendingRoyalty?.exists ? (
             <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-3 text-xs text-cyan-200 space-y-1">
               <p className="text-sm font-semibold text-cyan-100">Pending Royalty</p>
-              <p>Month ID: {pendingRoyalty.monthId}</p>
+              <p>
+                Month:{' '}
+                {pendingRoyalty.monthLabel || formatRoyaltyMonthId(pendingRoyalty.monthId) || pendingRoyalty.monthId}
+              </p>
               <p>Tier: {pendingRoyalty.tierIdx + 1}</p>
               <p>Amount: {formatUSD(pendingRoyalty.amountUsd)} • {formatRAMA(pendingRoyalty.amountRama)} RAMA</p>
             </div>
@@ -735,10 +1009,16 @@ export default function RoyaltyProgram() {
               Last distribution: <span className="text-cyan-100">{lastDistributionLabel}</span>
             </p>
             <p>
-              Distribution month: <span className="text-cyan-100">{lastDistributionMonth || '—'}</span>
+              Distribution month:{' '}
+              <span className="text-cyan-100">
+                {distributionMonthLabel || formatRoyaltyMonthId(globalDistribution?.lastDistributionMonth) || '—'}
+              </span>
             </p>
             <p>
-              Next payout window: <span className="text-cyan-100">{nextMonthEpoch ? nextMonthLabel : '—'}</span>
+              Next payout window:{' '}
+              <span className="text-cyan-100">
+                {nextPayoutLabel || '—'}
+              </span>
             </p>
           </div>
         </div>

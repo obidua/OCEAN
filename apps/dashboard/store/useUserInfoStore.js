@@ -274,6 +274,53 @@ const formatTeamVolume = (raw) => {
   return amount;
 };
 
+const MIN_VALID_TIMESTAMP = 946684800; // Jan 1 2000 UTC
+
+const parseRoyaltyMonthId = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+
+  if (numeric >= MIN_VALID_TIMESTAMP) {
+    const date = new Date(numeric * 1000);
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const monthStart = Date.UTC(year, month, 1);
+    return {
+      raw: numeric,
+      year,
+      month,
+      startTs: Math.floor(monthStart / 1000),
+      label: date.toLocaleDateString(undefined, { year: "numeric", month: "long" }),
+    };
+  }
+
+  if (numeric >= 100000) {
+    const month = numeric % 100;
+    const year = Math.floor(numeric / 100);
+    if (month >= 1 && month <= 12) {
+      const monthStart = Date.UTC(year, month - 1, 1);
+      return {
+        raw: numeric,
+        year,
+        month: month - 1,
+        startTs: Math.floor(monthStart / 1000),
+        label: new Date(monthStart).toLocaleDateString(undefined, { year: "numeric", month: "long" }),
+      };
+    }
+  }
+
+  return null;
+};
+
+const addMonthsToParsedMonth = (parsed, monthsToAdd = 1) => {
+  if (!parsed) return null;
+  const date = new Date(Date.UTC(parsed.year, parsed.month + monthsToAdd, 1));
+  return {
+    startTs: Math.floor(date.getTime() / 1000),
+    label: date.toLocaleDateString(undefined, { year: "numeric", month: "long" }),
+  };
+};
+
 // Cache USD→RAMA conversion ratio to avoid redundant RPC calls
 const USD_TO_RAMA_CACHE_MS = 5 * 60 * 1000;
 let usdToRamaRatioCache = {
@@ -3560,8 +3607,20 @@ export const useStore = create((set, get) => ({
       const qualifiedVolumeUsd = fromMicroUSD(qualifiedTUSD6);
       const currentLevel = Number(currentTierIdx);
       const lastPaidLevel = Number(lastPaidTier);
-      const lastPaidMonthEpoch = Number(lastPaidMonth);
-      const nextMonthEpoch = lastPaidMonthEpoch + (30 * 24 * 60 * 60); // Add 30 days
+
+      const lastPaidMonthRaw = Number(lastPaidMonth);
+      const lastPaidMonthParsed = parseRoyaltyMonthId(lastPaidMonthRaw);
+      const lastPaidMonthEpoch =
+        lastPaidMonthParsed?.startTs ??
+        (lastPaidMonthRaw >= MIN_VALID_TIMESTAMP ? lastPaidMonthRaw : 0);
+      const lastPaidMonthLabel = lastPaidMonthParsed?.label ?? null;
+
+      const nextMonthParsed = addMonthsToParsedMonth(lastPaidMonthParsed, 1);
+      const nextMonthEpoch =
+        nextMonthParsed?.startTs ??
+        (lastPaidMonthEpoch > 0 ? lastPaidMonthEpoch + 30 * 24 * 60 * 60 : 0);
+      const nextMonthLabel = nextMonthParsed?.label ?? null;
+
       const renewalTargetUsd = fromMicroUSD(nextThresholdUSD6);
       const renewalRequiredUsd = fromMicroUSD(neededUSD6);
       
@@ -3624,17 +3683,22 @@ export const useStore = create((set, get) => ({
       // Pending royalty for upcoming month (if any)
       let pendingRoyalty = null;
       try {
-        const pendingMonthId = BigInt(lastPaidMonthEpoch || 0) + 1n;
+        const pendingMonthId = BigInt(lastPaidMonthRaw || 0) + 1n;
         const pendingRaw = await royaltyManager.methods
           .pendingRoyalty(userAddress, pendingMonthId.toString())
           .call();
         if (pendingRaw?.exists) {
+          const pendingMonthParsed = parseRoyaltyMonthId(
+            pendingRaw.monthId ?? pendingMonthId
+          );
           pendingRoyalty = {
             monthId: Number(pendingRaw.monthId ?? pendingMonthId),
             tierIdx: Number(pendingRaw.tierIdx ?? currentLevel),
             amountUsd: fromMicroUSD(pendingRaw.amountUSD ?? 0),
             amountRama: fromWeiToRama(pendingRaw.amountRama ?? 0),
             exists: Boolean(pendingRaw.exists),
+            monthLabel: pendingMonthParsed?.label ?? null,
+            monthStartTs: pendingMonthParsed?.startTs ?? 0,
           };
         }
       } catch (err) {
@@ -3648,9 +3712,12 @@ export const useStore = create((set, get) => ({
           royaltyManager.methods.globalLastDistributionAt().call(),
           royaltyManager.methods.globalLastDistributionMonth().call(),
         ]);
+        const lastMonthParsed = parseRoyaltyMonthId(lastMonthRaw);
         globalDistribution = {
           lastDistributionAt: Number(lastAtRaw ?? 0),
           lastDistributionMonth: Number(lastMonthRaw ?? 0),
+          lastDistributionMonthLabel: lastMonthParsed?.label ?? null,
+          lastDistributionMonthStartTs: lastMonthParsed?.startTs ?? 0,
         };
       } catch (err) {
         console.warn("Failed to load global distribution stats:", err);
@@ -3668,7 +3735,10 @@ export const useStore = create((set, get) => ({
         overrideIncomeRama: 0,
         paidMonths,
         lastPaidMonthEpoch,
+        lastPaidMonthLabel,
+        lastPaidMonthRaw,
         nextMonthEpoch,
+        nextMonthLabel,
         qualifiedVolumeUsd,
         directs,
         renewalSnapshotUsd,
@@ -3705,7 +3775,10 @@ export const useStore = create((set, get) => ({
         overrideIncomeRama: 0,
         paidMonths: 0,
         lastPaidMonthEpoch: 0,
+        lastPaidMonthLabel: null,
+        lastPaidMonthRaw: 0,
         nextMonthEpoch: 0,
+        nextMonthLabel: null,
         qualifiedVolumeUsd: 0,
         directs: 0,
         renewalSnapshotUsd: 0,
