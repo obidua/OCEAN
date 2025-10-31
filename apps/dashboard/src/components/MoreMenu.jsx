@@ -113,12 +113,6 @@ const menuSections = [
         color: "text-violet-300",
       },
       {
-        path: "/dashboard/ocean-defi-guide",
-        label: "About Ocean DeFi",
-        icon: BookOpen,
-        color: "text-cyan-200",
-      },
-      {
         path: "/dashboard/about",
         label: "About & Vision",
         icon: Info,

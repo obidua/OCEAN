@@ -1707,10 +1707,10 @@ export default function Dashboard() {
 
               <div className="flex justify-between items-center">
                 <span className="text-xs text-neon-orange/70 font-medium">
-                  Team Business:
+                  Total Team Volume:
                 </span>
                 <span className="text-sm font-semibold text-neon-orange">
-                  ${(parseFloat(directTeamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"} USD
+                  ${(parseFloat(directTeamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"}
                 </span>
               </div>
             </div>
