@@ -256,6 +256,30 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getHeldFundsDueToCap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "usdTotal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ramaTotal",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint8",
         "name": "idx",
         "type": "uint8"
@@ -271,6 +295,25 @@
       {
         "internalType": "uint256",
         "name": "rewardUsd",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getPendingRewardTotalRAMA",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "ramaTotal",
         "type": "uint256"
       }
     ],
@@ -672,7 +715,7 @@
   },
   {
     "inputs": [],
-    "name": "releasePending",
+    "name": "releaseHeldRewards",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

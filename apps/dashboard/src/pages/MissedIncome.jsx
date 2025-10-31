@@ -42,11 +42,15 @@ export default function MissedIncome() {
   const userAddress = typeof window !== 'undefined' ? localStorage.getItem('userAddress') : null;
   const getMissedIncomeOverview = useStore((s) => s.getMissedIncomeOverview);
   const getMissedIncomeSlice = useStore((s) => s.getMissedIncomeSlice);
+  const getMissedByKind = useStore((s) => s.getMissedByKind);
+  const getMissedTotalsByReason = useStore((s) => s.getMissedTotalsByReason);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [overview, setOverview] = useState(null);
-  const [timeline, setTimeline] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [missedByKind, setMissedByKind] = useState(null);
+  const [missedReasonsTotals, setMissedReasonsTotals] = useState([]);
 
   // Auto-scroll refs
   const timelineContainerRef = useRef(null);
@@ -66,7 +70,7 @@ export default function MissedIncome() {
         ]);
         if (!cancelled) {
           setOverview(ov);
-          setTimeline(sl?.entries || []);
+          setEntries(sl?.entries || []);
         }
       } catch (err) {
         console.error(err);
@@ -74,17 +78,36 @@ export default function MissedIncome() {
       } finally {
         if (!cancelled) setLoading(false);
       }
+
+      if (userAddress) {
+        try {
+          const [byKind, reasonTotals] = await Promise.all([
+            typeof getMissedByKind === 'function'
+              ? getMissedByKind(userAddress)
+              : Promise.resolve(null),
+            typeof getMissedTotalsByReason === 'function'
+              ? getMissedTotalsByReason(userAddress)
+              : Promise.resolve([]),
+          ]);
+          if (!cancelled) {
+            if (byKind) setMissedByKind(byKind);
+            if (reasonTotals) setMissedReasonsTotals(reasonTotals);
+          }
+        } catch (aggErr) {
+          console.warn('Failed to load missed income aggregates:', aggErr);
+        }
+      }
     };
     load();
     return () => {
       cancelled = true;
     };
-  }, [userAddress, getMissedIncomeOverview, getMissedIncomeSlice]);
+  }, [userAddress, getMissedIncomeOverview, getMissedIncomeSlice, getMissedByKind, getMissedTotalsByReason]);
 
   // Auto-scroll effect for timeline
   useEffect(() => {
     const container = timelineContainerRef.current;
-    if (!container || !timeline?.length) return;
+    if (!container || !entries?.length) return;
 
     const scroll = () => {
       if (autoScrollPaused.current) {
@@ -129,7 +152,7 @@ export default function MissedIncome() {
       container.removeEventListener('mouseenter', handleMouseEnter);
       container.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [timeline]);
+  }, [entries]);
 
   const capDate = useMemo(() => {
     if (!overview?.capReachedAt) return null;
@@ -141,7 +164,7 @@ export default function MissedIncome() {
   }, [overview]);
 
   const categories = useMemo(() => {
-    const missed = overview?.missed || {};
+    const missed = missedByKind ?? overview?.missed ?? {};
     const total = Number(overview?.totalMissedUsd || 0) || 0;
     const pct = (v) => (total > 0 ? `${Math.round((v / total) * 100)}%` : '0%');
     return [
@@ -178,15 +201,84 @@ export default function MissedIncome() {
     ];
   }, [overview]);
 
+  const totalMissedUsd = overview?.totalMissedUsd || 0;
+  const earnedTotals = overview?.earned || {};
+  const totalEarnedUsd =
+    (earnedTotals.roiUsd || 0) +
+    (earnedTotals.spotUsd || 0) +
+    (earnedTotals.slabUsd || 0) +
+    (earnedTotals.slabOverrideUsd || 0);
+  const heldTotals = overview?.held || {};
+  const heldTotalUsd = (heldTotals.royaltyUsd || 0) + (heldTotals.rewardsUsd || 0);
+
+  const kindBreakdown = useMemo(() => {
+    const buckets = new Map();
+    (entries || []).forEach((entry) => {
+      const bucket = buckets.get(entry.kind) || {
+        kind: entry.kind,
+        count: 0,
+        total: 0,
+        reasons: new Map(),
+      };
+      bucket.count += 1;
+      bucket.total += entry.amountUsd || 0;
+      const reasonKey = entry.reason || 'unknown';
+      bucket.reasons.set(reasonKey, (bucket.reasons.get(reasonKey) || 0) + (entry.amountUsd || 0));
+      buckets.set(entry.kind, bucket);
+    });
+    return Array.from(buckets.values())
+      .map((bucket) => {
+        const topReason = Array.from(bucket.reasons.entries())
+          .sort((a, b) => b[1] - a[1])[0];
+        return {
+          kind: bucket.kind,
+          count: bucket.count,
+          total: bucket.total,
+          share: totalMissedUsd > 0 ? (bucket.total / totalMissedUsd) * 100 : 0,
+          topReason: topReason ? topReason[0] : '—',
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+  }, [entries, totalMissedUsd]);
+
+  const portfolioBreakdown = useMemo(() => {
+    const buckets = new Map();
+    (entries || []).forEach((entry) => {
+      if (!Number.isFinite(entry.pid) || entry.pid <= 0) return;
+      const bucket = buckets.get(entry.pid) || {
+        pid: entry.pid,
+        count: 0,
+        total: 0,
+        kinds: new Map(),
+      };
+      bucket.count += 1;
+      bucket.total += entry.amountUsd || 0;
+      bucket.kinds.set(entry.kind, (bucket.kinds.get(entry.kind) || 0) + (entry.amountUsd || 0));
+      buckets.set(entry.pid, bucket);
+    });
+    return Array.from(buckets.values())
+      .map((bucket) => {
+        const topKind = Array.from(bucket.kinds.entries())
+          .sort((a, b) => b[1] - a[1])[0];
+        return {
+          pid: bucket.pid,
+          count: bucket.count,
+          total: bucket.total,
+          topKind: topKind ? topKind[0] : '—',
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+  }, [entries]);
+
   const timelineUi = useMemo(() => {
-    return (timeline || []).map((e) => {
+    return (entries || []).map((e) => {
       const d = new Date((Number(e.at) || 0) * 1000);
       const dateStr = Number.isFinite(d.getTime()) ? d.toLocaleDateString() : '';
       const label = `${(e.kind || 'missed').toUpperCase()} Missed`;
       const note = `Missed ${formatUSD(e.amountUsd || 0)} on portfolio #${e.pid} · reason: ${e.reason}`;
       return { date: dateStr, label, note };
     });
-  }, [timeline]);
+  }, [entries]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -230,7 +322,7 @@ export default function MissedIncome() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:w-auto md:min-w-[260px]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:w-auto md:min-w-[280px]">
             <div className="cyber-glass border border-red-400/40 rounded-xl p-4 text-center">
               <p className="text-xs uppercase tracking-wider text-red-200/80 mb-2">
                 Total Missed Income (USD)
@@ -246,12 +338,25 @@ export default function MissedIncome() {
                 Held Balances (USD)
               </p>
               <NumberPopup
-                value={formatUSD(0)}
+                value={formatUSD(heldTotalUsd)}
                 label="Royalty + Rewards"
                 className="text-2xl sm:text-3xl font-bold text-cyan-300"
               />
               <p className="text-[11px] text-cyan-200/70 mt-2">
-                Hold amounts will surface here once post-cap rewards accrue while portfolios are inactive.
+                Royalty and one-time rewards poised to release when a new portfolio activates.
+              </p>
+            </div>
+            <div className="cyber-glass border border-emerald-400/40 rounded-xl p-4 text-center sm:col-span-2">
+              <p className="text-xs uppercase tracking-wider text-emerald-200/80 mb-2">
+                Lifetime Earned Before Cap
+              </p>
+              <NumberPopup
+                value={formatUSD(totalEarnedUsd)}
+                label="Total earned"
+                className="text-2xl sm:text-3xl font-bold text-emerald-300"
+              />
+              <p className="text-[11px] text-emerald-200/70 mt-2">
+                Includes ROI, spot, slab, and override income credited before the current lock.
               </p>
             </div>
           </div>
@@ -287,6 +392,177 @@ export default function MissedIncome() {
             </div>
           </div>
         ))}
+      </section>
+
+      {reasonsTop.length > 0 && (
+        <section className="cyber-glass border border-cyan-500/30 rounded-2xl p-6 space-y-3">
+          <h2 className="text-sm font-semibold text-cyan-200 uppercase tracking-wide">
+            Top Missed Reasons
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {reasonsTop.map((reason) => (
+              <div
+                key={reason.reasonHex}
+                className="border border-cyan-500/20 rounded-xl px-4 py-3 bg-cyan-500/5"
+              >
+                <p className="text-xs text-cyan-200/70 uppercase tracking-wide">
+                  {reason.label}
+                </p>
+                <p className="text-sm font-semibold text-emerald-300 mt-1">
+                  {formatUSD(reason.totalUsd)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {(kindBreakdown.length > 0 || portfolioBreakdown.length > 0) && (
+        <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="cyber-glass border border-cyan-500/30 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="text-cyan-300" size={20} />
+                <h2 className="text-base font-semibold text-cyan-200">
+                  Missed Income By Type
+                </h2>
+              </div>
+              <span className="text-xs text-cyan-300/70">
+                {kindBreakdown.length} categories
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm">
+                <thead className="text-cyan-300/70 uppercase tracking-wide">
+                  <tr>
+                    <th className="text-left py-2 pr-3">Type</th>
+                    <th className="text-right py-2 px-3">Occurrences</th>
+                    <th className="text-right py-2 px-3">Total USD</th>
+                    <th className="text-right py-2 px-3">Share</th>
+                    <th className="text-left py-2 pl-3">Top Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-cyan-500/10">
+                  {kindBreakdown.map((row) => (
+                    <tr key={row.kind} className="hover:bg-cyan-500/5 transition-colors">
+                      <td className="py-2 pr-3 font-mono uppercase text-cyan-100">{row.kind}</td>
+                      <td className="py-2 px-3 text-right text-cyan-100">{row.count}</td>
+                      <td className="py-2 px-3 text-right text-emerald-300">{formatUSD(row.total)}</td>
+                      <td className="py-2 px-3 text-right text-cyan-200">
+                        {row.share > 0 ? `${row.share.toFixed(1)}%` : '0%'}
+                      </td>
+                      <td className="py-2 pl-3 text-cyan-200/80">{row.topReason}</td>
+                    </tr>
+                  ))}
+                  {kindBreakdown.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-4 text-center text-cyan-300/70">
+                        No missed income captured yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="cyber-glass border border-cyan-500/30 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Layers className="text-neon-purple" size={20} />
+                <h2 className="text-base font-semibold text-cyan-200">
+                  Portfolio Impact
+                </h2>
+              </div>
+              <span className="text-xs text-cyan-300/70">
+                {portfolioBreakdown.length} affected portfolios
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm">
+                <thead className="text-cyan-300/70 uppercase tracking-wide">
+                  <tr>
+                    <th className="text-left py-2 pr-3">Portfolio #</th>
+                    <th className="text-right py-2 px-3">Missed Events</th>
+                    <th className="text-right py-2 px-3">Total USD</th>
+                    <th className="text-left py-2 pl-3">Primary Type</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-cyan-500/10">
+                  {portfolioBreakdown.map((row) => (
+                    <tr key={row.pid} className="hover:bg-cyan-500/5 transition-colors">
+                      <td className="py-2 pr-3 font-mono text-cyan-100">#{row.pid}</td>
+                      <td className="py-2 px-3 text-right text-cyan-100">{row.count}</td>
+                      <td className="py-2 px-3 text-right text-emerald-300">{formatUSD(row.total)}</td>
+                      <td className="py-2 pl-3 text-cyan-200/80 uppercase">{row.topKind}</td>
+                    </tr>
+                  ))}
+                  {portfolioBreakdown.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-cyan-300/70">
+                        No portfolio-level missed income detected.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="cyber-glass border border-cyan-500/30 rounded-2xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ClipboardList className="text-neon-green" size={22} />
+            <div>
+              <h2 className="text-base sm:text-lg font-semibold text-cyan-200">
+                Detailed Missed Records
+              </h2>
+              <p className="text-xs text-cyan-200/70">
+                Latest {entries.length} events pulled directly from CappingIncomeManager.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs sm:text-sm">
+            <thead className="text-cyan-300/70 uppercase tracking-wide">
+              <tr>
+                <th className="text-left py-2 pr-3">Date</th>
+                <th className="text-left py-2 px-3">Type</th>
+                <th className="text-left py-2 px-3">Reason</th>
+                <th className="text-right py-2 px-3">Portfolio</th>
+                <th className="text-right py-2 pl-3">USD</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-cyan-500/10">
+              {entries.map((entry) => {
+                const date = Number.isFinite(entry.at)
+                  ? new Date(entry.at * 1000).toLocaleString()
+                  : '—';
+                return (
+                  <tr key={entry.id} className="hover:bg-cyan-500/5 transition-colors">
+                    <td className="py-2 pr-3 text-cyan-100">{date}</td>
+                    <td className="py-2 px-3 font-mono uppercase text-cyan-100">{entry.kind}</td>
+                    <td className="py-2 px-3 text-cyan-200/80">{entry.reason}</td>
+                    <td className="py-2 px-3 text-right text-cyan-200">
+                      {entry.pid > 0 ? `#${entry.pid}` : '—'}
+                    </td>
+                    <td className="py-2 pl-3 text-right text-emerald-300">{formatUSD(entry.amountUsd)}</td>
+                  </tr>
+                );
+              })}
+              {!loading && entries.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-cyan-300/70">
+                    No missed income events recorded for this account.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-[2fr,3fr] gap-6">
@@ -342,6 +618,15 @@ export default function MissedIncome() {
               <p className="text-xs text-cyan-200/70">
                 Review key checkpoints after the cap was reached. (Hover to pause scrolling)
               </p>
+            </div>
+            <div className="ml-auto">
+              <Link
+                to="/dashboard/missed-income/history"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-cyan-200 border border-cyan-500/40 rounded-lg hover:border-cyan-300 transition-all"
+              >
+                View Full History
+                <ArrowRight size={14} />
+              </Link>
             </div>
           </div>
 
@@ -430,3 +715,9 @@ export default function MissedIncome() {
     </div>
   );
 }
+  const reasonsTop = useMemo(() => {
+    return missedReasonsTotals
+      .slice()
+      .sort((a, b) => (b.totalUsd || 0) - (a.totalUsd || 0))
+      .slice(0, 3);
+  }, [missedReasonsTotals]);

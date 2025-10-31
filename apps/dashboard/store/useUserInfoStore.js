@@ -257,6 +257,38 @@ const normalizeMissedKind = (k) => {
   return s || 'unknown';
 };
 
+const stringToBytes32 = (value) => {
+  if (!value) return '0x';
+  try {
+    const hex = Web3.utils.utf8ToHex(value);
+    return Web3.utils.padRight(hex, 66);
+  } catch {
+    return '0x';
+  }
+};
+
+const encodeMissedKind = (kind) => {
+  const key = (kind || '').toLowerCase();
+  switch (key) {
+    case 'spot':
+    case 'direct':
+      return stringToBytes32('direct');
+    case 'slaboverride':
+    case 'override':
+      return stringToBytes32('slabOverride');
+    case 'slab':
+      return stringToBytes32('slab');
+    case 'roi':
+      return stringToBytes32('roi');
+    case 'royalty':
+      return stringToBytes32('royalty');
+    case 'reward':
+      return stringToBytes32('reward');
+    default:
+      return '0x';
+  }
+};
+
 const fromMicroUSD = (value) => toNumber(value) / USD_MICRO;
 const fromWeiToRama = (value) => toNumber(value) / RAMA_DECIMALS;
 const fromWadToUsd = (value) => toNumber(value) / 1e18;
@@ -2947,6 +2979,158 @@ export const useStore = create((set, get) => ({
       };
     } catch (error) {
       console.error('getMissedIncomeSlice error:', error);
+      throw error;
+    }
+  },
+
+  getMissedIncomeSliceFiltered: async (
+    userAddress,
+    {
+      kind = null,
+      reason = null,
+      offset = 0,
+      limit = 50,
+    } = {}
+  ) => {
+    try {
+      if (!userAddress) throw new Error('Missing user address');
+
+      const cappingIncomeManager = makeContract(
+        CappingIncomeManagerABI,
+        Contract['CappingIncomeManager']
+      );
+      if (!cappingIncomeManager)
+        throw new Error('CappingIncomeManager unavailable');
+
+      const filterByKind = !!kind;
+      const filterByReason = !!reason;
+      const kindBytes = filterByKind ? encodeMissedKind(kind) : '0x';
+      const reasonBytes =
+        filterByReason && typeof reason === 'string'
+          ? reason.startsWith('0x')
+            ? reason
+            : stringToBytes32(reason)
+          : '0x';
+
+      const raw = await cappingIncomeManager.methods
+        .getMissedIncomeSliceFiltered(
+          userAddress,
+          filterByKind,
+          kindBytes,
+          filterByReason,
+          reasonBytes,
+          offset,
+          limit
+        )
+        .call();
+
+      const rawEntries =
+        raw?.out ??
+        raw?.[0] ??
+        (Array.isArray(raw) ? raw : []);
+      const totalMatchedRaw =
+        raw?.totalMatched ??
+        raw?.[1] ??
+        rawEntries.length;
+
+      const entries = (rawEntries ?? []).map((rec, idx) => {
+        const at = toNumber(rec?.at ?? rec?.[0] ?? 0);
+        const amountUSD6 = toBigIntSafe(rec?.amountUSD6 ?? rec?.[1] ?? 0);
+        const kindRaw = rec?.kind ?? rec?.[2];
+        const pid = toNumber(rec?.pid ?? rec?.[3] ?? 0);
+        const reasonRaw = rec?.reason ?? rec?.[4];
+        const kindKey = normalizeMissedKind(kindRaw);
+        const reasonStr = bytes32ToString(reasonRaw) || 'cap';
+        return {
+          id: `${offset + idx}-${at}-${pid}-${kindKey}`,
+          at,
+          amountUsd: fromMicroUSD(amountUSD6),
+          amountUsdRaw: amountUSD6.toString(),
+          kind: kindKey,
+          pid,
+          reason: reasonStr,
+          reasonHex:
+            typeof reasonRaw === 'string' && reasonRaw.startsWith('0x')
+              ? reasonRaw
+              : stringToBytes32(reasonStr),
+        };
+      });
+
+      return {
+        offset,
+        limit,
+        entries,
+        totalMatched: toNumber(totalMatchedRaw),
+      };
+    } catch (error) {
+      console.error('getMissedIncomeSliceFiltered error:', error);
+      throw error;
+    }
+  },
+
+  getMissedByKind: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error('Missing user address');
+      const cappingIncomeManager = makeContract(
+        CappingIncomeManagerABI,
+        Contract['CappingIncomeManager']
+      );
+      if (!cappingIncomeManager)
+        throw new Error('CappingIncomeManager unavailable');
+
+      const result = await cappingIncomeManager.methods
+        .getMissedByKind(userAddress)
+        .call();
+
+      const roiUSD6 = result?.roiUSD6 ?? result?.[0] ?? 0;
+      const directUSD6 = result?.directUSD6 ?? result?.[1] ?? 0;
+      const slabUSD6 = result?.slabUSD6 ?? result?.[2] ?? 0;
+      const slabOverrideUSD6 = result?.slabOverrideUSD6 ?? result?.[3] ?? 0;
+
+      return {
+        roiUsd: fromMicroUSD(roiUSD6),
+        spotUsd: fromMicroUSD(directUSD6),
+        slabUsd: fromMicroUSD(slabUSD6),
+        slabOverrideUsd: fromMicroUSD(slabOverrideUSD6),
+      };
+    } catch (error) {
+      console.error('getMissedByKind error:', error);
+      throw error;
+    }
+  },
+
+  getMissedTotalsByReason: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error('Missing user address');
+      const cappingIncomeManager = makeContract(
+        CappingIncomeManagerABI,
+        Contract['CappingIncomeManager']
+      );
+      if (!cappingIncomeManager)
+        throw new Error('CappingIncomeManager unavailable');
+
+      const res = await cappingIncomeManager.methods
+        .getMissedTotalsByReason(userAddress)
+        .call();
+
+      const reasons = res?.reasons ?? res?.[0] ?? [];
+      const totals = res?.totalsUSD6 ?? res?.[1] ?? [];
+
+      return reasons.map((reasonHex, idx) => {
+        const totalUsd = fromMicroUSD(totals[idx] ?? 0);
+        const labelRaw = bytes32ToString(reasonHex);
+        const label =
+          labelRaw && labelRaw.trim().length > 0
+            ? labelRaw
+            : String(reasonHex ?? '').slice(0, 12);
+        return {
+          reasonHex,
+          label,
+          totalUsd,
+        };
+      });
+    } catch (error) {
+      console.error('getMissedTotalsByReason error:', error);
       throw error;
     }
   },
