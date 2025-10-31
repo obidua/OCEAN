@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   BarChart3,
   ArrowRight,
+  ArrowUpRight,
   CalendarClock,
   Activity,
   Target,
@@ -12,10 +13,15 @@ import {
   Layers,
   ClipboardList,
   ShieldCheck,
+  Pause,
+  Loader2,
 } from 'lucide-react';
 import NumberPopup from '../components/NumberPopup';
 import { useStore } from '../../store/useUserInfoStore';
 import { formatUSD } from '../utils/contractData';
+import toast from '../utils/toast';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { useTransaction } from '../../config/register';
 
 const RECOVERY_STEPS = [
   {
@@ -44,6 +50,7 @@ export default function MissedIncome() {
   const getMissedIncomeSlice = useStore((s) => s.getMissedIncomeSlice);
   const getMissedByKind = useStore((s) => s.getMissedByKind);
   const getMissedTotalsByReason = useStore((s) => s.getMissedTotalsByReason);
+  const releaseHeldRewards = useStore((s) => s.releaseHeldRewards);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -51,58 +58,113 @@ export default function MissedIncome() {
   const [entries, setEntries] = useState([]);
   const [missedByKind, setMissedByKind] = useState(null);
   const [missedReasonsTotals, setMissedReasonsTotals] = useState([]);
+  const [releaseLoading, setReleaseLoading] = useState(false);
+  const [releaseError, setReleaseError] = useState(null);
+  const [releaseInFlight, setReleaseInFlight] = useState(false);
 
   // Auto-scroll refs
   const timelineContainerRef = useRef(null);
   const autoScrollFrame = useRef(null);
   const autoScrollPaused = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (!userAddress) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const [ov, sl] = await Promise.all([
-          getMissedIncomeOverview(userAddress),
-          getMissedIncomeSlice(userAddress, 0, 50),
-        ]);
-        if (!cancelled) {
-          setOverview(ov);
-          setEntries(sl?.entries || []);
-        }
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) setError(err?.message || 'Unable to load missed income.');
-      } finally {
-        if (!cancelled) setLoading(false);
+  const { address: connectedAddress, isConnected } = useAppKitAccount();
+  const { handleSendTx, hash } = useTransaction();
+
+  const fetchMissedData = useCallback(
+    async (showSpinner = true) => {
+      if (!userAddress || typeof getMissedIncomeOverview !== 'function') {
+        setOverview(null);
+        setEntries([]);
+        setMissedByKind(null);
+        setMissedReasonsTotals([]);
+        setLoading(false);
+        return;
       }
 
-      if (userAddress) {
-        try {
-          const [byKind, reasonTotals] = await Promise.all([
-            typeof getMissedByKind === 'function'
-              ? getMissedByKind(userAddress)
-              : Promise.resolve(null),
-            typeof getMissedTotalsByReason === 'function'
-              ? getMissedTotalsByReason(userAddress)
-              : Promise.resolve([]),
-          ]);
-          if (!cancelled) {
-            if (byKind) setMissedByKind(byKind);
-            if (reasonTotals) setMissedReasonsTotals(reasonTotals);
-          }
-        } catch (aggErr) {
-          console.warn('Failed to load missed income aggregates:', aggErr);
-        }
+      if (showSpinner) setLoading(true);
+      setError(null);
+
+      try {
+        const [ov, sl, byKindData, reasonTotalsData] = await Promise.all([
+          getMissedIncomeOverview(userAddress),
+          getMissedIncomeSlice(userAddress, 0, 50),
+          typeof getMissedByKind === 'function'
+            ? getMissedByKind(userAddress).catch(() => null)
+            : Promise.resolve(null),
+          typeof getMissedTotalsByReason === 'function'
+            ? getMissedTotalsByReason(userAddress).catch(() => [])
+            : Promise.resolve([]),
+        ]);
+
+        setOverview(ov || null);
+        setEntries(sl?.entries || []);
+        setMissedByKind(byKindData || null);
+        setMissedReasonsTotals(reasonTotalsData || []);
+      } catch (err) {
+        console.error(err);
+        setError(err?.message || 'Unable to load missed income.');
+      } finally {
+        if (showSpinner) setLoading(false);
       }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [userAddress, getMissedIncomeOverview, getMissedIncomeSlice, getMissedByKind, getMissedTotalsByReason]);
+    },
+    [
+      userAddress,
+      getMissedIncomeOverview,
+      getMissedIncomeSlice,
+      getMissedByKind,
+      getMissedTotalsByReason,
+    ]
+  );
+
+  useEffect(() => {
+    fetchMissedData(true);
+  }, [fetchMissedData]);
+
+  const handleReleaseHeldRewards = useCallback(async () => {
+    const heldData = overview?.held ?? {};
+    const oneTimeHold =
+      heldData.oneTimeUsd != null
+        ? heldData.oneTimeUsd
+        : heldData.rewardsUsd || 0;
+
+    try {
+      if (!isConnected || !connectedAddress) {
+        setReleaseError('Please connect your wallet to release held rewards.');
+        return;
+      }
+
+      if ((oneTimeHold || 0) <= 0) {
+        setReleaseError('No one-time held rewards available to release.');
+        return;
+      }
+
+      setReleaseLoading(true);
+      setReleaseError(null);
+
+      const tx = await releaseHeldRewards(connectedAddress);
+      if (!tx) {
+        throw new Error('Unable to build release transaction.');
+      }
+
+      handleSendTx(tx);
+      toast.success('Release transaction submitted. Balances will refresh once confirmed.');
+      setReleaseInFlight(true);
+    } catch (err) {
+      console.error('Failed to release held rewards:', err);
+      setReleaseError(err?.message || 'Failed to release held rewards.');
+    } finally {
+      setReleaseLoading(false);
+    }
+  }, [isConnected, connectedAddress, overview, releaseHeldRewards, handleSendTx]);
+
+  useEffect(() => {
+    if (!releaseInFlight || !hash) return;
+    const timer = setTimeout(() => {
+      fetchMissedData(false);
+      setReleaseInFlight(false);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [releaseInFlight, hash, fetchMissedData]);
 
   // Auto-scroll effect for timeline
   useEffect(() => {
@@ -218,6 +280,13 @@ export default function MissedIncome() {
     heldTotals.totalUsd != null
       ? heldTotals.totalUsd
       : heldRoyaltyUsd + heldOneTimeUsd;
+
+  const reasonsTop = useMemo(() => {
+    return (missedReasonsTotals || [])
+      .slice()
+      .sort((a, b) => (b.totalUsd || 0) - (a.totalUsd || 0))
+      .slice(0, 3);
+  }, [missedReasonsTotals]);
 
   const kindBreakdown = useMemo(() => {
     const buckets = new Map();
@@ -341,19 +410,67 @@ export default function MissedIncome() {
                 className="text-2xl sm:text-3xl font-bold text-red-300"
               />
             </div>
-            <div className="cyber-glass border border-cyan-400/40 rounded-xl p-4 text-center">
-              <p className="text-xs uppercase tracking-wider text-cyan-200/80 mb-2">
-                Held Balances (USD)
-              </p>
+            <div className="cyber-glass border border-yellow-400/30 hover:border-yellow-400/80 rounded-xl p-4 text-white transition-all group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-3 mb-3 relative z-10">
+                <div className="p-2 bg-yellow-400/20 rounded-lg flex-shrink-0 border border-yellow-400/30">
+                  <Pause size={20} className="text-yellow-400" />
+                </div>
+                <p className="text-xs sm:text-sm font-medium text-yellow-400 uppercase tracking-wide">
+                  Total Hold
+                </p>
+              </div>
               <NumberPopup
                 value={formatUSD(heldTotalUsd)}
-                label="Royalty + Rewards"
-                className="text-2xl sm:text-3xl font-bold text-cyan-300"
+                label="Total Hold"
+                className="text-2xl sm:text-3xl font-bold text-yellow-300 relative z-10"
               />
-              <div className="text-[11px] text-cyan-200/70 mt-2 space-y-1">
-                <p>Royalty Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldRoyaltyUsd)}</span></p>
-                <p>One-Time Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldOneTimeUsd)}</span></p>
+              <div className="text-xs text-yellow-200/80 relative z-10 mt-2">
+                Post-cap rewards waiting in RewardVault until a new portfolio activates.
               </div>
+              <div className="text-[11px] text-yellow-200/70 relative z-10 mt-2">
+                Royalty Hold: {formatUSD(heldRoyaltyUsd)} • One-Time Hold: {formatUSD(heldOneTimeUsd)}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 mt-4 relative z-10">
+                <button
+                  onClick={handleReleaseHeldRewards}
+                  disabled={releaseLoading || releaseInFlight || !isConnected || (heldOneTimeUsd ?? 0) <= 0}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-yellow-400/60 bg-yellow-400/10 text-yellow-200 hover:bg-yellow-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {releaseLoading ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Releasing…
+                    </>
+                  ) : (
+                    'Release One-Time Hold'
+                  )}
+                </button>
+                <button
+                  disabled
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-yellow-400/30 bg-yellow-400/5 text-yellow-200/60 cursor-not-allowed"
+                  title="Royalty release coming soon"
+                >
+                  Release Royalty Hold
+                </button>
+              </div>
+              {releaseError && (
+                <p className="text-[11px] text-red-300 mt-2 relative z-10">
+                  {releaseError}
+                </p>
+              )}
+              {releaseInFlight && !releaseLoading && (
+                <p className="text-[11px] text-yellow-200/70 mt-2 relative z-10">
+                  Transaction submitted. Balances will refresh once confirmed.
+                </p>
+              )}
+              <Link
+                to="/dashboard/missed-income/history"
+                className="inline-flex items-center gap-1 text-xs text-yellow-300/90 relative z-10 mt-3 hover:text-yellow-200 transition-colors"
+              >
+                <span>View Details</span>
+                <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
             </div>
             <div className="cyber-glass border border-emerald-400/40 rounded-xl p-4 text-center sm:col-span-2">
               <p className="text-xs uppercase tracking-wider text-emerald-200/80 mb-2">
@@ -724,9 +841,3 @@ export default function MissedIncome() {
     </div>
   );
 }
-  const reasonsTop = useMemo(() => {
-    return missedReasonsTotals
-      .slice()
-      .sort((a, b) => (b.totalUsd || 0) - (a.totalUsd || 0))
-      .slice(0, 3);
-  }, [missedReasonsTotals]);

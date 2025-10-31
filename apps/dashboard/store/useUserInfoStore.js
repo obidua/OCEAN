@@ -2921,19 +2921,37 @@ export const useStore = create((set, get) => ({
 
       const heldTotalUsdVault =
         heldFundsRaw != null
-          ? fromMicroUSD(
-              heldFundsRaw?.usdTotal ?? heldFundsRaw?.[0] ?? 0
-            )
+          ? fromMicroUSD(heldFundsRaw?.usdTotal ?? heldFundsRaw?.[0] ?? 0)
           : null;
       const heldTotalRamaVault =
         heldFundsRaw != null
-          ? fromWeiToRama(
-              heldFundsRaw?.ramaTotal ?? heldFundsRaw?.[1] ?? 0
-            )
+          ? fromWeiToRama(heldFundsRaw?.ramaTotal ?? heldFundsRaw?.[1] ?? 0)
           : null;
 
-      const royaltyHeldUsd = royaltyOverview?.royaltyIncomeUsd ?? 0;
-      const rewardsHeldUsd = oneTimeOverview?.pendingRewardUsd ?? 0;
+      let royaltyHeldUsd =
+        Number.isFinite(royaltyOverview?.royaltyIncomeUsd)
+          ? royaltyOverview?.royaltyIncomeUsd ?? 0
+          : 0;
+      let rewardsHeldUsd =
+        Number.isFinite(oneTimeOverview?.pendingRewardUsd)
+          ? oneTimeOverview?.pendingRewardUsd ?? 0
+          : 0;
+
+      if (heldTotalUsdVault != null) {
+        const total = heldTotalUsdVault;
+        royaltyHeldUsd = Math.min(
+          total,
+          Math.max(royaltyHeldUsd, 0)
+        );
+        const remaining = Math.max(total - royaltyHeldUsd, 0);
+        rewardsHeldUsd = Math.min(
+          remaining,
+          Math.max(rewardsHeldUsd, 0)
+        );
+        if (royaltyHeldUsd + rewardsHeldUsd < total) {
+          rewardsHeldUsd = total - royaltyHeldUsd;
+        }
+      }
 
       const held = {
         totalUsd:
@@ -6195,6 +6213,41 @@ export const useStore = create((set, get) => ({
       return tx;
     } catch (error) {
       console.error("Error building claimOneTimeReward transaction:", error);
+      throw error;
+    }
+  },
+
+  releaseHeldRewards: async (fromAddress) => {
+    try {
+      if (!fromAddress) throw new Error("No connected wallet address found");
+      const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
+      if (!rewardVault) throw new Error("RewardVault contract not available");
+
+      const data = rewardVault.methods.releaseHeldRewards().encodeABI();
+      const gasPrice = await web3.eth.getGasPrice();
+
+      let gasLimit;
+      try {
+        gasLimit = await web3.eth.estimateGas({
+          from: fromAddress,
+          to: Contract["RewardVault"],
+          data,
+        });
+      } catch (err) {
+        console.error("Gas estimation failed for releaseHeldRewards:", err);
+        throw new Error("Gas estimation failed. The transaction may fail.");
+      }
+
+      const toHex = web3.utils.toHex;
+      return {
+        from: fromAddress,
+        to: Contract["RewardVault"],
+        data,
+        gas: toHex(gasLimit),
+        gasPrice: toHex(gasPrice),
+      };
+    } catch (error) {
+      console.error("releaseHeldRewards error:", error);
       throw error;
     }
   },
