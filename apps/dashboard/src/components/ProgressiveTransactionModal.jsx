@@ -253,6 +253,23 @@ const ProgressiveTransactionModal = ({
 
   const explorerTxBase = (import.meta?.env?.VITE_EXPLORER_TX || import.meta?.env?.VITE_BLOCK_EXPLORER_TX || 'https://ramascan.com/tx/').replace(/\/$/, '/')
 
+  const stageSteps =
+    stage === STAGES.ERROR
+      ? [
+          { key: STAGES.PREPARE, label: 'Prepare' },
+          { key: STAGES.SIGN, label: 'Sign' },
+          { key: STAGES.PROCESSING, label: 'Process' },
+          { key: STAGES.ERROR, label: 'Error' },
+        ]
+      : [
+          { key: STAGES.PREPARE, label: 'Prepare' },
+          { key: STAGES.SIGN, label: 'Sign' },
+          { key: STAGES.PROCESSING, label: 'Process' },
+          { key: STAGES.SUCCESS, label: 'Done' },
+        ];
+  const currentStageIndexRaw = stageSteps.findIndex((step) => step.key === stage);
+  const currentStageIndex = currentStageIndexRaw >= 0 ? currentStageIndexRaw : 0;
+
   const stageConfig = {
     [STAGES.PREPARE]: {
       icon: Wallet,
@@ -363,57 +380,77 @@ const ProgressiveTransactionModal = ({
 
           {/* Stage indicators */}
           <div className="flex justify-center items-center gap-2 md:gap-3">
-            {[
-              { key: STAGES.PREPARE, label: 'Prepare' },
-              { key: STAGES.SIGN, label: 'Sign' },
-              { key: STAGES.PROCESSING, label: 'Process' },
-              { key: STAGES.SUCCESS, label: 'Done' },
-            ].map((s, idx) => {
-              const isCurrent = stage === s.key;
-              const isPast =
-                (stage === STAGES.SIGN && idx < 1) ||
-                (stage === STAGES.PROCESSING && idx < 2) ||
-                (stage === STAGES.SUCCESS && idx < 3);
-              const isActive = isCurrent || isPast || stage === STAGES.SUCCESS;
+            {stageSteps.map((step, idx) => {
+              const isCurrent = idx === currentStageIndex;
+              const isComplete =
+                idx < currentStageIndex ||
+                (stage === STAGES.SUCCESS && idx === currentStageIndex);
+              const isErrorStep = step.key === STAGES.ERROR;
+              const isActive = isCurrent || isComplete;
+
+              let circlePalette;
+              if (isErrorStep && isCurrent) {
+                circlePalette = 'border-red-400 bg-red-500/10';
+              } else if (stage === STAGES.SUCCESS && isActive) {
+                circlePalette = 'border-neon-green bg-neon-green/10';
+              } else if (isActive) {
+                circlePalette = 'border-cyan-400 bg-cyan-500/20';
+              } else {
+                circlePalette = 'border-cyan-500/20 bg-dark-950/50';
+              }
+
+              let icon;
+              if (isErrorStep && isCurrent) {
+                icon = <AlertCircle size={16} className="text-red-400" />;
+              } else if (isComplete) {
+                icon = (
+                  <CheckCircle
+                    size={16}
+                    className={stage === STAGES.SUCCESS ? 'text-neon-green' : 'text-cyan-400'}
+                  />
+                );
+              } else if (isCurrent) {
+                icon = <Loader2 size={16} className="text-cyan-400 animate-spin" />;
+              } else {
+                icon = (
+                  <span className={`text-xs ${isActive ? 'text-cyan-400' : 'text-cyan-500/40'}`}>
+                    {idx + 1}
+                  </span>
+                );
+              }
+
+              let labelColor;
+              if (isErrorStep && isCurrent) {
+                labelColor = 'text-red-400';
+              } else if (stage === STAGES.SUCCESS && isActive) {
+                labelColor = 'text-neon-green';
+              } else if (isActive) {
+                labelColor = 'text-cyan-400';
+              } else {
+                labelColor = 'text-cyan-500/40';
+              }
+
+              const showConnector = idx < stageSteps.length - 1;
+              const connectorActive = idx < currentStageIndex;
+              const connectorColor =
+                stage === STAGES.SUCCESS && connectorActive
+                  ? 'bg-neon-green'
+                  : connectorActive
+                    ? 'bg-cyan-400'
+                    : 'bg-cyan-500/20';
 
               return (
-                <div key={s.key} className="flex items-center">
+                <div key={step.key} className="flex items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                        isActive
-                          ? 'border-cyan-400 bg-cyan-500/20'
-                          : 'border-cyan-500/20 bg-dark-950/50'
-                      }`}
+                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${circlePalette}`}
                     >
-                      {stage === STAGES.SUCCESS && idx < 3 ? (
-                        <CheckCircle size={16} className="text-neon-green" />
-                      ) : isCurrent ? (
-                        <Loader2 size={16} className="text-cyan-400 animate-spin" />
-                      ) : isPast ? (
-                        <CheckCircle size={16} className="text-cyan-400" />
-                      ) : (
-                        <span className={`text-xs ${isActive ? 'text-cyan-400' : 'text-cyan-500/40'}`}>
-                          {idx + 1}
-                        </span>
-                      )}
+                      {icon}
                     </div>
-                    <span
-                      className={`text-[10px] mt-1 ${
-                        isActive ? 'text-cyan-400' : 'text-cyan-500/40'
-                      } hidden md:block`}
-                    >
-                      {s.label}
-                    </span>
+                    <span className={`text-[10px] mt-1 ${labelColor} hidden md:block`}>{step.label}</span>
                   </div>
-                  {idx < 3 && (
-                    <div
-                      className={`w-8 md:w-12 h-0.5 mx-1 transition-all duration-300 ${
-                        isPast || (stage === STAGES.SUCCESS && idx < 2)
-                          ? 'bg-cyan-400'
-                          : 'bg-cyan-500/20'
-                      }`}
-                    />
+                  {showConnector && (
+                    <div className={`w-8 md:w-12 h-0.5 mx-1 transition-all duration-300 ${connectorColor}`} />
                   )}
                 </div>
               );

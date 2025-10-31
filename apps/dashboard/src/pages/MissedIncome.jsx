@@ -15,9 +15,9 @@ import {
   Loader2,
 } from 'lucide-react';
 import NumberPopup from '../components/NumberPopup';
+import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
 import { useStore } from '../../store/useUserInfoStore';
 import { formatUSD } from '../utils/contractData';
-import toast from '../utils/toast';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { useTransaction } from '../../config/register';
 
@@ -59,6 +59,8 @@ export default function MissedIncome() {
   const [releaseLoading, setReleaseLoading] = useState(false);
   const [releaseError, setReleaseError] = useState(null);
   const [releaseInFlight, setReleaseInFlight] = useState(false);
+  const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [pendingReleaseAmountUsd, setPendingReleaseAmountUsd] = useState(null);
 
   // Auto-scroll refs
   const timelineContainerRef = useRef(null);
@@ -250,6 +252,20 @@ export default function MissedIncome() {
       ? heldTotalFromVault
       : heldOneTimeUsd + heldRoyaltyUsd;
   const hasOpenPortfolio = Boolean(overview?.hasOpenPortfolio);
+  const safeTotalHold = Number.isFinite(heldTotalUsd) ? Math.max(heldTotalUsd, 0) : 0;
+  let displayOneTimeUsd =
+    Number.isFinite(heldOneTimeUsd) && heldOneTimeUsd > 0 ? heldOneTimeUsd : 0;
+  let displayRoyaltyUsd =
+    Number.isFinite(heldRoyaltyUsd) && heldRoyaltyUsd > 0 ? heldRoyaltyUsd : 0;
+
+  if (safeTotalHold <= 0) {
+    displayOneTimeUsd = 0;
+    displayRoyaltyUsd = 0;
+  } else {
+    displayOneTimeUsd = Math.min(displayOneTimeUsd, safeTotalHold);
+    const remaining = Math.max(safeTotalHold - displayOneTimeUsd, 0);
+    displayRoyaltyUsd = Math.min(displayRoyaltyUsd, remaining);
+  }
 
   const handleReleaseHeldRewards = useCallback(async () => {
     try {
@@ -265,11 +281,13 @@ export default function MissedIncome() {
         return;
       }
 
-      if ((heldOneTimeUsd || 0) <= 0) {
-        setReleaseError('No held rewards available to release.');
+      if ((displayOneTimeUsd || 0) <= 0) {
+        setReleaseError('No one-time held rewards available to release.');
         return;
       }
 
+      setPendingReleaseAmountUsd(displayOneTimeUsd);
+      setShowReleaseModal(true);
       setReleaseLoading(true);
 
       const tx = await releaseHeldRewards(connectedAddress);
@@ -278,15 +296,29 @@ export default function MissedIncome() {
       }
 
       handleSendTx(tx);
-      toast.success('Release transaction submitted. Balances will refresh once confirmed.');
       setReleaseInFlight(true);
     } catch (err) {
       console.error('Failed to release held rewards:', err);
       setReleaseError(err?.message || 'Failed to release held rewards.');
+      setShowReleaseModal(false);
+      setPendingReleaseAmountUsd(null);
+      setReleaseInFlight(false);
     } finally {
       setReleaseLoading(false);
     }
-  }, [hasOpenPortfolio, isConnected, connectedAddress, heldOneTimeUsd, releaseHeldRewards, handleSendTx]);
+  }, [hasOpenPortfolio, isConnected, connectedAddress, displayOneTimeUsd, releaseHeldRewards, handleSendTx]);
+
+  const handleReleaseModalClose = useCallback(() => {
+    setShowReleaseModal(false);
+    setPendingReleaseAmountUsd(null);
+    setReleaseInFlight(false);
+    setReleaseError(null);
+  }, []);
+
+  const handleReleaseSuccess = useCallback(() => {
+    fetchMissedData(false);
+    setReleaseInFlight(false);
+  }, [fetchMissedData]);
 
   const reasonsTop = useMemo(() => {
     return (missedReasonsTotals || [])
@@ -422,7 +454,7 @@ export default function MissedIncome() {
                 Total Hold
               </p>
               <NumberPopup
-                value={formatUSD(heldTotalUsd)}
+                value={formatUSD(safeTotalHold)}
                 label="Total Hold"
                 className="text-3xl sm:text-4xl font-bold text-cyan-300"
               />
@@ -430,12 +462,12 @@ export default function MissedIncome() {
                 Post-cap rewards waiting in RewardVault until a new portfolio activates.
               </p>
               <p className="text-[11px] text-cyan-200/70">
-                One-Time Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldOneTimeUsd)}</span> • Royalty Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldRoyaltyUsd)}</span>
+                One-Time Hold: <span className="text-emerald-300 font-medium">{formatUSD(displayOneTimeUsd)}</span> • Royalty Hold: <span className="text-emerald-300 font-medium">{formatUSD(displayRoyaltyUsd)}</span>
               </p>
               {hasOpenPortfolio ? (
                 <button
                   onClick={handleReleaseHeldRewards}
-                  disabled={releaseLoading || releaseInFlight || (heldOneTimeUsd || 0) <= 0}
+                  disabled={releaseLoading || releaseInFlight || (displayOneTimeUsd || 0) <= 0}
                   className="inline-flex items-center justify-center w-full gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-cyan-400/60 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {releaseLoading ? (
@@ -444,7 +476,7 @@ export default function MissedIncome() {
                       Releasing…
                     </>
                   ) : (
-                    'Release Royalty Hold'
+                    'Release One-Time Hold'
                   )}
                 </button>
               ) : (
@@ -462,19 +494,6 @@ export default function MissedIncome() {
                   Transaction submitted. Balances will refresh once confirmed.
                 </p>
               )}
-            </div>
-            <div className="cyber-glass border border-emerald-400/40 rounded-xl p-4 text-center sm:col-span-2">
-              <p className="text-xs uppercase tracking-wider text-emerald-200/80 mb-2">
-                Lifetime Earned Before Cap
-              </p>
-              <NumberPopup
-                value={formatUSD(totalEarnedUsd)}
-                label="Total earned"
-                className="text-2xl sm:text-3xl font-bold text-emerald-300"
-              />
-              <p className="text-[11px] text-emerald-200/70 mt-2">
-                Includes ROI, spot, slab, and override income credited before the current lock.
-              </p>
             </div>
           </div>
         </div>
@@ -642,10 +661,11 @@ export default function MissedIncome() {
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" style={{ maxHeight: '350px', overflowY: 'auto' }} id="missed-records-scroll">
           <table className="w-full text-xs sm:text-sm">
             <thead className="text-cyan-300/70 uppercase tracking-wide">
               <tr>
+                <th className="text-left py-2 pr-3">#</th>
                 <th className="text-left py-2 pr-3">Date</th>
                 <th className="text-left py-2 px-3">Type</th>
                 <th className="text-left py-2 px-3">Reason</th>
@@ -654,12 +674,13 @@ export default function MissedIncome() {
               </tr>
             </thead>
             <tbody className="divide-y divide-cyan-500/10">
-              {entries.map((entry) => {
+              {entries.slice(0, 50).map((entry, idx) => {
                 const date = Number.isFinite(entry.at)
                   ? new Date(entry.at * 1000).toLocaleString()
                   : '—';
                 return (
                   <tr key={entry.id} className="hover:bg-cyan-500/5 transition-colors">
+                    <td className="py-2 pr-3 text-cyan-100">{idx + 1}</td>
                     <td className="py-2 pr-3 text-cyan-100">{date}</td>
                     <td className="py-2 px-3 font-mono uppercase text-cyan-100">{entry.kind}</td>
                     <td className="py-2 px-3 text-cyan-200/80">{entry.reason}</td>
@@ -680,6 +701,33 @@ export default function MissedIncome() {
             </tbody>
           </table>
         </div>
+        <script>
+        {`
+        setTimeout(function() {
+          var el = document.getElementById('missed-records-scroll');
+          if (el) {
+            let scrollStep = 1;
+            let scrollInterval = setInterval(function() {
+              if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
+                el.scrollTop = 0;
+              } else {
+                el.scrollTop += scrollStep;
+              }
+            }, 50);
+            el.addEventListener('mouseenter', function() { clearInterval(scrollInterval); });
+            el.addEventListener('mouseleave', function() {
+              scrollInterval = setInterval(function() {
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
+                  el.scrollTop = 0;
+                } else {
+                  el.scrollTop += scrollStep;
+                }
+              }, 50);
+            });
+          }
+        }, 1000);
+        `}
+        </script>
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-[2fr,3fr] gap-6">
@@ -829,6 +877,22 @@ export default function MissedIncome() {
           </Link>
         </div>
       </section>
+
+      <ProgressiveTransactionModal
+        isOpen={showReleaseModal}
+        onClose={handleReleaseModalClose}
+        txHash={hash}
+        title="Release Held Rewards"
+        description="Releasing your held rewards from RewardVault"
+        successMessage="Held rewards released successfully!"
+        onSuccess={handleReleaseSuccess}
+        amount={
+          pendingReleaseAmountUsd != null
+            ? formatUSD(pendingReleaseAmountUsd)
+            : null
+        }
+        amountLabel="Releasing Amount"
+      />
     </div>
   );
 }
