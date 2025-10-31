@@ -37,12 +37,15 @@ export default function OneTimeRewards() {
   const [error, setError] = useState(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState(null);
+  const [teamVolume, setTeamVolume] = useState(null);
+  const [loadingTeamVolume, setLoadingTeamVolume] = useState(false);
 
   const getOneTimeRewardsOverview = useStore((s) => s.getOneTimeRewardsOverview);
   const getGlobalOneTimeMilestones = useStore((s) => s.getGlobalOneTimeMilestones);
   const getUserRewardTotals = useStore((s) => s.getUserRewardTotals);
   const claimOneTimeReward = useStore((s) => s.claimOneTimeReward);
   const getRewardClaimHistory = useStore((s) => s.getRewardClaimHistory);
+  const getVolumeAnalytics = useStore((s) => s.getVolumeAnalytics);
 
   const { data: txHash, sendTransaction } = useSendTransaction();
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -132,6 +135,30 @@ export default function OneTimeRewards() {
     };
   }, [userAddress, getRewardClaimHistory]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!userAddress || typeof getVolumeAnalytics !== 'function') {
+      setTeamVolume(null);
+      return () => {};
+    }
+    const loadVolume = async () => {
+      try {
+        setLoadingTeamVolume(true);
+        const res = await getVolumeAnalytics(userAddress);
+        if (!cancelled) setTeamVolume(res || null);
+      } catch (err) {
+        console.warn('One-time rewards volume analytics unavailable:', err);
+        if (!cancelled) setTeamVolume(null);
+      } finally {
+        if (!cancelled) setLoadingTeamVolume(false);
+      }
+    };
+    loadVolume();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getVolumeAnalytics]);
+
   const handleClaimReward = async () => {
     if (!userAddress || !connectedAddress) {
       setClaimError('Please connect your wallet to claim rewards.');
@@ -164,6 +191,9 @@ export default function OneTimeRewards() {
         getOneTimeRewardsOverview(userAddress).then(setOverview).catch(() => {}),
         getUserRewardTotals(userAddress).then(setRewardTotals).catch(() => {}),
         getRewardClaimHistory(userAddress, 0, 20).then((res) => setClaimHistory(res?.claims || [])).catch(() => {}),
+        typeof getVolumeAnalytics === 'function'
+          ? getVolumeAnalytics(userAddress).then(setTeamVolume).catch(() => {})
+          : Promise.resolve(),
       ]);
     }
   };
@@ -215,6 +245,44 @@ export default function OneTimeRewards() {
   const pendingRewardRama = overview?.pendingRewardRama ?? 0;
   const qualifiedVolume = overview?.qualifiedVolumeUsd ?? 0;
   const qualifiedVolumeDisplay = isFallback ? '—' : formatUSD(qualifiedVolume);
+  const teamVolumeSummary = useMemo(() => {
+    const toNum = (val) => {
+      const n = Number(val);
+      return Number.isFinite(n) ? n : 0;
+    };
+    if (teamVolume && teamVolume.oneTimeReward?.teamBusiness) {
+      const summary = teamVolume.oneTimeReward.teamBusiness;
+      return {
+        total: toNum(summary.totalUsd),
+        l1: toNum(summary.l1Usd),
+        l2: toNum(summary.l2Usd),
+        lRest: toNum(summary.lrestUsd),
+      };
+    }
+    if (teamVolume) {
+      const capped = teamVolume.cappedVolumes || {};
+      const uncapped = teamVolume.uncappedVolumes || {};
+      const total =
+        toNum(capped.total) || toNum(teamVolume.totalQualified) || toNum(qualifiedVolume);
+      const l1 = toNum(capped.L1) || toNum(uncapped.L1);
+      const l2 = toNum(capped.L2) || toNum(uncapped.L2);
+      const restCandidate = toNum(capped.Lrest) || toNum(uncapped.Lrest);
+      const remainder = Math.max(total - (l1 + l2), 0);
+      return {
+        total,
+        l1,
+        l2,
+        lRest: restCandidate > 0 ? restCandidate : remainder,
+      };
+    }
+    const fallbackTotal = toNum(qualifiedVolume);
+    return {
+      total: fallbackTotal,
+      l1: 0,
+      l2: 0,
+      lRest: 0,
+    };
+  }, [teamVolume, qualifiedVolume]);
 
   // When using fallback milestones, compute a meaningful aggregate for the tiles
   const fallbackTotals = useMemo(() => {
@@ -265,37 +333,28 @@ export default function OneTimeRewards() {
   return (
     <div className="space-y-6">
       <div>
-       <div className='flex items-center space-x-3'>
-         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
-          One-Time Rewards
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
-        </h1>
-        <Gift
-              size={20}
-              className="text-white"
-              />
-       </div>
-        <p className="text-cyan-300/90 mt-1">
-          Achievement milestones with bonus rewards
-        </p>
+        <div className='flex items-center space-x-3'>
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+            One-Time Rewards
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
+          </h1>
+          <Gift size={20} className="text-white" />
+        </div>
+        <p className="text-cyan-300/90 mt-1">Achievement milestones with bonus rewards</p>
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/40 text-red-200 rounded-xl px-4 py-3 text-sm">
-          {error}
-        </div>
+        <div className="bg-red-500/10 border border-red-500/40 text-red-200 rounded-xl px-4 py-3 text-sm">{error}</div>
       )}
       {loading && (
-        <div className="text-sm text-cyan-200 flex items-center gap-2">
-          <AlertCircle size={16} /> Syncing one-time rewards…
-        </div>
+        <div className="text-sm text-cyan-200 flex items-center gap-2"><AlertCircle size={16} /> Syncing one-time rewards…</div>
       )}
 
       {isFallback && !loading && !error && (
-        <div className="text-xs text-cyan-300/70">
-          Live reward data is unavailable; connect your wallet to load dynamic milestone totals.
-        </div>
+        <div className="text-xs text-cyan-300/70">Live reward data is unavailable; connect your wallet to load dynamic milestone totals.</div>
       )}
+
+      {/* Removed Team Business, Qualified, Level 1, Level 2, Beyond summary boxes and table (already exists in Volume Distribution table) */}
 
       {/* Enhanced Ticket Boxes - 4 boxes */}
       <div className="grid md:grid-cols-4 gap-4">

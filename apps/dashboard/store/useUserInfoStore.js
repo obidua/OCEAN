@@ -3062,13 +3062,22 @@ export const useStore = create((set, get) => ({
 
       const filterByKind = !!kind;
       const filterByReason = !!reason;
-      const kindBytes = filterByKind ? encodeMissedKind(kind) : '0x';
+      if (!filterByKind && !filterByReason) {
+        const base = await get().getMissedIncomeSlice(userAddress, offset, limit);
+        const count = Array.isArray(base?.entries) ? base.entries.length : 0;
+        return {
+          ...base,
+          totalMatched: toNumber(base?.totalMatched ?? count + offset),
+        };
+      }
+      const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const kindBytes = filterByKind ? encodeMissedKind(kind) : ZERO_BYTES32;
       const reasonBytes =
         filterByReason && typeof reason === 'string'
           ? reason.startsWith('0x')
             ? reason
             : stringToBytes32(reason)
-          : '0x';
+          : ZERO_BYTES32;
 
       const raw = await cappingIncomeManager.methods
         .getMissedIncomeSliceFiltered(

@@ -151,6 +151,19 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
 
   const { cappedVolumes, uncappedVolumes, volumePerformance, legs, totalQualified, currentSlabIndex } = volumeData;
   const safeLegs = Array.isArray(legs) ? legs : [];
+  const parseVolume = (val) => {
+    const num = Number(val);
+    return Number.isFinite(num) ? num : 0;
+  };
+  const qualifiedTotal = parseVolume(totalQualified) || parseVolume(uncappedVolumes?.total);
+  const l1Qualified = parseVolume(cappedVolumes?.L1) || parseVolume(uncappedVolumes?.L1);
+  const l2Qualified = parseVolume(cappedVolumes?.L2) || parseVolume(uncappedVolumes?.L2);
+  const beyondRaw =
+    parseVolume(cappedVolumes?.Lrest) ||
+    parseVolume(uncappedVolumes?.Lrest) ||
+    parseVolume(uncappedVolumes?.L3);
+  const beyondQualified =
+    beyondRaw > 0 ? beyondRaw : Math.max(qualifiedTotal - (l1Qualified + l2Qualified), 0);
 
   return (
     <div className="space-y-6">
@@ -220,7 +233,7 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
               </div>
               <h3 className="text-base font-semibold text-cyan-300 uppercase tracking-wide">Volume Distribution</h3>
             </div>
-            
+
             <div className="space-y-4">
               {/* Top 3 Legs Display */}
               <div className="grid grid-cols-3 gap-3 grid grid-cols-3">
@@ -252,6 +265,45 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
                     All legs combined
                   </div>
                 </div>
+              </div>
+
+              <div className="cyber-glass border border-cyan-500/20 rounded-xl overflow-hidden">
+                <table className="w-full text-[11px] lg:text-xs text-cyan-200">
+                  <thead className="bg-cyan-500/10 text-[10px] uppercase tracking-[0.3em] text-cyan-300/80">
+                    <tr>
+                      <th className="py-3 px-3 lg:px-4 text-left font-semibold">Team Business</th>
+                      <th className="py-3 px-3 lg:px-4 text-right font-semibold">Qualified</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-cyan-500/15">
+                    <tr>
+                      <td className="py-3 px-3 lg:px-4 text-cyan-300/80">
+                        Total qualified volume contributing to reward eligibility.
+                      </td>
+                      <td className="py-3 px-3 lg:px-4 text-right text-cyan-100 font-semibold">
+                        {formatUSD(qualifiedTotal)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 px-3 lg:px-4 text-cyan-300">Level 1</td>
+                      <td className="py-3 px-3 lg:px-4 text-right text-cyan-100 font-semibold">
+                        {formatUSD(l1Qualified)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 px-3 lg:px-4 text-cyan-300">Level 2</td>
+                      <td className="py-3 px-3 lg:px-4 text-right text-cyan-100 font-semibold">
+                        {formatUSD(l2Qualified)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 px-3 lg:px-4 text-cyan-300">Beyond</td>
+                      <td className="py-3 px-3 lg:px-4 text-right text-cyan-100 font-semibold">
+                        {formatUSD(beyondQualified)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               {/* Performance Insights */}

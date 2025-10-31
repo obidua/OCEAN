@@ -1710,17 +1710,7 @@ export default function Dashboard() {
                   Team Business:
                 </span>
                 <span className="text-sm font-semibold text-neon-orange">
-                  ${(parseFloat(directTeamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"} 
-                </span>
-              </div>
-
-
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-neon-orange/70 font-medium">
-                  Total Volume:
-                </span>
-                <span className="text-sm font-semibold text-neon-orange">
-                  ${((parseFloat(directTeamInfo?.fullData["totalSumUsd"]) + parseFloat(directTeamInfo?.fullData["totalSelfUsd"]))/ 1e6).toFixed(2) || "0.00"}
+                  ${(parseFloat(directTeamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"} USD
                 </span>
               </div>
             </div>
