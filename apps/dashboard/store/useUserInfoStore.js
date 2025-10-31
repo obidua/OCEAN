@@ -2969,6 +2969,7 @@ export const useStore = create((set, get) => ({
       return {
         capLocked,
         capStatus,
+        hasOpenPortfolio: Boolean(hasOpenPortfolio),
         capReachedAt,
         daysSinceCap,
         missedCount: toNumber(missedCountRaw),

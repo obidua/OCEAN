@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   BarChart3,
   ArrowRight,
-  ArrowUpRight,
   CalendarClock,
   Activity,
   Target,
@@ -13,7 +12,6 @@ import {
   Layers,
   ClipboardList,
   ShieldCheck,
-  Pause,
   Loader2,
 } from 'lucide-react';
 import NumberPopup from '../components/NumberPopup';
@@ -119,43 +117,6 @@ export default function MissedIncome() {
   useEffect(() => {
     fetchMissedData(true);
   }, [fetchMissedData]);
-
-  const handleReleaseHeldRewards = useCallback(async () => {
-    const heldData = overview?.held ?? {};
-    const oneTimeHold =
-      heldData.oneTimeUsd != null
-        ? heldData.oneTimeUsd
-        : heldData.rewardsUsd || 0;
-
-    try {
-      if (!isConnected || !connectedAddress) {
-        setReleaseError('Please connect your wallet to release held rewards.');
-        return;
-      }
-
-      if ((oneTimeHold || 0) <= 0) {
-        setReleaseError('No one-time held rewards available to release.');
-        return;
-      }
-
-      setReleaseLoading(true);
-      setReleaseError(null);
-
-      const tx = await releaseHeldRewards(connectedAddress);
-      if (!tx) {
-        throw new Error('Unable to build release transaction.');
-      }
-
-      handleSendTx(tx);
-      toast.success('Release transaction submitted. Balances will refresh once confirmed.');
-      setReleaseInFlight(true);
-    } catch (err) {
-      console.error('Failed to release held rewards:', err);
-      setReleaseError(err?.message || 'Failed to release held rewards.');
-    } finally {
-      setReleaseLoading(false);
-    }
-  }, [isConnected, connectedAddress, overview, releaseHeldRewards, handleSendTx]);
 
   useEffect(() => {
     if (!releaseInFlight || !hash) return;
@@ -271,15 +232,61 @@ export default function MissedIncome() {
     (earnedTotals.slabUsd || 0) +
     (earnedTotals.slabOverrideUsd || 0);
   const heldTotals = overview?.held || {};
-  const heldRoyaltyUsd = heldTotals.royaltyUsd || 0;
-  const heldOneTimeUsd =
+  const heldTotalFromVault =
+    heldTotals.totalUsd != null ? Number(heldTotals.totalUsd) : null;
+  const heldRoyaltyUsd = 0;
+  const fallbackOneTimeUsd =
     heldTotals.oneTimeUsd != null
-      ? heldTotals.oneTimeUsd
-      : heldTotals.rewardsUsd || 0;
+      ? Number(heldTotals.oneTimeUsd)
+      : heldTotals.rewardsUsd != null
+        ? Number(heldTotals.rewardsUsd)
+        : 0;
+  const heldOneTimeUsd =
+    heldTotalFromVault != null && !Number.isNaN(heldTotalFromVault)
+      ? heldTotalFromVault
+      : fallbackOneTimeUsd;
   const heldTotalUsd =
-    heldTotals.totalUsd != null
-      ? heldTotals.totalUsd
-      : heldRoyaltyUsd + heldOneTimeUsd;
+    heldTotalFromVault != null && !Number.isNaN(heldTotalFromVault)
+      ? heldTotalFromVault
+      : heldOneTimeUsd + heldRoyaltyUsd;
+  const hasOpenPortfolio = Boolean(overview?.hasOpenPortfolio);
+
+  const handleReleaseHeldRewards = useCallback(async () => {
+    try {
+      setReleaseError(null);
+
+      if (!hasOpenPortfolio) {
+        setReleaseError('Activate a new portfolio to release held rewards.');
+        return;
+      }
+
+      if (!isConnected || !connectedAddress) {
+        setReleaseError('Please connect your wallet to release held rewards.');
+        return;
+      }
+
+      if ((heldOneTimeUsd || 0) <= 0) {
+        setReleaseError('No held rewards available to release.');
+        return;
+      }
+
+      setReleaseLoading(true);
+
+      const tx = await releaseHeldRewards(connectedAddress);
+      if (!tx) {
+        throw new Error('Unable to build release transaction.');
+      }
+
+      handleSendTx(tx);
+      toast.success('Release transaction submitted. Balances will refresh once confirmed.');
+      setReleaseInFlight(true);
+    } catch (err) {
+      console.error('Failed to release held rewards:', err);
+      setReleaseError(err?.message || 'Failed to release held rewards.');
+    } finally {
+      setReleaseLoading(false);
+    }
+  }, [hasOpenPortfolio, isConnected, connectedAddress, heldOneTimeUsd, releaseHeldRewards, handleSendTx]);
 
   const reasonsTop = useMemo(() => {
     return (missedReasonsTotals || [])
@@ -410,32 +417,26 @@ export default function MissedIncome() {
                 className="text-2xl sm:text-3xl font-bold text-red-300"
               />
             </div>
-            <div className="cyber-glass border border-yellow-400/30 hover:border-yellow-400/80 rounded-xl p-4 text-white transition-all group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex items-center gap-3 mb-3 relative z-10">
-                <div className="p-2 bg-yellow-400/20 rounded-lg flex-shrink-0 border border-yellow-400/30">
-                  <Pause size={20} className="text-yellow-400" />
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-yellow-400 uppercase tracking-wide">
-                  Total Hold
-                </p>
-              </div>
+            <div className="cyber-glass border border-cyan-400/40 rounded-xl p-5 sm:p-6 text-left space-y-3">
+              <p className="text-xs uppercase tracking-[0.35em] text-cyan-200/70">
+                Total Hold
+              </p>
               <NumberPopup
                 value={formatUSD(heldTotalUsd)}
                 label="Total Hold"
-                className="text-2xl sm:text-3xl font-bold text-yellow-300 relative z-10"
+                className="text-3xl sm:text-4xl font-bold text-cyan-300"
               />
-              <div className="text-xs text-yellow-200/80 relative z-10 mt-2">
+              <p className="text-xs text-cyan-200/75 leading-relaxed">
                 Post-cap rewards waiting in RewardVault until a new portfolio activates.
-              </div>
-              <div className="text-[11px] text-yellow-200/70 relative z-10 mt-2">
-                Royalty Hold: {formatUSD(heldRoyaltyUsd)} • One-Time Hold: {formatUSD(heldOneTimeUsd)}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 mt-4 relative z-10">
+              </p>
+              <p className="text-[11px] text-cyan-200/70">
+                One-Time Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldOneTimeUsd)}</span> • Royalty Hold: <span className="text-emerald-300 font-medium">{formatUSD(heldRoyaltyUsd)}</span>
+              </p>
+              {hasOpenPortfolio ? (
                 <button
                   onClick={handleReleaseHeldRewards}
-                  disabled={releaseLoading || releaseInFlight || !isConnected || (heldOneTimeUsd ?? 0) <= 0}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-yellow-400/60 bg-yellow-400/10 text-yellow-200 hover:bg-yellow-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={releaseLoading || releaseInFlight || (heldOneTimeUsd || 0) <= 0}
+                  className="inline-flex items-center justify-center w-full gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-cyan-400/60 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {releaseLoading ? (
                     <>
@@ -443,34 +444,24 @@ export default function MissedIncome() {
                       Releasing…
                     </>
                   ) : (
-                    'Release One-Time Hold'
+                    'Release Royalty Hold'
                   )}
                 </button>
-                <button
-                  disabled
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-yellow-400/30 bg-yellow-400/5 text-yellow-200/60 cursor-not-allowed"
-                  title="Royalty release coming soon"
-                >
-                  Release Royalty Hold
-                </button>
-              </div>
+              ) : (
+                <p className="text-[11px] text-cyan-200/60 italic">
+                  Activate a new portfolio to enable releasing held rewards.
+                </p>
+              )}
               {releaseError && (
-                <p className="text-[11px] text-red-300 mt-2 relative z-10">
+                <p className="text-[11px] text-red-300">
                   {releaseError}
                 </p>
               )}
               {releaseInFlight && !releaseLoading && (
-                <p className="text-[11px] text-yellow-200/70 mt-2 relative z-10">
+                <p className="text-[11px] text-cyan-200/70">
                   Transaction submitted. Balances will refresh once confirmed.
                 </p>
               )}
-              <Link
-                to="/dashboard/missed-income/history"
-                className="inline-flex items-center gap-1 text-xs text-yellow-300/90 relative z-10 mt-3 hover:text-yellow-200 transition-colors"
-              >
-                <span>View Details</span>
-                <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </Link>
             </div>
             <div className="cyber-glass border border-emerald-400/40 rounded-xl p-4 text-center sm:col-span-2">
               <p className="text-xs uppercase tracking-wider text-emerald-200/80 mb-2">
