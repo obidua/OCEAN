@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Gift, CheckCircle, Lock, AlertCircle, Clock, TrendingUp, Award, DollarSign } from 'lucide-react';
+import { Gift, CheckCircle, Lock, AlertCircle, Clock, TrendingUp, Award, DollarSign, BarChart3 } from 'lucide-react';
 import { useStore } from '../../store/useUserInfoStore';
 import { ONE_TIME_REWARDS, formatUSD, formatRAMA } from '../utils/contractData';
 import { useAccount, useSendTransaction } from 'wagmi';
 import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
+import VolumeAnalytics from '../components/VolumeAnalytics';
 
 const REWARD_NAMES = [
   'Coral Spark',
@@ -393,6 +394,30 @@ export default function OneTimeRewards() {
           )}
         </div>
       </div>
+
+      {userAddress && (
+        <div className="space-y-6">
+          <div className="cyber-glass border border-cyan-500/40 rounded-2xl p-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-neon-green/10 opacity-40" />
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
+                <BarChart3 size={22} className="text-cyan-400" />
+              </div>
+              <div>
+                <p className="text-sm text-cyan-300 font-medium uppercase tracking-wide">
+                  Enhanced Volume Analytics
+                </p>
+                <p className="text-xs text-cyan-300/80">
+                  Real-time business volume tracking from SlabManager
+                </p>
+              </div>
+            </div>
+            <div className="relative z-10">
+              <VolumeAnalytics userAddress={userAddress} showDetailed={true} maxLegs={8} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {claimError && (
         <div className="bg-red-500/10 border border-red-500/40 text-red-200 rounded-xl px-4 py-3 text-sm">

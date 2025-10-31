@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Trophy, Clock, CheckCircle, AlertCircle, TrendingUp, Award, Lock, History, RefreshCw } from 'lucide-react';
+import { Trophy, Clock, CheckCircle, AlertCircle, TrendingUp, Award, Lock, History, RefreshCw, BarChart3 } from 'lucide-react';
 import { useStore } from '../../store/useUserInfoStore';
 import { useAccount, useSendTransaction } from 'wagmi';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../utils/contractData';
 import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
 import AddressWithCopy from '../components/AddressWithCopy';
+import VolumeAnalytics from '../components/VolumeAnalytics';
 
 const ROYALTY_TIER_NAMES = [
   'Coral Starter',
@@ -569,11 +570,11 @@ export default function RoyaltyProgram() {
         </div>
 
         {/* Hold Reward */}
-        <div className="cyber-glass border border-neon-orange/40 rounded-xl p-5 hover:border-neon-orange/60 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-neon-orange/20 to-red-500/20">
-              <Award className="text-neon-orange" size={20} />
-            </div>
+      <div className="cyber-glass border border-neon-orange/40 rounded-xl p-5 hover:border-neon-orange/60 transition-all">
+        <div className="flex items-center justify-between mb-3">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-neon-orange/20 to-red-500/20">
+            <Award className="text-neon-orange" size={20} />
+          </div>
             <span className="text-xs text-neon-orange uppercase tracking-wider">Next</span>
         </div>
         <p className="text-xs text-cyan-300/70 uppercase tracking-wide mb-1">Hold / Next Month</p>
@@ -583,6 +584,30 @@ export default function RoyaltyProgram() {
         </p>
       </div>
     </div>
+
+      {userAddress && (
+        <div className="space-y-6">
+          <div className="cyber-glass border border-cyan-500/40 rounded-2xl p-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-neon-green/10 opacity-40" />
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
+                <BarChart3 size={22} className="text-cyan-400" />
+              </div>
+              <div>
+                <p className="text-sm text-cyan-300 font-medium uppercase tracking-wide">
+                  Enhanced Volume Analytics
+                </p>
+                <p className="text-xs text-cyan-300/80">
+                  Real-time business volume tracking from SlabManager
+                </p>
+              </div>
+            </div>
+            <div className="relative z-10">
+              <VolumeAnalytics userAddress={userAddress} showDetailed={true} maxLegs={8} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Advanced Royalty Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
