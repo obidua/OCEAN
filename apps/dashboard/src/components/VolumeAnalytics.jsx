@@ -158,37 +158,37 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="cyber-glass rounded-xl p-4 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-1 mb-2">
             <div className="p-2 bg-cyan-500/20 rounded-lg flex-shrink-0 border border-cyan-500/30">
               <TrendingUp className="text-cyan-400" size={16} />
             </div>
-            <p className="text-xs font-medium text-cyan-400 uppercase tracking-wide">Total Qualified</p>
+            <p className="text-[9px] lg:text-xs font-medium text-cyan-400 uppercase tracking-wide">Total Qualified</p>
           </div>
-          <p className="text-xl font-bold text-cyan-300">{formatUSD(totalQualified || 0)}</p>
+          <p className="text-[12px] lg:text-xl font-bold text-cyan-300">{formatUSD(totalQualified || 0)}</p>
           <p className="text-xs text-cyan-400/70 mt-1">Qualified volume</p>
         </div>
 
         <div className="cyber-glass rounded-xl p-4 border border-neon-green/30 hover:border-neon-green/80 relative overflow-hidden transition-all">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/50 to-transparent" />
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-1 mb-2">
             <div className="p-2 bg-neon-green/20 rounded-lg flex-shrink-0 border border-neon-green/30">
               <Activity className="text-neon-green" size={16} />
             </div>
-            <p className="text-xs font-medium text-neon-green uppercase tracking-wide">Current Slab</p>
+            <p className="text-[9px] lg:text-xs font-medium text-neon-green uppercase tracking-wide">Current Slab</p>
           </div>
-          <p className="text-xl font-bold text-neon-green">Level {currentSlabIndex || 0}</p>
+          <p className="text-[12px] lg:text-xl font-bold text-neon-green">Level {currentSlabIndex || 0}</p>
           <p className="text-xs text-neon-green/70 mt-1">Achievement level</p>
         </div>
 
         <div className="cyber-glass rounded-xl p-4 border border-neon-orange/30 hover:border-neon-orange/80 relative overflow-hidden transition-all">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-orange/50 to-transparent" />
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-1 mb-2">
             <div className="p-2 bg-neon-orange/20 rounded-lg flex-shrink-0 border border-neon-orange/30">
               <TrendingDown className="text-neon-orange" size={16} />
             </div>
-            <p className="text-xs font-medium text-neon-orange uppercase tracking-wide">Volume Loss</p>
+            <p className="text-[9px] lg:text-xs font-medium text-neon-orange uppercase tracking-wide">Volume Loss</p>
           </div>
-          <p className="text-xl font-bold text-neon-orange">
+          <p className="text-[12px] lg:text-xl font-bold text-neon-orange">
             {formatUSD(volumePerformance?.cappingEfficiency?.totalLoss || 0)}
           </p>
           <p className="text-xs text-neon-orange/70 mt-1">Due to capping</p>
@@ -196,13 +196,13 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
 
         <div className="cyber-glass rounded-xl p-4 border border-neon-purple/30 hover:border-neon-purple/80 relative overflow-hidden transition-all">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-purple/50 to-transparent" />
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-1 mb-2">
             <div className="p-2 bg-neon-purple/20 rounded-lg flex-shrink-0 border border-neon-purple/30">
               <Target className="text-neon-purple" size={16} />
             </div>
-            <p className="text-xs font-medium text-neon-purple uppercase tracking-wide">Balance Status</p>
+            <p className="text-[9px] lg:text-xs font-medium text-neon-purple uppercase tracking-wide">Balance Status</p>
           </div>
-          <p className={`sm:text-[8px] lg:text-lg font-bold ${volumePerformance?.balance?.isBalanced ? 'text-neon-green' : 'text-neon-orange'}`}>
+          <p className={`text-[12px] lg:text-xl font-bold ${volumePerformance?.balance?.isBalanced ? 'text-neon-green' : 'text-neon-orange'}`}>
             {volumePerformance?.balance?.isBalanced ? 'Balanced' : 'Needs Balance'}
           </p>
           <p className="text-xs text-neon-purple/70 mt-1">Volume distribution</p>
@@ -295,7 +295,7 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
             
             <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
               {safeLegs.slice(0, maxLegs).map((leg, index) => (
-                <div key={leg.address || index} className="flex items-center justify-between p-3 cyber-glass border border-cyan-500/20 rounded-lg hover:border-cyan-500/40 transition-all">
+                <div key={leg.address || index} className="flex items-center justify-between p-3 cyber-glass border border-cyan-500/20 rounded-lg hover:border-cyan-500/40 transition-all overflow-x-auto space-x-3">
                   <div className="flex items-center gap-3">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                       index === 0 ? 'bg-neon-green/20 text-neon-green border border-neon-green/40' :
@@ -309,14 +309,14 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
                       <p className="text-xs font-medium text-cyan-300 font-mono">
                         {leg.address ? `${leg.address.slice(0, 8)}...${leg.address.slice(-6)}` : 'Unknown'}
                       </p>
-                      <p className="text-xs text-cyan-400/70">
+                      <p className="text-[10px] lg:text-xs text-cyan-400/70">
                         {typeof leg.percentage === 'number' ? leg.percentage.toFixed(1) : '0'}% of total volume
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-cyan-300">{formatUSD(leg.volume || 0)}</p>
-                    <p className="text-xs text-cyan-400/70">{formatRAMA(leg.volumeRAMA || 0)}</p>
+                    <p className="text-[10px] lg:text-sm font-bold text-cyan-300">{formatUSD(leg.volume || 0)}</p>
+                    <p className="text-[10px] lg:text-xs text-cyan-400/70">{formatRAMA(leg.volumeRAMA || 0)}</p>
                   </div>
                 </div>
               ))}

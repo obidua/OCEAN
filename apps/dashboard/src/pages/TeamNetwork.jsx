@@ -897,7 +897,8 @@ export default function TeamNetwork() {
                   }`}
                 >
                   {level}
-                  <span className="ml-2 px-1.5 py-0.5 bg-white/20 rounded text-[11px] text-white/90">
+                  <span className={`ml-2 px-1.5 py-0.5 bg-white/20 rounded text-[11px] ${
+                    activeLevel === level ?"text-black": "text-white/90"}`}>
                       {levelData[level]?.length ?? 0}
                   </span>
                 </button>

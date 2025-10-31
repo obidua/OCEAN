@@ -428,7 +428,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                     </td>
                     <td className="py-3 px-4">
                       {isCurrent ? (
-                        <span className="px-3 py-1 bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950 rounded-full text-xs font-bold">
+                        <span className="px-1 py-1 bg-gradient-to-r from-neon-green to-cyan-500 text-white rounded-full text-[9px] lg:text-xs font-bold">
                           Current Level
                         </span>
                       ) : isAchieved ? (

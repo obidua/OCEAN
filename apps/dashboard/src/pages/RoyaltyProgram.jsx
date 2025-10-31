@@ -966,7 +966,7 @@ export default function RoyaltyProgram() {
               recentAchievedStages.map(({ idx, label, achievedLabel }) => (
                 <span
                   key={idx}
-                  className="px-2 py-1 rounded-full border border-neon-purple/40 bg-neon-purple/10 text-[11px] text-neon-purple/80"
+                  className="px-2 py-1 rounded-full border border-neon-purple/40 bg-neon-purple/10 text-[11px] text-white"
                 >
                   {label}
                   {achievedLabel ? ` • ${achievedLabel}` : ''}
@@ -1195,10 +1195,15 @@ export default function RoyaltyProgram() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right space-y-2">
-                      <p className="text-xs uppercase tracking-wide text-cyan-300/70">
-                        Monthly Payout
+                    <div className="flex justify-between items-center text-right space-y-2 lg:space-x-6">
+                      <div className='flex flex-col lg:flex-row justify-center items-center lg:space-x-1 '>
+                        <p className="text-xs lg:text-[15px] text-justify uppercase tracking-wide text-cyan-300/70">
+                        Monthly {" "}
                       </p>
+                      <p className="text-xs lg:text-[15px] uppercase tracking-wide text-cyan-300/70">
+                        Payout
+                      </p>
+                      </div>
                       <p className={amountClass}>{formatUSD(monthlyUsd)}</p>
                       <span className={badgeClass}>
                         {statusIcon}

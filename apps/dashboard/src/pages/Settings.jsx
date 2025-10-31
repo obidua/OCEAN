@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, AlertCircle, Clock, Lock, Copy, ExternalLink } from 'lucide-react';
+import { Settings as SettingsIcon, AlertCircle, Clock, Lock, Copy, ExternalLink, Settings as SettingIcon } from 'lucide-react';
 import { formatUSD } from '../utils/contractData';
 import { useStore } from '../../store/useUserInfoStore';
 import { useEffect, useMemo, useState } from 'react';
@@ -290,10 +290,18 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+
+        <div className='flex items-center space-x-3'>
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
           Settings & Information
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
+
+          <SettingIcon
+            size={20}
+            className="text-white"
+          />
+          </div>
         <p className="text-cyan-300/90 mt-1">Platform rules and withdrawal management</p>
       </div>
 

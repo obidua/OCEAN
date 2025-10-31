@@ -62,25 +62,25 @@ const SameSlabScreen = ({ SameSlabData }) => {
     <div>
       <div className="cyber-glass rounded-2xl p-6 border-2 border-neon-purple relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-purple/50 to-transparent" />
-        <div className="flex items-center justify-between mb-6 relative z-10">
+        <div className="flex flex-col lg:flex-row items-center justify-between mb-6 relative z-10">
           <div className="flex items-center gap-3">
             <Layers size={24} className="text-neon-purple" />
             <div>
-              <h2 className="text-lg font-semibold text-neon-purple uppercase tracking-wide">
+              <h2 className="text-[12px] lg:text-lg font-semibold text-neon-purple uppercase tracking-wide">
                 Same Slab Override Earnings
               </h2>
-              <p className="text-xs text-cyan-300/90 mt-1">
+              <p className="text-[10px] text-xs text-cyan-300/90 mt-1">
                 Earn from your downline members in the same slab (20% of the 60%
                 pool)
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-cyan-300/90">Total Earned</p>
-            <p className="text-2xl font-bold text-neon-purple">
+          <div className="text-right flex flex-row lg:flex-col items-end gap-1 mt-4 lg:mt-0">
+            <p className="text-[15px] lg:text-xs text-cyan-300/90">Total Earned</p>
+            <p className="text-[12px] lg:text-2xl font-bold text-neon-purple">
               {formatRAMA(totalOverrideRama)} RAMA
             </p>
-            <p className="text-[11px] text-cyan-300/70">
+            <p className="text-[12px] text-cyan-300/70">
               ≈ {formatUSD(totalOverrideUsd)}
             </p>
           </div>

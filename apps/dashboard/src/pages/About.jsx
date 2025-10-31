@@ -3,18 +3,42 @@ import { Shield, Zap, TrendingUp, Users, Lock, DollarSign } from 'lucide-react';
 export default function About() {
   return (
     <div className="space-y-6">
-      <div className="cyber-glass border border-cyan-500/30 rounded-2xl p-8 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-neon-green/10 opacity-50" />
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-        <h1 className="text-4xl font-bold mb-3 relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green">OCEAN DeFi</h1>
-        <p className="text-xl mb-2 relative z-10 text-cyan-300">Decentralized Growth Ecosystem</p>
-        <p className="text-lg opacity-90 relative z-10 text-cyan-300/90">Built on Ramestta Blockchain</p>
-        <div className="flex gap-4 mt-4 text-sm relative z-10">
-          <span className="px-3 py-1 cyber-glass border border-cyan-500/30 rounded-full text-cyan-300">Transparent</span>
-          <span className="px-3 py-1 cyber-glass border border-cyan-500/30 rounded-full text-cyan-300">Sustainable</span>
-          <span className="px-3 py-1 cyber-glass border border-cyan-500/30 rounded-full text-cyan-300">Validator-Backed</span>
-        </div>
-      </div>
+      <div className="cyber-glass border border-cyan-500/30 rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden">
+  {/* Gradient overlay */}
+  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-neon-green/10 opacity-50" />
+
+  {/* Top border highlight */}
+  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+
+  {/* Title */}
+  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green text-center sm:text-left">
+    OCEAN DeFi
+  </h1>
+
+  {/* Subtitle */}
+  <p className="text-lg sm:text-xl mb-2 relative z-10 text-cyan-300 text-center sm:text-left">
+    Decentralized Growth Ecosystem
+  </p>
+
+  {/* Chain info */}
+  <p className="text-base sm:text-lg opacity-90 relative z-10 text-cyan-300/90 text-center sm:text-left">
+    Built on Ramestta Blockchain
+  </p>
+
+  {/* Feature tags */}
+  <div className="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4 mt-4 text-xs sm:text-sm relative z-10">
+    <span className="px-3 py-1 cyber-glass border border-cyan-500/30 rounded-full text-cyan-300">
+      Transparent
+    </span>
+    <span className="px-3 py-1 cyber-glass border border-cyan-500/30 rounded-full text-cyan-300">
+      Sustainable
+    </span>
+    <span className="px-3 py-1 cyber-glass border border-cyan-500/30 rounded-full text-cyan-300">
+      Validator-Backed
+    </span>
+  </div>
+</div>
+
 
       <div className="cyber-glass rounded-2xl p-6 border border-cyan-500/30 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
