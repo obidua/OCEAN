@@ -16,7 +16,9 @@ import {
   Calendar,
   BarChart3,
   Volume2,
-  VolumeX
+  VolumeX,
+  Wallet2,
+  Award
 } from 'lucide-react';
 import { useWaitForTransactionReceipt } from 'wagmi';
 import { useTransaction } from '../../config/register';
@@ -810,9 +812,15 @@ export default function AccruedRewards() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green">
+            <div className='flex items-center space-x-3'>
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green">
               Accrued Rewards
             </h1>
+            <Award
+              size={20}
+              className="text-white"
+              />
+            </div>
             <p className="text-cyan-300/80 mt-1">
               Track and claim your portfolio rewards across all investments.
             </p>

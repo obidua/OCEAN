@@ -23,6 +23,7 @@ import {
   Lock,
   Pause,
   Coins,
+  LayoutDashboard,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatUSD, formatRAMA } from "../utils/contractData";
@@ -1454,6 +1455,19 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+          Dashboard
+          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
+        </h1>
+        <LayoutDashboard
+        size={20}
+        className="text-white"
+        />
+      </div>
+
+
       <IncomeNotificationOverlay />
       {dashError && (
         <div className="cyber-glass border border-red-400/40 bg-red-500/5 text-red-300 rounded-xl px-4 py-3 text-sm">

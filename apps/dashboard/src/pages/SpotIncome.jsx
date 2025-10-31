@@ -381,10 +381,16 @@ export default function SpotIncome() {
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+          <div className="flex items-center space-x-3">
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
             Spot Income
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
           </h1>
+           <Coins
+              size={20}
+              className="text-white"
+              />
+          </div>
           <p className="text-cyan-300/90 mt-1">
             Track real-time direct income credited from your network.
           </p>

@@ -440,10 +440,16 @@ export default function TeamNetwork() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+          <div className='flex items-center space-x-3'>
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
             Team Network
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
           </h1>
+          <Users
+              size={20}
+              className="text-white"
+              />
+          </div>
           <p className="text-cyan-300/90 mt-1">
             Manage your referral network and team structure
           </p>

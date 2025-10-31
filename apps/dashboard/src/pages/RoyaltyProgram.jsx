@@ -760,7 +760,7 @@ export default function RoyaltyProgram() {
       <div>
         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-flex items-center gap-3">
           Royalty Program
-          <Trophy className="text-neon-orange" size={32} />
+          <Trophy className="text-neon-orange" size={20} />
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
         <p className="text-cyan-300/90 mt-1">

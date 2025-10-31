@@ -16,6 +16,7 @@ import {
   Filter,
   SortAsc,
   SortDesc,
+  Shield,
 } from 'lucide-react';
 import { formatRAMA, formatUSD } from '../utils/contractData';
 import AddressWithCopy from '../components/AddressWithCopy';
@@ -1111,10 +1112,17 @@ export default function SafeWallet() {
         </>
       )}
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+        <div className='flex items-center space-x-3'>
+          <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
           Safe Wallet
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
+
+        <Shield
+        size={20}
+        className="text-white"
+        />
+        </div>
         <p className="text-cyan-300/90 mt-1 text-sm sm:text-base">Your fee-free internal balance</p>
       </div>
 

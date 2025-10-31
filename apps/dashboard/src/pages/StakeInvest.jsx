@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Wallet, Zap, TrendingUp, AlertCircle, CheckCircle, HelpCircle, ChevronDown, ChevronUp, DollarSign, User, Users, Info, Clipboard, Loader2, Copy } from 'lucide-react';
+import { Wallet, Zap, TrendingUp, AlertCircle, CheckCircle, HelpCircle, ChevronDown, ChevronUp, DollarSign, User, Users, Info, Clipboard, Loader2, Copy, Wallet2 } from 'lucide-react';
 import { formatUSD } from '../utils/contractData';
 import Tooltip from '../components/Tooltip';
 import CopyButton from '../components/CopyButton';
@@ -797,10 +797,16 @@ export default function StakeInvest() {
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 lg:pb-6">
       <div className="mb-4 sm:mb-6">
+      <div className="flex items-center space-x-3">
         <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
           Stake & Invest
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
+        <Wallet2
+        size={20}
+        className="text-white"
+        />
+      </div>
         <p className="text-cyan-300/90 mt-1 text-sm sm:text-base">Activate or top-up your portfolio</p>
       </div>
 

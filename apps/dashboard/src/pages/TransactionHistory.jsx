@@ -455,10 +455,17 @@ export default function TransactionHistory() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
+        <div className='flex items-center space-x-3'>
+          <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
           Income/Trx History
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
         </h1>
+
+        <History
+                size={20}
+                className="text-white"
+                />
+        </div>
         <p className="text-sm sm:text-base text-cyan-300/90 mt-1">Complete record of all your income streams and transactions</p>
       </div>
 
