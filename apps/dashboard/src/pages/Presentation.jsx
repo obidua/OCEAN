@@ -21,20 +21,21 @@ function Presentation() {
   ];
 
   const REWARD_NAMES = [
-    'Coral Spark',        // 1 - $6,000 - $100
-    'Pearl Bloom',        // 2 - $15,000 - $250
-    'Shell Harvest',      // 3 - $40,000 - $500
-    'Wave Bounty',        // 4 - $120,000 - $1,000
-    'Tide Treasure',      // 5 - $300,000 - $2,500
-    'Blue Depth Bonus',   // 6 - $600,000 - $5,000
-    'Guardian\'s Gift',   // 7 - $1.5M - $8,000
-    'Captain\'s Chest',   // 8 - $3M - $12,000
-    'Trident Gem',        // 9 - $6M - $30,000
-    'Sea Legend Award',   // 10 - $15M - $50,000
-    'Abyss Crown',        // 11 - $30M - $85,000
-    'Poseidon\'s Favor',  // 12 - $60M - $150,000
-    'Neptune Scepter',    // 13 - $200M - $500,000
-    'Ocean Infinity',     // 14 - $500M - $1,500,000
+  'Coral Spark',        // 1 - $6,000 - $100
+  'Pearl Bloom',        // 2 - $15,000 - $250
+  'Shell Harvest',      // 3 - $40,000 - $500
+  'Wave Bounty',        // 4 - $120,000 - $1,000
+  'Tide Treasure',      // 5 - $300,000 - $2,500
+  'Blue Depth Bonus',   // 6 - $600,000 - $5,000
+  "Guardian's Gift",   // 7 - $1.5M - $8,000
+  "Captain's Chest",   // 8 - $3M - $12,000
+  'Trident Gem',        // 9 - $6M - $30,000
+  'Sea Legend Award',   // 10 - $15M - $50,000
+  'Abyss Crown',        // 11 - $30M - $85,000
+  "Poseidon's Favor",  // 12 - $60M - $150,000
+  'Neptune Scepter',    // 13 - $200M - $500,000
+  'Ocean Infinity',     // 14 - $500M - $1,500,000
+  'Legendary Wave',     // 15 - $1B - $3,000,000
   ];
 
   const ROYALTY_TIER_NAMES = [
@@ -1096,39 +1097,35 @@ function Presentation() {
             <strong className="text-neon-green">One-time bonus rewards</strong> when you reach team volume milestones. Claim to your wallet of choice!
           </p>
           <div className="max-h-[40vh] md:max-h-[50vh] overflow-y-auto custom-scrollbar pr-2 space-y-2 mb-4">
-            {REWARD_NAMES.slice(0, 14).map((name, i) => {
-              const rewards = [
-                { amt: '$100', vol: '$6K' },
-                { amt: '$250', vol: '$15K' },
-                { amt: '$500', vol: '$40K' },
-                { amt: '$1,000', vol: '$120K' },
-                { amt: '$2,500', vol: '$300K' },
-                { amt: '$5,000', vol: '$600K' },
-                { amt: '$8,000', vol: '$1.5M' },
-                { amt: '$12,000', vol: '$3M' },
-                { amt: '$30,000', vol: '$6M' },
-                { amt: '$50,000', vol: '$15M' },
-                { amt: '$85,000', vol: '$30M' },
-                { amt: '$150,000', vol: '$60M' },
-                { amt: '$500,000', vol: '$200M' },
-                { amt: '$1,500,000', vol: '$500M' }
-              ];
-              return (
+            {[{ amt: '$100', vol: '$6K' },
+              { amt: '$250', vol: '$15K' },
+              { amt: '$500', vol: '$40K' },
+              { amt: '$1,000', vol: '$120K' },
+              { amt: '$2,500', vol: '$300K' },
+              { amt: '$5,000', vol: '$600K' },
+              { amt: '$8,000', vol: '$1.5M' },
+              { amt: '$12,000', vol: '$3M' },
+              { amt: '$30,000', vol: '$6M' },
+              { amt: '$50,000', vol: '$15M' },
+              { amt: '$85,000', vol: '$30M' },
+              { amt: '$150,000', vol: '$60M' },
+              { amt: '$500,000', vol: '$200M' },
+              { amt: '$1,500,000', vol: '$500M' },
+              { amt: '$3,000,000', vol: '$1B' }].map((reward, i) => (
                 <div key={i} className={`cyber-glass border rounded-lg p-3 flex items-center justify-between ${i >= 10 ? 'border-neon-purple/50 bg-neon-purple/5' : 'border-cyan-500/30'} animate-fade-in-up`} style={{animationDelay: `${i * 0.08}s`, animationFillMode: 'both'}}>
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${i >= 10 ? 'bg-gradient-to-br from-neon-purple to-pink-500 text-dark-950' : 'bg-gradient-to-br from-cyan-500 to-neon-green text-dark-950'}`}>{i + 1}</div>
                     <div>
-                      <p className={`font-bold text-sm ${i >= 10 ? 'text-neon-purple' : 'text-cyan-300'}`}>{name}</p>
-                      <p className="text-xs text-cyan-300/70">{rewards[i].vol} volume</p>
+                      <p className={`font-bold text-sm ${i >= 10 ? 'text-neon-purple' : 'text-cyan-300'}`}>{REWARD_NAMES[i]}</p>
+                      <p className="text-xs text-cyan-300/70">{reward.vol} volume</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-bold text-base ${i >= 10 ? 'text-neon-purple' : 'text-neon-green'}`}>{rewards[i].amt}</p>
+                    <p className={`font-bold text-base ${i >= 10 ? 'text-neon-purple' : 'text-neon-green'}`}>{reward.amt}</p>
                     <p className="text-xs text-cyan-300/70">once</p>
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
           <div className="cyber-glass border-2 border-neon-green rounded-xl p-5">
             <h3 className="text-base font-bold text-neon-green mb-3">Total Potential from All Rewards</h3>

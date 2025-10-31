@@ -45,6 +45,7 @@ export default function TeamNetwork() {
   const getLegsDetailedVolume = useStore((state) => state.getLegsDetailedVolume);
   const getVolumeAnalytics = useStore((state) => state.getVolumeAnalytics);
   const getDirectsPortfolioBreakdown = useStore((state) => state.getDirectsPortfolioBreakdown);
+  const getDashboardDetails = useStore((state) => state.getDashboardDetails);
 
   const navigate = useNavigate();
 
@@ -63,6 +64,7 @@ export default function TeamNetwork() {
   const [legCapData, setLegCapData] = useState({ leg1: 40, leg2: 30, leg3: 30 });
   const [detailedVolumeData, setDetailedVolumeData] = useState(null);
   const [volumeLoading, setVolumeLoading] = useState(false);
+  const [dashboardSummary, setDashboardSummary] = useState(null);
   const directListRef = useRef(null);
   const autoScrollFrame = useRef(null);
   const autoScrollPaused = useRef(false);
@@ -79,15 +81,25 @@ export default function TeamNetwork() {
     if (!userAddress || !getTeamNetworkData) {
       setNetwork(null);
       setDirectVolumesMap(null);
+      setDashboardSummary(null);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getTeamNetworkData(userAddress, {
-        maxDepth: 10,
-        detailLimit: 100,
-      });
+      const dashboardPromise = getDashboardDetails
+        ? getDashboardDetails(userAddress).catch((err) => {
+            console.warn('Failed to fetch dashboard summary for team network:', err);
+            return null;
+          })
+        : Promise.resolve(null);
+      const [data, dashboard] = await Promise.all([
+        getTeamNetworkData(userAddress, {
+          maxDepth: 10,
+          detailLimit: 100,
+        }),
+        dashboardPromise,
+      ]);
       // Also fetch directs' self/team volumes from ComprehensiveView and keep a quick lookup map
       let volMap = null;
       if (getDirectsPortfolioAndTeamVolumes) {
@@ -102,6 +114,7 @@ export default function TeamNetwork() {
 
       console.log("this is team network data",data);
       setNetwork(data);
+      setDashboardSummary(dashboard);
 
       // Load detailed volume analytics from SlabManager
       if (getVolumeAnalytics) {
@@ -121,10 +134,11 @@ export default function TeamNetwork() {
       setError(err?.message || 'Failed to load team network data');
       setNetwork(null);
       setDirectVolumesMap(null);
+      setDashboardSummary(null);
     } finally {
       setIsLoading(false);
     }
-  }, [userAddress, getTeamNetworkData, getDirectsPortfolioAndTeamVolumes]);
+  }, [userAddress, getTeamNetworkData, getDirectsPortfolioAndTeamVolumes, getDashboardDetails]);
 
   useEffect(() => {
     loadNetwork();
@@ -273,14 +287,21 @@ export default function TeamNetwork() {
   const levelData = dynamicLevelData ?? EMPTY_LEVEL_DATA;
 
   const userStatus = useMemo(() => {
-    const qualifiedUsd = Number.isFinite(teamVolumeQualifiedUsd)
+    const qualifiedUsdFromDashboard =
+      dashboardSummary?.userStatus?.qualifiedVolumeUsd ??
+      dashboardSummary?.slabPanel?.qualifiedVolumeUsd ??
+      dashboardSummary?.totals?.qualifiedVolumeUsd;
+    const qualifiedUsd = Number.isFinite(qualifiedUsdFromDashboard)
+      ? qualifiedUsdFromDashboard
+      : Number.isFinite(teamVolumeQualifiedUsd)
       ? teamVolumeQualifiedUsd
       : 0;
     return {
       directChildrenCount: String(directMembersActive.length),
       qualifiedVolumeUSD: Math.round(qualifiedUsd * 1e6).toString(),
+      qualifiedVolumeUsd: qualifiedUsd,
     };
-  }, [directMembersActive.length, teamVolumeQualifiedUsd]);
+  }, [directMembersActive.length, teamVolumeQualifiedUsd, dashboardSummary]);
 
   const directVolumeFromMembers = directMembersActive.reduce(
     (sum, member) => sum + (member.summary?.lifetimeUsd ?? 0),

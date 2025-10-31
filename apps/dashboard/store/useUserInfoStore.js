@@ -274,6 +274,44 @@ const formatTeamVolume = (raw) => {
   return amount;
 };
 
+// Cache USD→RAMA conversion ratio to avoid redundant RPC calls
+const USD_TO_RAMA_CACHE_MS = 5 * 60 * 1000;
+let usdToRamaRatioCache = {
+  value: null,
+  fetchedAt: 0,
+};
+
+const getUsdToRamaRatio = async () => {
+  const now = Date.now();
+  if (
+    usdToRamaRatioCache.value != null &&
+    now - usdToRamaRatioCache.fetchedAt < USD_TO_RAMA_CACHE_MS
+  ) {
+    return usdToRamaRatioCache.value;
+  }
+
+  const portfolioManager = makeContract(PortFolioManagerABI, Contract["PortFolioManager"]);
+  if (!portfolioManager) {
+    return usdToRamaRatioCache.value;
+  }
+
+  try {
+    const quoteWei = await callWithDualRPC(
+      () => portfolioManager.methods.getPackageValueInRAMA("1000000").call(),
+      "getPackageValueInRAMA"
+    );
+    const ratio = Number(quoteWei) / RAMA_DECIMALS;
+    if (Number.isFinite(ratio) && ratio > 0) {
+      usdToRamaRatioCache = { value: ratio, fetchedAt: now };
+      return ratio;
+    }
+  } catch (err) {
+    console.warn("[Store] Failed to fetch usd→RAMA ratio:", err);
+  }
+
+  return usdToRamaRatioCache.value;
+};
+
 const readLocalJSON = (key) => {
   try {
     const raw = localStorage.getItem(key);
@@ -4328,14 +4366,19 @@ export const useStore = create((set, get) => ({
         };
       }
 
+      const usdToRamaRatio = await getUsdToRamaRatio();
+      const hasUsdToRamaRatio =
+        Number.isFinite(usdToRamaRatio) && usdToRamaRatio > 0;
+
       // Process and format leg data
       const processedLegs = legsDetailed.map((leg, index) => {
         const volume = fromMicroUSD(leg.volume || 0);
+        const volumeRama = hasUsdToRamaRatio ? volume * usdToRamaRatio : volume;
         return {
           address: leg.leg,
           volume: volume,
           volumeUSD: volume,
-          volumeRAMA: volume / 0.1, // Convert USD to RAMA
+          volumeRAMA: volumeRama,
           volumeRaw: leg.volume,
           rank: index + 1,
           percentage: 0 // Will calculate after sorting
@@ -4381,10 +4424,12 @@ export const useStore = create((set, get) => ({
         topPerformers: sortedLegs.slice(0, 5)
       };
 
+      const totalVolumeRama = hasUsdToRamaRatio ? totalVolume * usdToRamaRatio : totalVolume;
+
       return {
         legs: sortedLegs,
         totalVolume,
-        totalVolumeRAMA: totalVolume / 0.1,
+        totalVolumeRAMA: totalVolumeRama,
         topLegs,
         summary,
         lastUpdated: Date.now()
@@ -4418,14 +4463,19 @@ export const useStore = create((set, get) => ({
         slabManager.methods.getSlabIndex(userAddress).call()
       ]);
 
+      const usdToRamaRatio = await getUsdToRamaRatio();
+      const hasUsdToRamaRatio =
+        Number.isFinite(usdToRamaRatio) && usdToRamaRatio > 0;
+
       // Process detailed legs
       const processedLegs = (legsDetailed || []).map((leg, index) => {
         const volume = fromMicroUSD(leg.volume || 0);
+        const volumeRama = hasUsdToRamaRatio ? volume * usdToRamaRatio : volume;
         return {
           address: leg.leg,
           rawVolume: leg.volume || 0,
           volume,
-          volumeRAMA: volume / 0.1,
+          volumeRAMA: volumeRama,
           rank: index + 1
         };
       }).sort((a, b) => b.volume - a.volume);
@@ -4438,6 +4488,8 @@ export const useStore = create((set, get) => ({
       processedLegs.forEach(leg => {
         leg.percentage = totalVolume > 0 ? (leg.volume / totalVolume) * 100 : 0;
       });
+
+      const totalVolumeRama = hasUsdToRamaRatio ? totalVolume * usdToRamaRatio : totalVolume;
 
       // Process uncapped volumes (actual business volumes)
       const uncappedVolumes = {
@@ -4483,6 +4535,7 @@ export const useStore = create((set, get) => ({
         legs: processedLegs,
         cappedVolumes,
         uncappedVolumes,
+        totalVolumeRAMA: totalVolumeRama,
         totalQualified,
         currentSlabIndex,
         volumePerformance,
@@ -7429,16 +7482,38 @@ export const useStore = create((set, get) => ({
         throw new Error("RoiDistributor contract not available");
       }
 
-      const autoWindow = await callWithDualRPC(
-        () => roiDistributorContracts[0].methods._autoWindow(userAddress).call(),
-        '_autoWindow'
-      );
+      const [autoWindow, epochSecondsRaw] = await Promise.all([
+        callWithDualRPC(
+          () => roiDistributorContracts[0].methods._autoWindow(userAddress).call(),
+          '_autoWindow'
+        ),
+        callWithDualRPC(
+          () => roiDistributorContracts[0].methods.epochSeconds().call(),
+          'epochSeconds'
+        ).catch((err) => {
+          console.warn('[Store] epochSeconds fetch failed, falling back to 86400:', err);
+          return null;
+        }),
+      ]);
 
       console.log('[Store] Raw auto window data:', autoWindow);
 
       const fromPeriod = Number(autoWindow.fromPeriod || autoWindow[0]);
       const lastPeriod = Number(autoWindow.lastPeriod || autoWindow[1]);
-      const totalPeriods = lastPeriod - fromPeriod + 1;
+      const epochSeconds = Number(epochSecondsRaw) || 86400; // default to daily periods
+      const epochMs = epochSeconds * 1000;
+      const periodToDateString = (period) => {
+        const numeric = Number(period);
+        if (!Number.isFinite(numeric) || numeric <= 0) return '—';
+        const date = new Date(numeric * epochMs);
+        if (Number.isNaN(date.getTime())) return '—';
+        return date.toLocaleDateString();
+      };
+
+      const totalPeriods =
+        Number.isFinite(fromPeriod) && Number.isFinite(lastPeriod) && lastPeriod >= fromPeriod
+          ? lastPeriod - fromPeriod + 1
+          : 0;
 
       // Calculate smart claiming strategy (max 99 periods per transaction)
       const maxPeriodsPerTx = 99;
@@ -7449,15 +7524,16 @@ export const useStore = create((set, get) => ({
         const txFromPeriod = fromPeriod + (i * maxPeriodsPerTx);
         const txToPeriod = Math.min(txFromPeriod + maxPeriodsPerTx - 1, lastPeriod);
         const txPeriods = txToPeriod - txFromPeriod + 1;
-        
+        const estimatedFromDate = periodToDateString(txFromPeriod);
+        const estimatedToDate = periodToDateString(txToPeriod);
+
         claimingPlan.push({
           transactionNumber: i + 1,
           fromPeriod: txFromPeriod,
           toPeriod: txToPeriod,
           periodsCount: txPeriods,
-          // Estimate dates (assuming daily periods)
-          estimatedFromDate: new Date(Date.now() - (lastPeriod - txFromPeriod + 1) * 24 * 60 * 60 * 1000).toLocaleDateString(),
-          estimatedToDate: new Date(Date.now() - (lastPeriod - txToPeriod + 1) * 24 * 60 * 60 * 1000).toLocaleDateString()
+          estimatedFromDate,
+          estimatedToDate
         });
       }
 
@@ -7467,6 +7543,7 @@ export const useStore = create((set, get) => ({
         totalPeriods,
         totalTransactions,
         claimingPlan,
+        epochSeconds,
         canClaim: totalPeriods > 0,
         success: true,
         timestamp: Date.now(),
@@ -7504,6 +7581,24 @@ export const useStore = create((set, get) => ({
       if (roiDistributorContracts.length === 0) {
         throw new Error("RoiDistributor contract not available");
       }
+
+      const epochSecondsRaw = await callWithDualRPC(
+        () => roiDistributorContracts[0].methods.epochSeconds().call(),
+        'epochSeconds'
+      ).catch((err) => {
+        console.warn('[Store] epochSeconds fetch failed for breakdown, defaulting to 86400:', err);
+        return null;
+      });
+
+      const epochSeconds = Number(epochSecondsRaw) || 86400;
+      const epochMs = epochSeconds * 1000;
+      const periodToDateString = (period) => {
+        const numeric = Number(period);
+        if (!Number.isFinite(numeric) || numeric <= 0) return '—';
+        const date = new Date(numeric * epochMs);
+        if (Number.isNaN(date.getTime())) return '—';
+        return date.toLocaleDateString();
+      };
 
       // If no periods specified, get the auto window
       let actualFromPeriod = fromPeriod;
@@ -7547,8 +7642,8 @@ export const useStore = create((set, get) => ({
           ramaAmount,
           usdRaw: usdPerPeriod[index] || '0',
           ramaRaw: ramaPerPeriod[index] || '0',
-          // Calculate date from period (assuming daily periods)
-          estimatedDate: new Date(Date.now() - (periodIds.length - index - 1) * 24 * 60 * 60 * 1000).toLocaleDateString()
+          // Convert contract period into a local date using epochSeconds cadence
+          estimatedDate: periodToDateString(periodId)
         };
       });
 
