@@ -1,0 +1,361 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      }
+    ],
+    "name": "BeaconUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "cfg",
+    "outputs": [
+      { "internalType": "contract ICoreConfig", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      {
+        "internalType": "enum SlabManagerReader.AchKind",
+        "name": "kind",
+        "type": "uint8"
+      }
+    ],
+    "name": "getRemainingForNext",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "targetUSD", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "totalNeeded",
+            "type": "uint256"
+          },
+          { "internalType": "uint256", "name": "L1_needed", "type": "uint256" },
+          { "internalType": "uint256", "name": "L2_needed", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "Lrest_needed",
+            "type": "uint256"
+          },
+          { "internalType": "bool", "name": "isAchieved", "type": "bool" }
+        ],
+        "internalType": "struct SlabManagerReader.NextAchievementProgress",
+        "name": "p",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
+    "name": "getUserOverview",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "qualifiedBusinessUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "currentSlabIdx",
+            "type": "uint8"
+          },
+          { "internalType": "uint256", "name": "currentL1", "type": "uint256" },
+          { "internalType": "uint256", "name": "currentL2", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "currentLrest",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              { "internalType": "address", "name": "leg", "type": "address" },
+              { "internalType": "uint256", "name": "volume", "type": "uint256" }
+            ],
+            "internalType": "struct SlabManagerReader.LegBusiness[]",
+            "name": "allLegs",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint64",
+                "name": "achievedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL1",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL2",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedLrest",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "name": "achievedSlabs",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint64",
+                "name": "achievedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL1",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL2",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedLrest",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "name": "achievedRewards",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint64",
+                "name": "achievedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL1",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedL2",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "qualifiedLrest",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "name": "achievedRoyalties",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextSlabThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextRewardThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextRoyaltyThreshold",
+            "type": "uint256"
+          },
+          { "internalType": "bool", "name": "canClaimSlab", "type": "bool" },
+          { "internalType": "uint64", "name": "lastClaimAt", "type": "uint64" },
+          {
+            "internalType": "uint32",
+            "name": "new50DirectsSinceClaim",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct SlabManagerReader.UserOverview",
+        "name": "ov",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_cfg", "type": "address" }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reg",
+    "outputs": [
+      {
+        "internalType": "contract IRegistryMinimal",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "slab",
+    "outputs": [
+      { "internalType": "contract ISlabLens", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]

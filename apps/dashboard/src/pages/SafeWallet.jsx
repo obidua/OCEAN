@@ -555,6 +555,45 @@ export default function SafeWallet() {
     return 'text-cyan-300 border-cyan-500/30 bg-cyan-500/10';
   };
 
+  const portfolioCreationFallbacks = useMemo(() => {
+    const fallbackMap = new Map();
+    if (!Array.isArray(historyEntries) || historyEntries.length === 0) {
+      return fallbackMap;
+    }
+
+    const keyFor = (entry) =>
+      `${Number(entry?.timestamp) || 0}::${Number(entry?.pid) || 0}`;
+
+    const stakeSpendByKey = new Map();
+
+    historyEntries.forEach((entry) => {
+      if (!entry || entry.isCredit) return;
+      const kind = Number(entry.kind ?? 0);
+      if (kind !== SAFEWALLET_KINDS.STAKE_SPEND) return;
+      const key = keyFor(entry);
+      const usd = Math.abs(Number(entry.usd ?? 0));
+      const rama = Math.abs(Number(entry.rama ?? 0));
+      if (!key) return;
+      if (usd > 0 || rama > 0) {
+        stakeSpendByKey.set(key, { usd, rama });
+      }
+    });
+
+    historyEntries.forEach((entry) => {
+      if (!entry || entry.isCredit) return;
+      const kind = Number(entry.kind ?? 0);
+      if (kind !== SAFEWALLET_KINDS.PORTFOLIO_CREATE) return;
+      const key = keyFor(entry);
+      if (!key) return;
+      const fallback = stakeSpendByKey.get(key);
+      if (fallback) {
+        fallbackMap.set(entry.id, fallback);
+      }
+    });
+
+    return fallbackMap;
+  }, [historyEntries]);
+
   const mapHistoryEntry = useCallback(
     (entry) => {
       if (!entry) return null;
@@ -586,7 +625,7 @@ export default function SafeWallet() {
       }
       const details = detailsPieces.join(' • ') || '—';
 
-      const grossRama = Number(entry.rama ?? 0);
+      let grossRama = Number(entry.rama ?? 0);
       let grossUsd = Number(entry.usd ?? 0);
       if (grossUsd <= 0 && grossRama > 0) {
         const estimatedUsd = toUsd(grossRama);
@@ -594,6 +633,24 @@ export default function SafeWallet() {
           grossUsd = estimatedUsd;
         }
       }
+
+      if (kind === SAFEWALLET_KINDS.PORTFOLIO_CREATE && Math.abs(grossUsd) < 1e-6) {
+        const fallback = portfolioCreationFallbacks.get(entry.id);
+        if (fallback) {
+          if (fallback.usd > 0) {
+            grossUsd = fallback.usd;
+          } else if (fallback.rama > 0) {
+            const estimatedUsd = toUsd(fallback.rama);
+            if (estimatedUsd > 0) {
+              grossUsd = estimatedUsd;
+            }
+          }
+          if ((grossRama <= 0 || !Number.isFinite(grossRama)) && fallback.rama > 0) {
+            grossRama = fallback.rama;
+          }
+        }
+      }
+
       if (Math.abs(grossUsd) < 1e-6) {
         grossUsd = 0;
       }
@@ -640,7 +697,7 @@ export default function SafeWallet() {
         tokenAmount: grossRama,
       };
     },
-    [address, formatDate, toUsd, userAddress, withdrawalHistory]
+    [address, formatDate, portfolioCreationFallbacks, toUsd, userAddress, withdrawalHistory]
   );
 
   const historyRows = useMemo(() => {
