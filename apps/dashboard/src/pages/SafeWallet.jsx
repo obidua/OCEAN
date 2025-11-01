@@ -313,9 +313,9 @@ export default function SafeWallet() {
             rama: incomeTotals?.slab?.rama || 0
           },
           spot: {
-            // Use spot data for growth income, fallback to roi from ComprehensiveView
-            usd: spotData?.lifetimeUsd || incomeTotals?.roi?.usd || 0,
-            rama: spotData?.lifetimeRama || incomeTotals?.roi?.rama || 0
+            // Use spot income (Direct Income) lifetime totals; fallback to Direct income from totals
+            usd: (spotData?.overview?.lifetimeUsd ?? incomeTotals?.direct?.usd ?? 0),
+            rama: (spotData?.overview?.lifetimeRama ?? incomeTotals?.direct?.rama ?? 0)
           },
           accrued: {
             usd: accruedUsd,

@@ -320,14 +320,12 @@ const ProgressiveTransactionModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
-        {(stage === STAGES.SUCCESS || stage === STAGES.ERROR) && (
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-cyan-500/10 transition-colors"
-          >
-            <X size={20} className="text-cyan-400" />
-          </button>
-        )}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 rounded-lg hover:bg-cyan-500/10 transition-colors"
+        >
+          <X size={20} className="text-cyan-400" />
+        </button>
 
         {/* Header gradient line */}
         <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${currentConfig.bgColor}`} />
@@ -457,8 +455,24 @@ const ProgressiveTransactionModal = ({
             })}
           </div>
 
+          {/* Close/Cancel actions for in-progress states */}
+          {stage !== STAGES.SUCCESS && stage !== STAGES.ERROR && (
+            <div className="w-full space-y-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all text-sm"
+              >
+                Close
+              </button>
+              <p className="text-xs text-cyan-300/70 text-center">
+                Need to cancel? Reject the transaction in your wallet.
+              </p>
+            </div>
+          )}
+
           {/* Transaction hash */}
-          {txHash && stage !== STAGES.ERROR && (
+          {txHash && (
             <div className="pt-4 border-t border-cyan-500/10 space-y-3">
               <p className="text-xs text-cyan-400/80 uppercase tracking-wider font-semibold">
                 Transaction Details
@@ -473,9 +487,17 @@ const ProgressiveTransactionModal = ({
                       ? 'border-neon-green/40 text-neon-green bg-neon-green/10'
                       : stage === STAGES.PROCESSING
                       ? 'border-yellow-400/40 text-yellow-400 bg-yellow-400/10'
+                      : stage === STAGES.ERROR
+                      ? 'border-red-400/40 text-red-400 bg-red-400/10'
                       : 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10'
                   }`}>
-                    {stage === STAGES.SUCCESS ? 'Confirmed' : stage === STAGES.PROCESSING ? 'Pending' : 'Submitted'}
+                    {stage === STAGES.SUCCESS 
+                      ? 'Confirmed' 
+                      : stage === STAGES.PROCESSING 
+                      ? 'Pending' 
+                      : stage === STAGES.ERROR 
+                      ? 'Failed' 
+                      : 'Submitted'}
                   </span>
                 </div>
                 <div className="text-xs text-cyan-300/90 break-all font-mono bg-dark-950/50 rounded px-2 py-1.5 border border-cyan-500/10">
@@ -484,7 +506,7 @@ const ProgressiveTransactionModal = ({
               </div>
               
               {/* Action buttons */}
-              {stage === STAGES.SUCCESS && (
+              {(stage === STAGES.SUCCESS || stage === STAGES.ERROR) && (
                 <div className="grid grid-cols-2 gap-2">
                   <a
                     href={`${explorerTxBase}${txHash}`}
@@ -572,15 +594,33 @@ const ProgressiveTransactionModal = ({
           )}
 
           {stage === STAGES.ERROR && (
-            <div className="space-y-2">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href={txHash ? `${explorerTxBase}${txHash}` : 'https://ramascan.com/'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-red-500/50 transition-all"
+                >
+                  <ExternalLink size={16} />
+                  View on Ramascan
+                </a>
+                <a
+                  href="/"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-semibold hover:shadow-lg hover:shadow-neon-green/50 transition-all"
+                >
+                  <Award size={16} />
+                  Go to Dashboard
+                </a>
+              </div>
               <button
                 onClick={onClose}
-                className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-red-500/50 transition-all"
+                className="w-full px-6 py-3 cyber-glass border border-red-500/40 text-red-300 rounded-xl font-bold hover:border-red-500/60 hover:bg-red-500/10 transition-all"
               >
                 Close & Retry
               </button>
-              <p className="text-xs text-red-300/70">
-                Please check your wallet and try again
+              <p className="text-xs text-red-300/70 text-center">
+                Transaction failed or was rejected. You can review it on the explorer and try again.
               </p>
             </div>
           )}

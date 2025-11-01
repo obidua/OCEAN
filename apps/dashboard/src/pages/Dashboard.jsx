@@ -820,9 +820,10 @@ export default function Dashboard() {
     }
 
     if (isError && isClaimingGrowth) {
+      // Keep modal open so ProgressiveTransactionModal can show the error state
       setClaimError("Transaction failed. Please try again.");
       setIsClaimingGrowth(false);
-      setShowClaimModal(false);
+      // do not close modal here; let the modal show the failure UI with explorer links
     }
   }, [isSuccess, isError, receipt, isClaimingGrowth]);
 
@@ -957,9 +958,13 @@ export default function Dashboard() {
     dashboardPortfolio?.creditedUsd ?? portFolioDetails?.creditedUsd ?? 0;
   const pendingUsdValue = dashboardPortfolio?.pendingUsd ?? 0;
   const totalAccruedRewardUsd = creditedUsdValue + pendingUsdValue;
+  
+  // Remaining Reward = Maximum possible reward - Already accrued reward
+  // Maximum possible reward = Cap - Principal (the growth portion only)
+  const maxPossibleReward = Math.max(0, portfolioCapUsd - portfolioPrincipalUsd);
   const remainingRewardUsdFallback = Math.max(
     0,
-    portfolioCapUsd - totalAccruedRewardUsd
+    maxPossibleReward - totalAccruedRewardUsd
   );
   const remainingRewardUsd =
     dashboardPortfolio?.remainingCapUsd ??
@@ -1027,9 +1032,12 @@ export default function Dashboard() {
     ? formatTimestamp(portFolioDetails?.lastAccrual)
     : null;
 
+  // Portfolio Cap Progress: Shows how much of the potential reward has been earned
+  // Progress = (Accrued Reward / Maximum Possible Reward) * 100
+  const maxPossibleRewardForProgress = Math.max(0, portfolioCapUsd - portfolioPrincipalUsd);
   const computedProgressFromTotals =
-    portfolioCapUsd > 0
-      ? Math.min(100, (totalAccruedRewardUsd / portfolioCapUsd) * 100)
+    maxPossibleRewardForProgress > 0
+      ? Math.min(100, (totalAccruedRewardUsd / maxPossibleRewardForProgress) * 100)
       : 0;
   const progressRaw = capProgressBps
     ? capProgressBps / 100
@@ -2041,7 +2049,7 @@ export default function Dashboard() {
                     {(Array.isArray(portfolioIds) ? portfolioIds : []).map(
                       (pid) => (
                         <option key={pid} value={pid}>
-                          {pid}
+                          #Portfolio {pid}
                         </option>
                       )
                     )}
@@ -2090,8 +2098,8 @@ export default function Dashboard() {
                         />
                       </div>
                       <p className="text-xs text-cyan-300/90 mt-1">
-                        {formatUSD(portfolioPrincipalUsd)} /{" "}
-                        {formatUSD(portfolioCapUsd)}
+                        {formatUSD(totalAccruedRewardUsd)} /{" "}
+                        {formatUSD(maxPossibleRewardForProgress)}
                         {capLabel && (
                           <span className="ml-1 text-neon-green">
                             {capLabel}

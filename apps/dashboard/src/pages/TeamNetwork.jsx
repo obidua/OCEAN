@@ -531,11 +531,11 @@ export default function TeamNetwork() {
               />
             </div>
             <div className="cyber-glass rounded-xl p-4 border border-cyan-500/30">
-              <p className="text-xs text-cyan-300/90 mb-1 truncate">Team Volume</p>
+              <p className="text-xs text-cyan-300/90 mb-1 truncate">Total Volume</p>
               <NumberPopup
                 value={`${(parseFloat(teamInfo?.fullData["totalSumUsd"]) / 1e6).toFixed(2) || "0.00"}`}
 
-                label="Team Volume"
+                label="Total Volume"
                 className="text-lg md:text-xl font-bold text-neon-green"
               />
             </div>
@@ -604,10 +604,10 @@ export default function TeamNetwork() {
                                 />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-xs text-cyan-300/90 mb-1">Team Volume</p>
+                                <p className="text-xs text-cyan-300/90 mb-1">Total Volume</p>
                                 <NumberPopup
                                   value={(parseFloat(teamInfo?.fullData?.teamUsd[idx])/1e6).toFixed(2) || "0.00"}
-                                  label="Team Volume"
+                                  label="Total Volume"
                                   className="text-sm font-semibold text-neon-green"
                                 />
                               </div>

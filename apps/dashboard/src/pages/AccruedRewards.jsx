@@ -106,6 +106,47 @@ const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
     return `${asNumber.toFixed(2)}%`;
   };
 
+  // Convert period (DayID) to human-readable date
+  const formatPeriodToDate = (periodId) => {
+    if (!periodId || periodId === 0) return '—';
+    
+    // CONFIGURATION: Period conversion mode
+    // TEST MODE: 10 minutes = 1 day (for testing)
+    // LIVE MODE: 1 day = 1 day (for production)
+    const TEST_MODE = true; // Set to false for live/production
+    
+    let timestamp;
+    if (TEST_MODE) {
+      // Test mode: Period represents 10-minute intervals
+      // periodId * 600 seconds * 1000 = milliseconds since epoch
+      timestamp = Number(periodId) * 600 * 1000;
+    } else {
+      // Live mode: Period represents days
+      // periodId * 86400 seconds * 1000 = milliseconds since epoch
+      timestamp = Number(periodId) * 86400 * 1000;
+    }
+    
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Format period range with both period ID and date
+  const formatPeriodRange = (from, to) => {
+    if (!from || !to) return '—';
+    const fromDate = formatPeriodToDate(from);
+    const toDate = formatPeriodToDate(to);
+    return (
+      <div className="flex flex-col items-end">
+        <span className="text-cyan-100 font-mono text-xs">{from} → {to}</span>
+        <span className="text-cyan-300/60 text-[10px]">{fromDate} → {toDate}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/80 backdrop-blur-sm pt-10 pb-10 sm:pt-0 sm:pb-0">
       <div className="cyber-glass rounded-xl border border-cyan-500/30 w-full max-w-4xl max-h-[calc(100vh-80px)] mx-4 my-4 sm:my-6 overflow-hidden">
@@ -152,13 +193,13 @@ const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
                 <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
                   <h3 className="text-sm font-semibold text-cyan-300 mb-3">Period Range</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
                       <span className="text-cyan-300/70">From → To:</span>
-                      <span className="text-cyan-100 font-mono">{debugInfo.fromPeriod} → {debugInfo.toPeriod}</span>
+                      {formatPeriodRange(debugInfo.fromPeriod, debugInfo.toPeriod)}
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
                       <span className="text-cyan-300/70">Page Window:</span>
-                      <span className="text-cyan-100 font-mono">{debugInfo.pageStartPeriod} → {debugInfo.pageEndPeriod}</span>
+                      {formatPeriodRange(debugInfo.pageStartPeriod, debugInfo.pageEndPeriod)}
                     </div>
                     <div className="flex justify-between">
                       <span className="text-cyan-300/70">Total Epochs:</span>
@@ -223,7 +264,12 @@ const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
                           {entries.map((item, idx) => (
                             <tr key={`${item.periodId}-${idx}`} className="hover:bg-cyan-500/10 transition-colors">
                               <td className="py-2 pl-2 pr-3 text-cyan-300/80 font-mono">{idx + 1}</td>
-                              <td className="py-2 px-3 font-mono text-cyan-200">{item.periodId}</td>
+                              <td className="py-2 px-3">
+                                <div className="flex flex-col">
+                                  <span className="font-mono text-cyan-200 text-xs">{item.periodId}</span>
+                                  <span className="text-[10px] text-cyan-300/60">{formatPeriodToDate(item.periodId)}</span>
+                                </div>
+                              </td>
                               <td className="py-2 px-3 text-right text-emerald-300">{formatUSD(item.usd)}</td>
                               <td className="py-2 px-3 text-right text-cyan-200">{formatRAMAPrecise(item.rama)}</td>
                             </tr>
@@ -1142,6 +1188,7 @@ export default function AccruedRewards() {
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Claimed</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Unclaimed (USD/RAMA)</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Available (USD/RAMA)</th>
+                  <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Created</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Status</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Type</th>
                   <th className="text-center py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Actions</th>
@@ -1150,7 +1197,7 @@ export default function AccruedRewards() {
               <tbody className="divide-y divide-cyan-500/20">
                 {loading ? (
                   <tr>
-                    <td colSpan={13} className="py-8 text-center">
+                    <td colSpan={14} className="py-8 text-center">
                       <Loader2
                         size={24}
                         className="animate-spin mx-auto text-cyan-400"
@@ -1160,7 +1207,7 @@ export default function AccruedRewards() {
                 ) : filteredPortfolios.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={13}
+                      colSpan={14}
                       className="py-8 text-center text-cyan-300/70"
                     >
                       {filterMode === 'pending' ? 'No portfolios with pending rewards found.' : filterMode === 'claimed' ? 'No fully-claimed portfolios found.' : 'No portfolios found.'}
@@ -1170,6 +1217,14 @@ export default function AccruedRewards() {
                   filteredPortfolios.map((portfolio) => {
                     const prev = dashboard?.totals?.periods || {};
                     const epochCount = portfolio?.roi?.ramaAmount ? (prev.count || 0) : 0;
+                    const createdAtTimestamp = portfolio?.roi?.meta?.createdAt || 0;
+                    const createdDate = createdAtTimestamp > 0 
+                      ? new Date(createdAtTimestamp * 1000).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })
+                      : '—';
                     return (
                       <tr
                         key={portfolio.portfolioId}
@@ -1198,6 +1253,9 @@ export default function AccruedRewards() {
                             <span className="text-emerald-300">{formatUSD(portfolio?.roi?.accrued || 0)}</span>
                             <span className="text-[11px] text-emerald-300/70">{formatRAMAPrecise(portfolio?.roi?.ramaAmount || 0)} RAMA</span>
                           </div>
+                        </td>
+                        <td className="py-3 px-4 text-left text-cyan-200 text-xs whitespace-nowrap">
+                          {createdDate}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="inline-flex items-center gap-2">

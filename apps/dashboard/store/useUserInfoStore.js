@@ -659,12 +659,15 @@ export const useStore = create((set, get) => ({
   getROITiming: async () => {
     try {
       const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
-      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
-      const [nextTs] = await Promise.all([
+      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
+      if (!roiDistributorView || !roiDistributor) throw new Error("ROI Distributor contracts not available");
+      const [nextTs, lastTs] = await Promise.all([
         roiDistributorView.methods.nextDistributionTs().call(),
+        roiDistributor.methods.lastDistributionTs().call(),
       ]);
       return {
         nextDistributionTs: toNumber(nextTs),
+        lastDistributionTs: toNumber(lastTs),
       };
     } catch (error) {
       console.error("Error fetching ROI timing:", error);
@@ -4788,11 +4791,29 @@ export const useStore = create((set, get) => ({
       const currentSlabIndex = contractSlabIndex + 1; // Always add 1 to convert to display level
 
       const capBreakdown = computeBusinessCapBreakdown(processedLegs, qualifiedVolumeContract);
-      const cappedVolumes = {
-        L1: capBreakdown.breakdown.L1,
-        L2: capBreakdown.breakdown.L2,
-        Lrest: capBreakdown.breakdown.Lrest
-      };
+      
+      // If qualified volume is 0 but we have actual leg volumes, use uncapped volumes as capped volumes
+      // This handles the case where the contract hasn't processed qualification yet but legs have volume
+      let cappedVolumes;
+      if (qualifiedVolumeContract === 0 && totalVolume > 0) {
+        // Use actual leg volumes directly (40% L1, 30% L2, 30% Lrest caps)
+        const L1Volume = processedLegs[0]?.volume || 0;
+        const L2Volume = processedLegs[1]?.volume || 0;
+        const LrestVolume = processedLegs.slice(2).reduce((sum, leg) => sum + leg.volume, 0);
+        
+        cappedVolumes = {
+          L1: L1Volume,
+          L2: L2Volume,
+          Lrest: LrestVolume
+        };
+      } else {
+        cappedVolumes = {
+          L1: capBreakdown.breakdown.L1,
+          L2: capBreakdown.breakdown.L2,
+          Lrest: capBreakdown.breakdown.Lrest
+        };
+      }
+      
       const totalQualified = qualifiedVolumeContract > 0 ? qualifiedVolumeContract : capBreakdown.countedTotal;
 
       // Volume performance analysis
