@@ -80,14 +80,22 @@
     "inputs": [],
     "name": "cfg",
     "outputs": [
-      { "internalType": "contract ICoreConfig", "name": "", "type": "address" }
+      {
+        "internalType": "contract ICoreConfig",
+        "name": "",
+        "type": "address"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
       {
         "internalType": "enum SlabManagerReader.AchKind",
         "name": "kind",
@@ -98,20 +106,36 @@
     "outputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "targetUSD", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "targetUSD",
+            "type": "uint256"
+          },
           {
             "internalType": "uint256",
             "name": "totalNeeded",
             "type": "uint256"
           },
-          { "internalType": "uint256", "name": "L1_needed", "type": "uint256" },
-          { "internalType": "uint256", "name": "L2_needed", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "L1_needed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L2_needed",
+            "type": "uint256"
+          },
           {
             "internalType": "uint256",
             "name": "Lrest_needed",
             "type": "uint256"
           },
-          { "internalType": "bool", "name": "isAchieved", "type": "bool" }
+          {
+            "internalType": "bool",
+            "name": "isAchieved",
+            "type": "bool"
+          }
         ],
         "internalType": "struct SlabManagerReader.NextAchievementProgress",
         "name": "p",
@@ -123,7 +147,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
     ],
     "name": "getUserOverview",
     "outputs": [
@@ -139,8 +167,16 @@
             "name": "currentSlabIdx",
             "type": "uint8"
           },
-          { "internalType": "uint256", "name": "currentL1", "type": "uint256" },
-          { "internalType": "uint256", "name": "currentL2", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "currentL1",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentL2",
+            "type": "uint256"
+          },
           {
             "internalType": "uint256",
             "name": "currentLrest",
@@ -148,8 +184,16 @@
           },
           {
             "components": [
-              { "internalType": "address", "name": "leg", "type": "address" },
-              { "internalType": "uint256", "name": "volume", "type": "uint256" }
+              {
+                "internalType": "address",
+                "name": "leg",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "volume",
+                "type": "uint256"
+              }
             ],
             "internalType": "struct SlabManagerReader.LegBusiness[]",
             "name": "allLegs",
@@ -157,7 +201,11 @@
           },
           {
             "components": [
-              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint8",
+                "name": "id",
+                "type": "uint8"
+              },
               {
                 "internalType": "uint64",
                 "name": "achievedAt",
@@ -185,7 +233,11 @@
           },
           {
             "components": [
-              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint8",
+                "name": "id",
+                "type": "uint8"
+              },
               {
                 "internalType": "uint64",
                 "name": "achievedAt",
@@ -213,7 +265,11 @@
           },
           {
             "components": [
-              { "internalType": "uint8", "name": "id", "type": "uint8" },
+              {
+                "internalType": "uint8",
+                "name": "id",
+                "type": "uint8"
+              },
               {
                 "internalType": "uint64",
                 "name": "achievedAt",
@@ -254,8 +310,16 @@
             "name": "nextRoyaltyThreshold",
             "type": "uint256"
           },
-          { "internalType": "bool", "name": "canClaimSlab", "type": "bool" },
-          { "internalType": "uint64", "name": "lastClaimAt", "type": "uint64" },
+          {
+            "internalType": "bool",
+            "name": "canClaimSlab",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint64",
+            "name": "lastClaimAt",
+            "type": "uint64"
+          },
           {
             "internalType": "uint32",
             "name": "new50DirectsSinceClaim",
@@ -272,7 +336,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_cfg", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_cfg",
+        "type": "address"
+      }
     ],
     "name": "initialize",
     "outputs": [],
@@ -282,14 +350,26 @@
   {
     "inputs": [],
     "name": "owner",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -317,14 +397,22 @@
     "inputs": [],
     "name": "slab",
     "outputs": [
-      { "internalType": "contract ISlabLens", "name": "", "type": "address" }
+      {
+        "internalType": "contract ISlabLens",
+        "name": "",
+        "type": "address"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "newOwner", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
     ],
     "name": "transferOwnership",
     "outputs": [],
@@ -351,7 +439,11 @@
         "name": "newImplementation",
         "type": "address"
       },
-      { "internalType": "bytes", "name": "data", "type": "bytes" }
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],

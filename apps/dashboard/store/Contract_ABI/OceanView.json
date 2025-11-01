@@ -313,6 +313,40 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "maxDepth",
+        "type": "uint8"
+      }
+    ],
+    "name": "getLevelWisePortfolioVolume",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "levelUsd",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "levelCounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "grandTotalUsd",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       }
     ],
     "name": "getPortfolios",

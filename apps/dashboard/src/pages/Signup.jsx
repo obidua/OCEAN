@@ -86,7 +86,7 @@ export default function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const [trxData, setTrxData] = useState(null);
+  const [trxData, setTrxData] = useState();
   const [trxHash, setTrxHash] = useState();
   const [txModalOpen, setTxModalOpen] = useState(false);
   const [txStage, setTxStage] = useState('idle');

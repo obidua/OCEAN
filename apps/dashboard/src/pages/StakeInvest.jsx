@@ -9,6 +9,7 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import { useBalance, useWaitForTransactionReceipt } from 'wagmi';
 import { useTransaction } from "../../config/register";
 import financialSounds from '../utils/financialSounds';
+import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
 
 export default function StakeInvest() {
   // Constants
@@ -66,11 +67,6 @@ export default function StakeInvest() {
 
   // Current user info
   const [currentUserId, setCurrentUserId] = useState(null);
-
-  // Success countdown timer
-  const [successCountdown, setSuccessCountdown] = useState(10);
-
-
 
   const tier = parseFloat(stakeAmount) >= 5001 ? 2 : 1;
   const dailyRate = tier === 2 ? 0.40 : 0.33;
@@ -315,20 +311,18 @@ export default function StakeInvest() {
   const [trxData, setTrxData] = useState();
   const [trxHash, setTrxHash] = useState();
   const [txModalOpen, setTxModalOpen] = useState(false);
-  const [txStage, setTxStage] = useState('idle');
-  const [txError, setTxError] = useState('');
-
-
+  const [txSuccess, setTxSuccess] = useState(false);
 
   const { handleSendTx, hash } = useTransaction(trxData !== null && trxData);
+  
   useEffect(() => {
     if (trxData) {
       try {
-        setTxStage('connecting');
+        setTxModalOpen(true);
         handleSendTx(trxData);
       } catch (error) {
-        setTxError(error?.message || 'Transaction rejected or failed to send.');
-        setTxStage('error');
+        setTxModalOpen(false);
+        toast.error(error?.message || 'Transaction rejected or failed to send.');
         setIsStaking(false);
         try { financialSounds.playMoneyOut(); } catch {}
       }
@@ -337,8 +331,7 @@ export default function StakeInvest() {
 
   useEffect(() => {
     if (hash) {
-      setTrxHash(hash)
-      setTxStage('activating');
+      setTrxHash(hash);
     }
   }, [hash]);
 
@@ -350,36 +343,34 @@ export default function StakeInvest() {
       confirmations: 1,
     });
 
-
   useEffect(() => {
     if (!hash) return;
     if (isSuccess && receipt?.status === 'success') {
-      setTxStage('success');
+      setTxSuccess(true);
       setIsStaking(false);
       try { financialSounds.playTransactionSuccess(); } catch {}
     } else if (isError || receipt?.status === 'reverted') {
-      setTxStage('error');
-      setTxError('Your transaction failed or was reverted.');
+      setTxModalOpen(false);
       setIsStaking(false);
+      toast.error('Your transaction failed or was reverted.');
       try { financialSounds.playMoneyOut(); } catch {}
     }
   }, [isSuccess, isError, receipt, address, hash]);
 
-  const STAKE_STAGE_FLOW = ['initiated', 'connecting', 'activating'];
-  const STAGE_CONTENT = {
-    initiated: { title: 'Request initiated', subtitle: 'Preparing your staking transaction…' },
-    connecting: { title: 'Connecting wallet', subtitle: 'Approve the request in your wallet to continue.' },
-    activating: { title: 'Processing stake', subtitle: 'Finalizing on-chain. This may take a few moments.' },
-    success: { title: 'Stake complete', subtitle: 'Transaction confirmed successfully.' },
-  };
-
-  const cancelTx = () => {
+  const handleCloseModal = () => {
     setTxModalOpen(false);
-    setTxStage('idle');
-    setTxError('');
     setTrxData(undefined);
     setTrxHash(undefined);
+    setTxSuccess(false);
     setIsStaking(false);
+  };
+
+  const handleSuccess = () => {
+    setStakeAmount('10');
+    setBeneficiaryAddress('');
+    setSponsorValidated(false);
+    setSponsorInfo(null);
+    setSponsorError('');
   };
 
   // Sponsor validation (for staking on behalf of others)
@@ -893,40 +884,6 @@ export default function StakeInvest() {
     };
     fetchCurrentUserId();
   }, [address, userIdByAdd]);
-
-  // Countdown timer and auto-redirect on success
-  useEffect(() => {
-    if (txStage === 'success') {
-      setSuccessCountdown(10);
-      
-      const timer = setInterval(() => {
-        setSuccessCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // Reset form and refresh
-            setStakeAmount('10');
-            setBeneficiaryAddress('');
-            setSponsorValidated(false);
-            setSponsorInfo(null);
-            setSponsorError('');
-            setTxModalOpen(false);
-            setTxStage('idle');
-            setTxError('');
-            setTrxData(undefined);
-            setTrxHash(undefined);
-            setIsStaking(false);
-            
-            // Refresh the page
-            window.location.reload();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [txStage]);
 
 
 
@@ -1522,129 +1479,17 @@ export default function StakeInvest() {
         </button>
       </div>
 
-      {txModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark-950/80 backdrop-blur">
-          <div className="w-full max-w-md cyber-glass border border-cyan-500/30 rounded-2xl p-6 sm:p-8 relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/70 to-transparent" />
-            {txStage === 'error' ? (
-              <div className="space-y-5 text-center">
-                <div className="mx-auto w-16 h-16 rounded-full border border-red-500/50 bg-red-500/10 flex items-center justify-center">
-                  <AlertCircle size={32} className="text-red-400" />
-                </div>
-                <h3 className="text-2xl font-semibold text-red-200">Transaction failed</h3>
-                <p className="text-sm text-red-200/80">{txError || 'Your transaction failed or was reverted. Please try again.'}</p>
-                <button
-                  type="button"
-                  onClick={() => { setTxModalOpen(false); setTxStage('idle'); setTxError(''); setTrxData(undefined); setTrxHash(undefined); }}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-bold hover:shadow-neon-cyan transition-all"
-                >
-                  Close & retry
-                </button>
-              </div>
-            ) : txStage === 'success' ? (
-              <div className="space-y-5 text-center">
-                <div className="mx-auto w-16 h-16 rounded-full border border-neon-green/50 bg-neon-green/10 flex items-center justify-center">
-                  <CheckCircle size={32} className="text-neon-green" />
-                </div>
-                <h3 className="text-2xl font-semibold text-cyan-100">Stake complete</h3>
-                <p className="text-sm text-cyan-300/80">Your staking transaction is confirmed on-chain.</p>
-                
-                {/* Countdown Timer */}
-                <div className="cyber-glass border border-cyan-500/30 rounded-xl px-4 py-3 bg-cyan-500/5">
-                  <p className="text-xs text-cyan-300/70 mb-2">Redirecting in</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-12 h-12 rounded-full border-2 border-cyan-500 bg-cyan-500/10 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-cyan-100">{successCountdown}</span>
-                    </div>
-                    <span className="text-sm text-cyan-300/80">seconds</span>
-                  </div>
-                  <p className="text-xs text-cyan-300/60 mt-2">Page will refresh automatically</p>
-                </div>
-
-                {trxHash && (
-                  <div className="cyber-glass border border-cyan-500/30 rounded-xl px-4 py-3 text-left text-xs text-cyan-200/90">
-                    <p className="mb-2 uppercase tracking-wider text-[11px] text-cyan-300/70">Transaction Hash</p>
-                    <p className="font-semibold text-cyan-100">{`${trxHash.slice(0, 10)}...${trxHash.slice(-8)}`}</p>
-                    <p className="mt-2 break-all font-mono text-[11px] text-cyan-300/70">{trxHash}</p>
-                  </div>
-                )}
-                <div className="space-y-3">
-                  <a
-                    href={trxHash ? `https://ramascan.com/tx/${trxHash}` : 'https://ramascan.com/'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all text-sm"
-                  >
-                    View on Ramascan
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => { 
-                      setStakeAmount('10');
-                      setBeneficiaryAddress('');
-                      setSponsorValidated(false);
-                      setSponsorInfo(null);
-                      setSponsorError('');
-                      setTxModalOpen(false); 
-                      setTxStage('idle'); 
-                      setTxError(''); 
-                      setTrxData(undefined); 
-                      setTrxHash(undefined);
-                      setIsStaking(false);
-                      window.location.reload();
-                    }}
-                    className="w-full py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-bold hover:shadow-neon-cyan transition-all"
-                  >
-                    Close & Refresh Now
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-center space-y-5">
-                <div className="w-16 h-16 rounded-full border border-cyan-500/50 bg-cyan-500/10 flex items-center justify-center">
-                  <Loader2 size={32} className="text-cyan-200 animate-spin" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-cyan-200">{STAGE_CONTENT[txStage]?.title ?? 'Processing request'}</h3>
-                  <p className="text-sm text-cyan-300/80">{STAGE_CONTENT[txStage]?.subtitle ?? 'Hang tight while we process your transaction.'}</p>
-                </div>
-                <div className="w-full space-y-3">
-                  {STAKE_STAGE_FLOW.map((stageKey) => {
-                    const stageIndex = STAKE_STAGE_FLOW.indexOf(stageKey);
-                    const activeIndex = STAKE_STAGE_FLOW.indexOf(txStage);
-                    const isComplete = activeIndex > stageIndex;
-                    const isActive = activeIndex === stageIndex;
-                    return (
-                      <div
-                        key={stageKey}
-                        className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-3 ${
-                          isComplete ? 'border-neon-green/60 bg-neon-green/10' : isActive ? 'border-cyan-500/60 bg-cyan-500/10' : 'border-cyan-500/20 bg-dark-900/60'
-                        }`}
-                      >
-                        <div className="text-left">
-                          <p className="text-sm font-medium text-cyan-100">{STAGE_CONTENT[stageKey]?.title ?? stageKey}</p>
-                          <p className="text-[11px] text-cyan-300/70">{STAGE_CONTENT[stageKey]?.subtitle ?? ''}</p>
-                        </div>
-                        {isComplete ? <CheckCircle size={16} className="text-neon-green" /> : isActive ? <Loader2 size={16} className="text-cyan-300 animate-spin" /> : <span className="h-2 w-2 rounded-full bg-cyan-500/40" />}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="w-full space-y-3">
-                  <button
-                    type="button"
-                    onClick={cancelTx}
-                    className="w-full py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all text-sm"
-                  >
-                    Cancel request
-                  </button>
-                </div>
-                <p className="text-xs text-cyan-300/70">Need to cancel? Reject the transaction in your wallet.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ProgressiveTransactionModal
+        isOpen={txModalOpen}
+        onClose={handleCloseModal}
+        txHash={trxHash}
+        title="Stake Portfolio"
+        description="Creating your portfolio stake"
+        successMessage="Your portfolio has been staked successfully!"
+        onSuccess={handleSuccess}
+        amount={stakeAmountNum > 0 ? `$${stakeAmountNum.toFixed(2)}` : ''}
+        amountLabel="Stake Amount"
+      />
 
       {showRegisterModal && (
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-dark-950/80 backdrop-blur p-4 overflow-y-auto">

@@ -159,84 +159,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint32",
-        "name": "fromPeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "toPeriod",
-        "type": "uint32"
-      }
-    ],
-    "name": "ROIForAPortfolio",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "usdTotal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "ramaTotal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint32",
-        "name": "epochsCount",
-        "type": "uint32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "uint32",
-        "name": "fromPeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "toPeriod",
-        "type": "uint32"
-      }
-    ],
-    "name": "ROIForBoosterPortfolios",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "usdTotal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "ramaTotal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint32",
-        "name": "epochsCount",
-        "type": "uint32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -466,6 +388,57 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "epoch",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPidClaimsSlice",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "pid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "usdTotal",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ramaTotal",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ROIDistributor.PidClaim[]",
+        "name": "out",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       }
     ],
     "name": "getTotalsClaimed",
@@ -660,159 +633,6 @@
         "internalType": "contract IPortfolioManager",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "previewClaimPerPortfolio",
-    "outputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "pids",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "usdTotals",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "ramaTotals",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint32[]",
-        "name": "epochCounts",
-        "type": "uint32[]"
-      },
-      {
-        "internalType": "uint32",
-        "name": "fromPeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "lastPeriod",
-        "type": "uint32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "offset",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "previewUnclaimedForPortfolio_UsingCapMgr",
-    "outputs": [
-      {
-        "internalType": "uint32",
-        "name": "fromPeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "toPeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "pageStartPeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "pageEndPeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalEpochs",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint32[]",
-        "name": "periodIds",
-        "type": "uint32[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "usdPerPeriod",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "ramaPerPeriod",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint32",
-        "name": "epochsCount",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "usdTotal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "ramaTotal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "principalUsd6",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "capPct",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "remPidCapBeforeUSD6",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "remPidCapAfterUSD6",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "remUser4xBeforeUSD6",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "remUser4xAfterUSD6",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",

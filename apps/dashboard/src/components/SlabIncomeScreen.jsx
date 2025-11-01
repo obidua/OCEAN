@@ -671,6 +671,106 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                 </div>
               )}
 
+              {/* Royalty Rewards Table (renamed from Royalty Tiers) */}
+              {royaltyTiers && (
+                <div className="cyber-glass border border-purple-500/40 rounded-2xl overflow-hidden relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/70 to-transparent" />
+                  
+                  {/* Header */}
+                  <div className="p-6 pb-4 relative z-10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/30">
+                        <TrendingUp size={20} className="text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-purple-400">Royalty Rewards</h4>
+                        <p className="text-xs text-purple-300/70">Premium reward structure</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-purple-300/60">
+                      Total Tiers: {royaltyTiers.length}
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="relative z-10 max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-purple-500/30 hover:scrollbar-thumb-purple-500/50">
+                    <div className="px-6 pb-6">
+                      <div className="bg-dark-950/40 rounded-xl border border-purple-500/20">
+                        <div className="overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-purple-500/30 hover:scrollbar-thumb-purple-500/50">
+                          <table className="w-full min-w-[520px] text-sm">
+                            <thead className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-purple-500/20">
+                              <tr>
+                                <th className="text-left py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider whitespace-nowrap">
+                                  Tier
+                                </th>
+                                <th className="text-right py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider whitespace-nowrap">
+                                  Threshold
+                                </th>
+                                <th className="text-right py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider whitespace-nowrap">
+                                  Reward
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {royaltyTiers.map((tier, idx) => {
+                                const isEligible = qualifiedVolumeUsd >= tier.threshold;
+                                const isNext = !isEligible && (idx === 0 || qualifiedVolumeUsd >= royaltyTiers[idx - 1]?.threshold);
+                                return (
+                                  <tr 
+                                    key={idx} 
+                                    className={`border-b border-purple-500/10 transition-all duration-200 ${
+                                      isNext 
+                                        ? "bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20" 
+                                        : isEligible
+                                        ? "bg-gradient-to-r from-green-500/10 to-emerald-500/10"
+                                        : "hover:bg-purple-500/5"
+                                    }`}
+                                  >
+                                    <td className="py-3 px-4">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                          isEligible 
+                                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white" 
+                                            : isNext
+                                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                                            : "bg-purple-500/20 text-purple-400"
+                                        }`}>
+                                          {idx + 1}
+                                        </div>
+                                        <span className={`font-medium ${
+                                          isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
+                                        }`}>
+                                          Tier {idx + 1}
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td className="py-3 px-4 text-right">
+                                      <span className={`font-bold ${
+                                        isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
+                                      } whitespace-nowrap`}>
+                                        ${tier.threshold?.toLocaleString()}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-4 text-right">
+                                      <span className={`font-bold ${
+                                        isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
+                                      } whitespace-nowrap`}>
+                                        ${tier.reward?.toLocaleString()}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Reward Milestones Table */}
               {rewardMilestones && (
                 <div className="cyber-glass border border-yellow-500/40 rounded-2xl overflow-hidden relative group">
@@ -753,106 +853,6 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                             })}
                           </tbody>
                         </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Royalty Tiers Table */}
-              {royaltyTiers && (
-                <div className="cyber-glass border border-purple-500/40 rounded-2xl overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
-                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/70 to-transparent" />
-                  
-                  {/* Header */}
-                  <div className="p-6 pb-4 relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/30">
-                        <TrendingUp size={20} className="text-purple-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-bold text-purple-400">Royalty Tiers</h4>
-                        <p className="text-xs text-purple-300/70">Premium reward structure</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-purple-300/60">
-                      Total Tiers: {royaltyTiers.length}
-                    </div>
-                  </div>
-
-                  {/* Table */}
-                  <div className="relative z-10 max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-purple-500/30 hover:scrollbar-thumb-purple-500/50">
-                    <div className="px-6 pb-6">
-                      <div className="bg-dark-950/40 rounded-xl border border-purple-500/20">
-                        <div className="overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-purple-500/30 hover:scrollbar-thumb-purple-500/50">
-                          <table className="w-full min-w-[520px] text-sm">
-                            <thead className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-purple-500/20">
-                              <tr>
-                                <th className="text-left py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider whitespace-nowrap">
-                                  Tier
-                                </th>
-                                <th className="text-right py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider whitespace-nowrap">
-                                  Threshold
-                                </th>
-                                <th className="text-right py-3 px-4 font-semibold text-purple-300 text-xs uppercase tracking-wider whitespace-nowrap">
-                                  Reward
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {royaltyTiers.map((tier, idx) => {
-                                const isEligible = qualifiedVolumeUsd >= tier.threshold;
-                                const isNext = !isEligible && (idx === 0 || qualifiedVolumeUsd >= royaltyTiers[idx - 1]?.threshold);
-                                return (
-                                  <tr 
-                                    key={idx} 
-                                    className={`border-b border-purple-500/10 transition-all duration-200 ${
-                                      isNext 
-                                        ? "bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20" 
-                                        : isEligible
-                                        ? "bg-gradient-to-r from-green-500/10 to-emerald-500/10"
-                                        : "hover:bg-purple-500/5"
-                                    }`}
-                                  >
-                                    <td className="py-3 px-4">
-                                      <div className="flex items-center gap-2">
-                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                                          isEligible 
-                                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white" 
-                                            : isNext
-                                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                                            : "bg-purple-500/20 text-purple-400"
-                                        }`}>
-                                          {idx + 1}
-                                        </div>
-                                        <span className={`font-medium ${
-                                          isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
-                                        }`}>
-                                          Tier {idx + 1}
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="py-3 px-4 text-right">
-                                      <span className={`font-bold ${
-                                        isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
-                                      } whitespace-nowrap`}>
-                                        ${tier.threshold?.toLocaleString()}
-                                      </span>
-                                    </td>
-                                    <td className="py-3 px-4 text-right">
-                                      <span className={`font-bold ${
-                                        isNext ? "text-purple-400" : isEligible ? "text-green-400" : "text-purple-300/60"
-                                      } whitespace-nowrap`}>
-                                        ${tier.reward?.toLocaleString()}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
                       </div>
                     </div>
                   </div>

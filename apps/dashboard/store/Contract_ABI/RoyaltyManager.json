@@ -1,5 +1,50 @@
 [
   {
+    "inputs": [],
+    "name": "AlreadyDone",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BadStage",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EpochConfigInvalid",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IndexOOB",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoCapRoom",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoEntitlement",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoOpenPortfolio",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotAuthorized",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAmount",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -124,7 +169,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "ramaAmount",
+        "name": "creditedUSD6",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "creditedRamaWei",
         "type": "uint256"
       }
     ],
@@ -176,34 +227,9 @@
         "internalType": "uint256",
         "name": "amountUSD",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amountRama",
-        "type": "uint256"
       }
     ],
     "name": "RoyaltyPendingSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint64",
-        "name": "monthId",
-        "type": "uint64"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "root",
-        "type": "bytes32"
-      }
-    ],
-    "name": "RoyaltyRootSet",
     "type": "event"
   },
   {
@@ -218,6 +244,40 @@
     ],
     "name": "Upgraded",
     "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "name": "bizSnap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "lastTUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currTUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gainUSD6",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [],
@@ -241,52 +301,13 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountRamaWei",
+        "name": "maxUSD6",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountUSD6",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint8",
-        "name": "tierIdx",
-        "type": "uint8"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "proof",
-        "type": "bytes32[]"
       }
     ],
     "name": "claimRoyalty",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint64",
-        "name": "",
-        "type": "uint64"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "claimed",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -305,6 +326,19 @@
     "name": "clearPendingRoyalty",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "currentMonthId",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -398,6 +432,76 @@
     "name": "distributeRoyaltyManual",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "epochLenSec",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "epochZeroTs",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      }
+    ],
+    "name": "getExpectedRoyaltyForMonth",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "tierIdx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "entitledUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "creditedUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expectedCreditUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "holdUSD6",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1139,6 +1243,11 @@
             "internalType": "uint256",
             "name": "t60dAgoCacheUSD6",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastPaidBusinessUSD6",
+            "type": "uint256"
           }
         ],
         "internalType": "struct RoyaltyManager.RoyaltyOverview",
@@ -1178,6 +1287,24 @@
   {
     "inputs": [
       {
+        "internalType": "uint256[]",
+        "name": "teamBusiness",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "monthlyUSD",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "initTiers",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_cfg",
         "type": "address"
@@ -1192,11 +1319,11 @@
     "inputs": [
       {
         "internalType": "uint64",
-        "name": "",
+        "name": "ts",
         "type": "uint64"
       }
     ],
-    "name": "monthLastDistributionAt",
+    "name": "monthIdAt",
     "outputs": [
       {
         "internalType": "uint64",
@@ -1215,12 +1342,12 @@
         "type": "uint64"
       }
     ],
-    "name": "monthRoot",
+    "name": "monthLastDistributionAt",
     "outputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint64",
         "name": "",
-        "type": "bytes32"
+        "type": "uint64"
       }
     ],
     "stateMutability": "view",
@@ -1261,12 +1388,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountRama",
+        "name": "amountUSD",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amountUSD",
+        "name": "creditedUSD",
         "type": "uint256"
       },
       {
@@ -1299,29 +1426,28 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "ramaWei",
-        "type": "uint256"
-      }
-    ],
-    "name": "ramaToUsd",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "user",
         "type": "address"
       },
+      {
+        "internalType": "uint64",
+        "name": "monthId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "minStageIdx",
+        "type": "uint8"
+      }
+    ],
+    "name": "recordEntitlementFromDistributor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "uint64[]",
         "name": "monthIds",
@@ -1344,11 +1470,40 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "user",
         "type": "address"
       }
     ],
     "name": "royalty",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "royaltyState",
     "outputs": [
       {
         "internalType": "uint8",
@@ -1364,6 +1519,11 @@
         "internalType": "bool",
         "name": "paused",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lastPaidBusinessUSD6",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1392,16 +1552,16 @@
     "inputs": [
       {
         "internalType": "uint64",
-        "name": "monthId",
+        "name": "zeroTs",
         "type": "uint64"
       },
       {
-        "internalType": "bytes32",
-        "name": "root",
-        "type": "bytes32"
+        "internalType": "uint64",
+        "name": "lenSec",
+        "type": "uint64"
       }
     ],
-    "name": "setMonthlyRoot",
+    "name": "setEpochConfig",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1426,11 +1586,6 @@
       {
         "internalType": "uint256",
         "name": "amountUSD6",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountRamaWei",
         "type": "uint256"
       }
     ],
@@ -1595,25 +1750,6 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "usd6",
-        "type": "uint256"
-      }
-    ],
-    "name": "usdToRama",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

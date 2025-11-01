@@ -568,6 +568,49 @@
         "type": "address"
       }
     ],
+    "name": "getLegKeysOf",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "leg",
+        "type": "address"
+      }
+    ],
+    "name": "getLegVolOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
     "name": "getLegsDetailed",
     "outputs": [
       {
@@ -693,6 +736,19 @@
   },
   {
     "inputs": [],
+    "name": "getRewardMilestonesAll",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "out",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getRoyaltyTiers",
     "outputs": [
       {
@@ -743,6 +799,48 @@
         "internalType": "uint8[11]",
         "name": "",
         "type": "uint8[11]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getSlabState",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "slabIdx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "lastClaimAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint32",
+        "name": "new50SinceLastClaim",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSlabThresholds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "out",
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",

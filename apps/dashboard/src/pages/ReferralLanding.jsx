@@ -107,7 +107,7 @@ export default function ReferralLanding() {
           {referralCode ? (
             <div className="mb-6 p-3 cyber-glass border border-neon-green/40 rounded-xl text-xs text-neon-green/80 flex items-center justify-between">
               <span>Referral Code</span>
-              <code className="font-mono text-sm text-neon-green">{referralCode}</code>
+              <code className="font-mono text-sm text-neon-green">{referralCode.slice(0,8)+"..."+referralCode.slice(-8)}</code>
             </div>
           ) : (
             <div className="mb-6 p-3 border border-cyan-500/30 rounded-xl text-xs text-cyan-300/80">

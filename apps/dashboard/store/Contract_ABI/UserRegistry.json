@@ -472,6 +472,11 @@
             "internalType": "uint64",
             "name": "createdAt",
             "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "isTempDeactive",
+            "type": "bool"
           }
         ],
         "internalType": "struct IUserRegistry.UserInfo",
@@ -558,8 +563,40 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "isTempDeactive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "lastId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxIdGap",
     "outputs": [
       {
         "internalType": "uint32",
@@ -669,12 +706,38 @@
   {
     "inputs": [
       {
+        "internalType": "uint32",
+        "name": "_gap",
+        "type": "uint32"
+      }
+    ],
+    "name": "setMaxIdGap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_pm",
         "type": "address"
       }
     ],
     "name": "setPortfolioManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "tempDeactivateUser",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
