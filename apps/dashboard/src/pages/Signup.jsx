@@ -19,6 +19,7 @@ import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { useStore } from '../../store/useUserInfoStore';
 import { useTransaction } from '../../config/register';
 import { useDisconnect, useWaitForTransactionReceipt } from 'wagmi';
+import financialSounds from '../utils/financialSounds';
 
 const MIN_USD = 10;
 const MAX_USD = 100_000_000;
@@ -75,6 +76,11 @@ export default function Signup() {
   const lastValidatedInputRef = useRef('');
   const sponsorValidatedRef = useRef(false);
   const sponsorInputRef = useRef(null);
+  // Debounce timer for sponsor auto-validation
+  const sponsorDebounceRef = useRef(null);
+  // Countdown state & interval for auto-validation
+  const [autoValidateSeconds, setAutoValidateSeconds] = useState(0);
+  const autoValidateIntervalRef = useRef(null);
 
   const { data: balanceData } = useBalance({ address: address });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -255,6 +261,7 @@ export default function Signup() {
         setTxError(error?.shortMessage || error?.message || 'Transaction was rejected or failed to send.');
         setTxStage('error');
         setIsSubmitting(false);
+        try { financialSounds.playMoneyOut(); } catch {}
       }
     }
   }, [trxData, handleSendTx]);
@@ -277,6 +284,7 @@ export default function Signup() {
       setTxStage('success');
       setTxReceipt(receipt);
       setIsSubmitting(false);
+      try { financialSounds.playTransactionSuccess(); } catch {}
       try {
         if (address) localStorage.setItem('userAddress', address);
       } catch {}
@@ -284,6 +292,7 @@ export default function Signup() {
       setTxStage('error');
       setTxError('Your transaction failed or was reverted.');
       setIsSubmitting(false);
+      try { financialSounds.playMoneyOut(); } catch {}
     }
   }, [isSuccess, isError, receipt, hash, address]);
 
@@ -357,17 +366,59 @@ useEffect(() => {
 
   useEffect(() => {
     const trimmed = (userValue || '').trim();
+    // Clear any pending debounce on every change
+    if (sponsorDebounceRef.current) {
+      clearTimeout(sponsorDebounceRef.current);
+      sponsorDebounceRef.current = null;
+    }
+    // Clear any existing countdown interval
+    if (autoValidateIntervalRef.current) {
+      clearInterval(autoValidateIntervalRef.current);
+      autoValidateIntervalRef.current = null;
+    }
+
     if (!trimmed) {
       lastValidatedInputRef.current = '';
+      setAutoValidateSeconds(0);
       return;
     }
     if (trimmed === lastValidatedInputRef.current) return;
 
-    const handle = setTimeout(() => {
+    // Auto-validate after 10 seconds of inactivity
+    setAutoValidateSeconds(10);
+    autoValidateIntervalRef.current = setInterval(() => {
+      setAutoValidateSeconds((prev) => {
+        if (prev <= 1) {
+          if (autoValidateIntervalRef.current) {
+            clearInterval(autoValidateIntervalRef.current);
+            autoValidateIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    sponsorDebounceRef.current = setTimeout(() => {
       validateSponsor({ silent: true, value: trimmed });
-    }, 800);
+      // Clear countdown on trigger
+      if (autoValidateIntervalRef.current) {
+        clearInterval(autoValidateIntervalRef.current);
+        autoValidateIntervalRef.current = null;
+      }
+      setAutoValidateSeconds(0);
+      sponsorDebounceRef.current = null;
+    }, 10_000);
 
-    return () => clearTimeout(handle);
+    return () => {
+      if (sponsorDebounceRef.current) {
+        clearTimeout(sponsorDebounceRef.current);
+        sponsorDebounceRef.current = null;
+      }
+      if (autoValidateIntervalRef.current) {
+        clearInterval(autoValidateIntervalRef.current);
+        autoValidateIntervalRef.current = null;
+      }
+    };
   }, [userValue, validateSponsor]);
 
   const handleRefresh = async () => {
@@ -453,6 +504,7 @@ useEffect(() => {
     setIsSubmitting(true);
     setTxStage('initiated');
     setTxModalOpen(true);
+  try { financialSounds.playPortfolioUpdate(); } catch {}
 
     try {
       const already = await isUserRegisterd(address);
@@ -470,12 +522,14 @@ useEffect(() => {
         setTxStage('error');
         setTxError('Unable to build registration transaction.');
         setIsSubmitting(false);
+        try { financialSounds.playMoneyOut(); } catch {}
       }
     } catch (error) {
       console.error('Registration failed:', error);
       setTxStage('error');
       setTxError(error?.message || 'An unexpected error occurred. Please try again.');
       setIsSubmitting(false);
+      try { financialSounds.playMoneyOut(); } catch {}
     }
   };
 
@@ -485,6 +539,9 @@ useEffect(() => {
     setTxError('');
     setTxReceipt(null);
     setRedirectCountdown(15);
+    setIsSubmitting(false);
+    setTrxData(null);
+    setTrxHash(undefined);
     if (redirectTimerRef.current) {
       clearInterval(redirectTimerRef.current);
       redirectTimerRef.current = null;
@@ -860,12 +917,24 @@ useEffect(() => {
                           </div>
                         )}
                       </div>
-                      <div className="flex w-full flex-col items-center justify-center gap-2 sm:w-auto sm:flex-row sm:justify-center">
+                      <div className="flex w-full sm:w-auto flex-row items-center justify-start gap-2 overflow-x-auto whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() => validateSponsor({ silent: false })}
+                          onClick={() => {
+                            // Manual validate: cancel pending auto-validate and run immediately
+                            if (sponsorDebounceRef.current) {
+                              clearTimeout(sponsorDebounceRef.current);
+                              sponsorDebounceRef.current = null;
+                            }
+                            if (autoValidateIntervalRef.current) {
+                              clearInterval(autoValidateIntervalRef.current);
+                              autoValidateIntervalRef.current = null;
+                            }
+                            setAutoValidateSeconds(0);
+                            validateSponsor({ silent: false });
+                          }}
                           disabled={validationPending || !(userValue || '').trim()}
-                          className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 px-5 py-3 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="shrink-0 flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 px-5 py-3 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {validationPending ? (
                             <>
@@ -892,6 +961,15 @@ useEffect(() => {
                               if (text && text.trim()) {
                                 handleSponsorChange(text.trim());
                                 // auto-validate after paste
+                                if (sponsorDebounceRef.current) {
+                                  clearTimeout(sponsorDebounceRef.current);
+                                  sponsorDebounceRef.current = null;
+                                }
+                                if (autoValidateIntervalRef.current) {
+                                  clearInterval(autoValidateIntervalRef.current);
+                                  autoValidateIntervalRef.current = null;
+                                }
+                                setAutoValidateSeconds(0);
                                 await validateSponsor({ silent: false, value: text.trim() });
                               }
                             } catch (err) {
@@ -899,7 +977,7 @@ useEffect(() => {
                             }
                           }}
                           title="Paste from clipboard"
-                          className="rounded-xl border border-cyan-500/30 px-3 py-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-500/10"
+                          className="shrink-0 rounded-xl border border-cyan-500/30 px-3 py-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-500/10"
                         >
                           <Clipboard size={16} />
                         </button>
@@ -907,7 +985,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={handleSponsorEdit}
-                            className="rounded-xl border border-cyan-500/30 px-5 py-3 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-500/10"
+                            className="shrink-0 rounded-xl border border-cyan-500/30 px-5 py-3 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-500/10"
                           >
                             Edit
                           </button>
@@ -924,7 +1002,12 @@ useEffect(() => {
 
                     {!sponsorError && !sponsorValidated && trimmedSponsor.length === 0 && (
                       <p className="text-xs text-cyan-400/60">
-                        Hint: paste a registered wallet or numeric sponsor ID to auto-validate.
+                        Hint: paste a registered wallet or numeric sponsor ID to auto-validate. Auto-check runs 10s after typing; click Validate to check immediately.
+                      </p>
+                    )}
+                    {!sponsorError && !sponsorValidated && trimmedSponsor.length > 0 && autoValidateSeconds > 0 && (
+                      <p className="text-xs text-cyan-300/80">
+                        Auto-validation will start in {autoValidateSeconds}s… or click Validate to run now.
                       </p>
                     )}
                   </div>
@@ -1085,6 +1168,15 @@ useEffect(() => {
                       </div>
                     );
                   })}
+                </div>
+                <div className="w-full space-y-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="w-full py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all text-sm"
+                  >
+                    Cancel request
+                  </button>
                 </div>
                 <p className="text-xs text-cyan-300/70">
                   Need to cancel? Reject the transaction in your wallet or close this window once complete.

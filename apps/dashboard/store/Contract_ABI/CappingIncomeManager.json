@@ -142,9 +142,9 @@
       },
       {
         "indexed": false,
-        "internalType": "bytes32",
+        "internalType": "uint8",
         "name": "reason",
-        "type": "bytes32"
+        "type": "uint8"
       }
     ],
     "name": "MissedIncomeNoted",
@@ -256,6 +256,30 @@
     ],
     "name": "Upgraded",
     "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "_computeNext4xThreshold",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "nextThresholdUSD6",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cumPrincipalUSD6",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [],
@@ -569,9 +593,9 @@
             "type": "uint256"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "uint8",
             "name": "reason",
-            "type": "bytes32"
+            "type": "uint8"
           }
         ],
         "internalType": "struct CappingIncomeManager.MissedIncomeRec[]",
@@ -605,9 +629,9 @@
         "type": "bool"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "uint8",
         "name": "reason",
-        "type": "bytes32"
+        "type": "uint8"
       },
       {
         "internalType": "uint256",
@@ -645,9 +669,9 @@
             "type": "uint256"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "uint8",
             "name": "reason",
-            "type": "bytes32"
+            "type": "uint8"
           }
         ],
         "internalType": "struct CappingIncomeManager.MissedIncomeRec[]",
@@ -674,9 +698,9 @@
     "name": "getMissedTotalsByReason",
     "outputs": [
       {
-        "internalType": "bytes32[]",
+        "internalType": "uint8[]",
         "name": "reasons",
-        "type": "bytes32[]"
+        "type": "uint8[]"
       },
       {
         "internalType": "uint256[]",
@@ -1004,7 +1028,7 @@
         "type": "uint256"
       }
     ],
-    "name": "remainingToCapWei",
+    "name": "remainingToCapUSD",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1162,6 +1186,11 @@
         "internalType": "bool",
         "name": "accepted",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "credited",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",

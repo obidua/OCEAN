@@ -16,6 +16,7 @@ import RoyaltyManagerABI from './Contract_ABI/RoyaltyManager.json';
 import RewardVaultABI from './Contract_ABI/RewardVault.json';
 import SafeWalletABI from './Contract_ABI/SafeWallet.json';
 import RoiDistributionABI from './Contract_ABI/RoiDistributor.json';
+import RoiDistributionViewABI from './Contract_ABI/ROIDistributorView.json';
 import { dayShortFromUnix } from "../src/utils/helper";
 import { checkEnvironmentConfig, resolveContractAddress, validateRuntimeConfig } from "../src/utils/envCheck.js";
 import { getRPCUrls, callWithDualRPC as rpcCallWithDualRPC, createWeb3Instance } from "../src/utils/rpcConfig.js";
@@ -81,6 +82,7 @@ const Contract = {
   UserRegistry: resolveAddress("USERREGISTRY", "0x246c7317F4093065B96c2b0DC65A63De395444ed"),
   CoreConfig: resolveAddress("CORECONFIG", "0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d"),
   RoiDistribution: resolveAddress("ROIDISTRIBUTOR", "0x7951bf0faABE00c451F1d92008297a7bd85d4678"),
+  RoiDistributionView: resolveAddress("ROIDISTRIBUTORVIEW", "0x1B2a90477504586c66130E2146c5Ae6618Ef55B1"),
   PortFolioManager: resolveAddress("PORTFOLIOMANAGER", "0xC73f964eA7bC04a2c7455CAf6107238147c88365"),
   RoyaltyManager: resolveAddress("ROYALTYMANAGER", "0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5"),
   SlabManager: resolveAddress("SLABMANAGER", "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9"),
@@ -567,10 +569,15 @@ export const useStore = create((set, get) => ({
 
       const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
       if (!roiDistributor) throw new Error("ROI Distributor contract not available");
+      
+      // Use view contract for read operations
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
+      
       // 1) Pre-check unclaimed ROI to prevent revert
       let unclaimed;
       try {
-        unclaimed = await roiDistributor.methods.getUnclaimedROI(fromAddress).call();
+        unclaimed = await roiDistributorView.methods.getUnclaimedROI(fromAddress).call();
       } catch (e) {
         console.error('Failed to fetch unclaimed ROI preview:', e);
       }
@@ -581,7 +588,7 @@ export const useStore = create((set, get) => ({
         // Try to provide a helpful ETA if available
         let etaMsg = '';
         try {
-          const nextTs = await roiDistributor.methods.nextDistributionTs().call();
+          const nextTs = await roiDistributorView.methods.nextDistributionTs().call();
           const tsNum = toNumber(nextTs);
           if (tsNum > 0) {
             const now = Math.floor(Date.now() / 1000);
@@ -651,17 +658,13 @@ export const useStore = create((set, get) => ({
   // ROI Distributor timings and window helpers
   getROITiming: async () => {
     try {
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
-      const [lastTs, nextTs, maxPeriods] = await Promise.all([
-        roiDistributor.methods.lastDistributionTs().call(),
-        roiDistributor.methods.nextDistributionTs().call(),
-        roiDistributor.methods.maxPeriodsPerClaim().call(),
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
+      const [nextTs] = await Promise.all([
+        roiDistributorView.methods.nextDistributionTs().call(),
       ]);
       return {
-        lastDistributionTs: toNumber(lastTs),
         nextDistributionTs: toNumber(nextTs),
-        maxPeriodsPerClaim: toNumber(maxPeriods),
       };
     } catch (error) {
       console.error("Error fetching ROI timing:", error);
@@ -671,9 +674,9 @@ export const useStore = create((set, get) => ({
 
   getUnclaimedROIWindow: async (address) => {
     try {
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
-      const out = await roiDistributor.methods.getUnclaimedROI(address).call();
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
+      const out = await roiDistributorView.methods.getUnclaimedROI(address).call();
       return {
         usd: fromMicroUSD(out?.usdTotalMicro ?? 0),
         rama: fromWeiToRama(out?.ramaTotalWei ?? 0),
@@ -689,9 +692,9 @@ export const useStore = create((set, get) => ({
 
   previewClaimPerPortfolioSlice: async (address, offset = 0, limit = 50) => {
     try {
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
-      const res = await roiDistributor.methods
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
+      const res = await roiDistributorView.methods
         .previewClaimPerPortfolioSlice(address, offset, limit)
         .call();
       const pids = res?.pids ?? [];
@@ -716,9 +719,9 @@ export const useStore = create((set, get) => ({
 
   getTotalsClaimedFromDistributor: async (address) => {
     try {
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
-      const result = await roiDistributor.methods.getTotalsClaimed(address).call();
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
+      const result = await roiDistributorView.methods.getTotalsClaimed(address).call();
       
       // Handle both array and object responses
       const usd = result?.[0] ?? result?.usd ?? result;
@@ -798,11 +801,11 @@ export const useStore = create((set, get) => ({
         }
       }
 
-      // Use ROI Distributor to get preview
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
+      // Use ROI Distributor View to get preview
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
       
-      const previewRaw = await roiDistributor.methods.previewClaimPerPortfolio(address).call();
+      const previewRaw = await roiDistributorView.methods.previewClaimPerPortfolio(address).call();
       
       // Handle both array and object responses with safe access
       const pids = previewRaw?.pids ?? previewRaw?.[0] ?? [];
@@ -917,10 +920,10 @@ export const useStore = create((set, get) => ({
 
   previewUnclaimedForPortfolioUsingCapMgr: async (pid, offset = 0, value = 1000) => {
     try {
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) throw new Error("ROI Distributor contract not available");
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
 
-      const preview = await roiDistributor.methods
+      const preview = await roiDistributorView.methods
         .previewUnclaimedForPortfolio_UsingCapMgr(
           String(pid),
           String(offset),
@@ -1029,12 +1032,12 @@ export const useStore = create((set, get) => ({
 
   getClaimHistoryPaged: async (address, offset = 0, limit = 20) => {
     try {
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) {
-        throw new Error("ROI Distributor contract not available");
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) {
+        throw new Error("ROI DistributorView contract not available");
       }
 
-      const result = await roiDistributor.methods
+      const result = await roiDistributorView.methods
         .getClaimHistorySlice(address, offset, limit)
         .call();
 
@@ -1170,17 +1173,17 @@ export const useStore = create((set, get) => ({
         }
       }
 
-      // Fallback to ROI Distributor contract
-      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
-      if (!roiDistributor) {
-        console.warn("Neither ComprehensiveView nor ROI Distributor contracts available");
+      // Fallback to ROI Distributor View contract
+      const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
+      if (!roiDistributorView) {
+        console.warn("Neither ComprehensiveView nor ROI Distributor View contracts available");
         return { claimedUsd: 0, claimedRama: 0, unclaimedUsd: 0, unclaimedRama: 0 };
       }
 
       // Get totals claimed and unclaimed ROI separately
       const [claimedTotals, unclaimedData] = await Promise.all([
-        roiDistributor.methods.getTotalsClaimed(address).call(),
-        roiDistributor.methods.getUnclaimedROI(address).call()
+        roiDistributorView.methods.getTotalsClaimed(address).call(),
+        roiDistributorView.methods.getUnclaimedROI(address).call()
       ]);
 
       return {
@@ -1628,28 +1631,13 @@ export const useStore = create((set, get) => ({
       const capProgressBps = toNumber(pick("capProgressBps", 12));
       const dailyRateWad = pick("dailyRateWad", 11);
 
-      // Fetch remaining-to-cap from CappingIncomeManager and convert to USD6 via PortfolioManager
-      let remainingToCapWei = "0";
+      // Fetch remaining-to-cap from CappingIncomeManager (returns USD6 directly)
       let remainingCapUsdMicro = "0";
       try {
-        const wei = await cappingIncomeManager.methods.remainingToCapWei(portId).call();
-        remainingToCapWei = String(wei ?? "0");
-        if (wei && wei !== "0" && wei !== "0x0") {
-          try {
-            // Validate wei is a valid number
-            const weiNumber = BigInt(wei);
-            if (weiNumber > 0n) {
-              const usd6 = await portfolioManager.methods.getPackageValueInUSD(wei).call();
-              remainingCapUsdMicro = String(usd6 ?? "0");
-            }
-          } catch (convErr) {
-            console.warn("getPackageValueInUSD failed for remainingToCapWei:", convErr?.message || convErr);
-            // Set to 0 on failure to prevent further errors
-            remainingCapUsdMicro = "0";
-          }
-        }
+        const usd6 = await cappingIncomeManager.methods.remainingToCapUSD(portId).call();
+        remainingCapUsdMicro = String(usd6 ?? "0");
       } catch (remErr) {
-        console.warn("CappingIncomeManager.remainingToCapWei failed:", remErr?.message || remErr);
+        console.warn("CappingIncomeManager.remainingToCapUSD failed:", remErr?.message || remErr);
       }
 
       const result = {
@@ -1673,7 +1661,6 @@ export const useStore = create((set, get) => ({
         capUsd: fromMicroUSD(capUsdMicro),
         dailyRateWad,
         capProgressBps,
-        remainingToCapWei,
         remainingCapUsdMicro,
         remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
       };
@@ -1715,15 +1702,15 @@ export const useStore = create((set, get) => ({
         CappingIncomeManagerABI,
         Contract["CappingIncomeManager"]
       );
-      const roiDistributor = makeContract(
-        RoiDistributionABI,
-        Contract["RoiDistribution"]
+      const roiDistributorView = makeContract(
+        RoiDistributionViewABI,
+        Contract["RoiDistributionView"]
       );
 
       const roiPreviewMap = new Map();
-      if (roiDistributor) {
+      if (roiDistributorView) {
         try {
-          const previewRaw = await roiDistributor.methods
+          const previewRaw = await roiDistributorView.methods
             .previewClaimPerPortfolio(userAddress)
             .call();
           const previewPids =
@@ -1817,24 +1804,15 @@ export const useStore = create((set, get) => ({
             const frozenUntil = toNumber(pick(entry, "frozenUntil", 14) ?? 0);
             const roiPreview = roiPreviewMap.get(pid);
 
-            // Remaining-to-cap from CappingIncomeManager (wei) -> USD6 via PortfolioManager
-            let remainingToCapWei = "0";
+            // Remaining-to-cap from CappingIncomeManager (returns USD6 directly)
             let remainingCapUsdMicro = "0";
             try {
               if (cappingIncomeManager && Number.isFinite(pid)) {
-                const remWei = await cappingIncomeManager.methods.remainingToCapWei(pid).call();
-                remainingToCapWei = String(remWei ?? "0");
-                if (remWei && remWei !== "0" && portfolioManager) {
-                  try {
-                    const usd6 = await portfolioManager.methods.getPackageValueInUSD(remWei).call();
-                    remainingCapUsdMicro = String(usd6 ?? "0");
-                  } catch (convErr) {
-                    console.warn("getPackageValueInUSD failed (dashboard portfolios):", convErr?.message || convErr);
-                  }
-                }
+                const usd6 = await cappingIncomeManager.methods.remainingToCapUSD(pid).call();
+                remainingCapUsdMicro = String(usd6 ?? "0");
               }
             } catch (remErr) {
-              console.warn("remainingToCapWei (dashboard portfolios) failed:", remErr?.message || remErr);
+              console.warn("remainingToCapUSD (dashboard portfolios) failed:", remErr?.message || remErr);
             }
 
             const principalUsd = fromMicroUSD(principalUsdMicro);
@@ -1873,7 +1851,6 @@ export const useStore = create((set, get) => ({
               pendingUsdMicro: roiPreview?.usdMicro ?? "0",
               pendingRama: roiPreview?.rama ?? 0,
               pendingRamaWei: roiPreview?.ramaWei ?? 0,
-              remainingToCapWei,
               remainingCapUsdMicro,
               remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
             };
@@ -3294,24 +3271,15 @@ export const useStore = create((set, get) => ({
               pick(entry, "capProgressBps", 7) ?? 0
             );
 
-            // Remaining-to-cap from CappingIncomeManager (wei) -> USD6 via PortfolioManager
-            let remainingToCapWei = "0";
+            // Remaining-to-cap from CappingIncomeManager (returns USD6 directly)
             let remainingCapUsdMicro = "0";
             try {
               if (cappingIncomeManager && Number.isFinite(pid) && pid > 0) {
-                const remWei = await cappingIncomeManager.methods.remainingToCapWei(pid).call();
-                remainingToCapWei = String(remWei ?? "0");
-                if (remWei && remWei !== "0" && portfolioManager) {
-                  try {
-                    const usd6 = await portfolioManager.methods.getPackageValueInUSD(remWei).call();
-                    remainingCapUsdMicro = String(usd6 ?? "0");
-                  } catch (convErr) {
-                    console.warn("getPackageValueInUSD failed (portfolio summaries v2):", convErr?.message || convErr);
-                  }
-                }
+                const usd6 = await cappingIncomeManager.methods.remainingToCapUSD(pid).call();
+                remainingCapUsdMicro = String(usd6 ?? "0");
               }
             } catch (remErr) {
-              console.warn("remainingToCapWei (portfolio summaries v2) failed:", remErr?.message || remErr);
+              console.warn("remainingToCapUSD (portfolio summaries v2) failed:", remErr?.message || remErr);
             }
 
             const normalized = {
@@ -3330,7 +3298,6 @@ export const useStore = create((set, get) => ({
               createdAt,
               frozenUntil,
               capProgressBps,
-              remainingToCapWei,
               remainingCapUsdMicro,
               remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
             };
@@ -3406,26 +3373,16 @@ export const useStore = create((set, get) => ({
           }
         }
 
-        // Remaining-to-cap from CappingIncomeManager (wei) -> USD6 via PortfolioManager
-        let remainingToCapWei = "0";
+        // Remaining-to-cap from CappingIncomeManager (returns USD6 directly)
         let remainingCapUsdMicro = "0";
         try {
           if (Number.isFinite(pid)) {
             const cm = new web3.eth.Contract(CappingIncomeManagerABI, Contract["CappingIncomeManager"]);
-            const remWei = await cm.methods.remainingToCapWei(pid).call();
-            remainingToCapWei = String(remWei ?? "0");
-            if (remWei && remWei !== "0") {
-              try {
-                const pm = new web3.eth.Contract(PortFolioManagerABI, Contract["PortFolioManager"]);
-                const usd6 = await pm.methods.getPackageValueInUSD(remWei).call();
-                remainingCapUsdMicro = String(usd6 ?? "0");
-              } catch (convErr) {
-                console.warn("getPackageValueInUSD failed (portfolio summaries legacy):", convErr?.message || convErr);
-              }
-            }
+            const usd6 = await cm.methods.remainingToCapUSD(pid).call();
+            remainingCapUsdMicro = String(usd6 ?? "0");
           }
         } catch (remErr) {
-          console.warn("remainingToCapWei (portfolio summaries legacy) failed:", remErr?.message || remErr);
+          console.warn("remainingToCapUSD (portfolio summaries legacy) failed:", remErr?.message || remErr);
         }
 
         const normalized = {
@@ -3443,7 +3400,6 @@ export const useStore = create((set, get) => ({
           createdAt,
           frozenUntil,
           capProgressBps,
-          remainingToCapWei,
           remainingCapUsdMicro,
           remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
         };
@@ -8061,13 +8017,13 @@ export const useStore = create((set, get) => ({
 
       console.log('[Store] Fetching detailed unclaimed ROI for:', userAddress);
 
-      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
-      if (roiDistributorContracts.length === 0) {
-        throw new Error("RoiDistributor contract not available");
+      const roiDistributorViewContracts = makeDualContracts(RoiDistributionViewABI, Contract["RoiDistributionView"]);
+      if (roiDistributorViewContracts.length === 0) {
+        throw new Error("RoiDistributorView contract not available");
       }
 
       const unclaimedData = await callWithDualRPC(
-        () => roiDistributorContracts[0].methods.getUnclaimedROI(userAddress).call(),
+        () => roiDistributorViewContracts[0].methods.getUnclaimedROI(userAddress).call(),
         'getUnclaimedROI'
       );
 
@@ -8125,13 +8081,13 @@ export const useStore = create((set, get) => ({
 
       console.log('[Store] Fetching portfolio claim preview for:', userAddress);
 
-      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
-      if (roiDistributorContracts.length === 0) {
-        throw new Error("RoiDistributor contract not available");
+      const roiDistributorViewContracts = makeDualContracts(RoiDistributionViewABI, Contract["RoiDistributionView"]);
+      if (roiDistributorViewContracts.length === 0) {
+        throw new Error("RoiDistributorView contract not available");
       }
 
       const portfolioPreview = await callWithDualRPC(
-        () => roiDistributorContracts[0].methods.previewClaimPerPortfolio(userAddress).call(),
+        () => roiDistributorViewContracts[0].methods.previewClaimPerPortfolio(userAddress).call(),
         'previewClaimPerPortfolio'
       );
 
@@ -8347,14 +8303,14 @@ export const useStore = create((set, get) => ({
 
       console.log('[Store] Fetching ROI claim history for:', userAddress);
 
-      const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
-      if (roiDistributorContracts.length === 0) {
-        throw new Error("RoiDistributor contract not available");
+      const roiDistributorViewContracts = makeDualContracts(RoiDistributionViewABI, Contract["RoiDistributionView"]);
+      if (roiDistributorViewContracts.length === 0) {
+        throw new Error("RoiDistributorView contract not available");
       }
 
       // Get total count first
       const totalCount = await callWithDualRPC(
-        () => roiDistributorContracts[0].methods.getClaimHistoryCount(userAddress).call(),
+        () => roiDistributorViewContracts[0].methods.getClaimHistoryCount(userAddress).call(),
         'getClaimHistoryCount'
       );
 
@@ -8370,7 +8326,7 @@ export const useStore = create((set, get) => ({
 
       // Get claim history slice
       const historyData = await callWithDualRPC(
-        () => roiDistributorContracts[0].methods.getClaimHistorySlice(userAddress, offset, limit).call(),
+        () => roiDistributorViewContracts[0].methods.getClaimHistorySlice(userAddress, offset, limit).call(),
         'getClaimHistorySlice'
       );
 

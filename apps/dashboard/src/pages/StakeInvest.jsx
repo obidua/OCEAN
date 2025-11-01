@@ -8,6 +8,7 @@ import toast from '../utils/toast';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { useBalance, useWaitForTransactionReceipt } from 'wagmi';
 import { useTransaction } from "../../config/register";
+import financialSounds from '../utils/financialSounds';
 
 export default function StakeInvest() {
   // Constants
@@ -24,6 +25,10 @@ export default function StakeInvest() {
   const latestSponsorRef = useRef('');
   const lastValidatedRef = useRef('');
   const sponsorValidatedRef = useRef(false);
+  // Auto-validate debounce and countdown for beneficiary
+  const sponsorDebounceRef = useRef(null);
+  const [autoValidateSeconds, setAutoValidateSeconds] = useState(0);
+  const autoValidateIntervalRef = useRef(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const [isStaking, setIsStaking] = useState(false);
   const [loadingLastSelf, setLoadingLastSelf] = useState(false);
@@ -44,6 +49,10 @@ export default function StakeInvest() {
   const latestRegSponsorRef = useRef('');
   const lastValidatedRegSponsorRef = useRef('');
   const registrationSponsorValidatedRef = useRef(false);
+  // Auto-validate debounce and countdown for registration sponsor
+  const regSponsorDebounceRef = useRef(null);
+  const [regAutoValidateSeconds, setRegAutoValidateSeconds] = useState(0);
+  const regAutoValidateIntervalRef = useRef(null);
 
   const [stakeAmount, setStakeAmount] = useState('10');
   const [ramaStake, SetramaStake] = useState('');
@@ -321,6 +330,7 @@ export default function StakeInvest() {
         setTxError(error?.message || 'Transaction rejected or failed to send.');
         setTxStage('error');
         setIsStaking(false);
+        try { financialSounds.playMoneyOut(); } catch {}
       }
     }
   }, [trxData]);
@@ -346,10 +356,12 @@ export default function StakeInvest() {
     if (isSuccess && receipt?.status === 'success') {
       setTxStage('success');
       setIsStaking(false);
+      try { financialSounds.playTransactionSuccess(); } catch {}
     } else if (isError || receipt?.status === 'reverted') {
       setTxStage('error');
       setTxError('Your transaction failed or was reverted.');
       setIsStaking(false);
+      try { financialSounds.playMoneyOut(); } catch {}
     }
   }, [isSuccess, isError, receipt, address, hash]);
 
@@ -359,6 +371,15 @@ export default function StakeInvest() {
     connecting: { title: 'Connecting wallet', subtitle: 'Approve the request in your wallet to continue.' },
     activating: { title: 'Processing stake', subtitle: 'Finalizing on-chain. This may take a few moments.' },
     success: { title: 'Stake complete', subtitle: 'Transaction confirmed successfully.' },
+  };
+
+  const cancelTx = () => {
+    setTxModalOpen(false);
+    setTxStage('idle');
+    setTxError('');
+    setTrxData(undefined);
+    setTrxHash(undefined);
+    setIsStaking(false);
   };
 
   // Sponsor validation (for staking on behalf of others)
@@ -443,15 +464,71 @@ export default function StakeInvest() {
   );
 
   useEffect(() => {
-    if (stakeType !== 'other') return;
+    if (stakeType !== 'other') {
+      // clear any timers if switching away
+      if (sponsorDebounceRef.current) {
+        clearTimeout(sponsorDebounceRef.current);
+        sponsorDebounceRef.current = null;
+      }
+      if (autoValidateIntervalRef.current) {
+        clearInterval(autoValidateIntervalRef.current);
+        autoValidateIntervalRef.current = null;
+      }
+      setAutoValidateSeconds(0);
+      return;
+    }
     const trimmed = (beneficiaryAddress || '').trim();
+    // clear previous timers on change
+    if (sponsorDebounceRef.current) {
+      clearTimeout(sponsorDebounceRef.current);
+      sponsorDebounceRef.current = null;
+    }
+    if (autoValidateIntervalRef.current) {
+      clearInterval(autoValidateIntervalRef.current);
+      autoValidateIntervalRef.current = null;
+    }
     if (!trimmed) {
       lastValidatedRef.current = '';
+      setAutoValidateSeconds(0);
       return;
     }
     if (trimmed === lastValidatedRef.current) return;
-    const handle = setTimeout(() => validateSponsor({ silent: true, value: trimmed }), 700);
-    return () => clearTimeout(handle);
+
+    // start 10s countdown
+    setAutoValidateSeconds(10);
+    autoValidateIntervalRef.current = setInterval(() => {
+      setAutoValidateSeconds((prev) => {
+        if (prev <= 1) {
+          if (autoValidateIntervalRef.current) {
+            clearInterval(autoValidateIntervalRef.current);
+            autoValidateIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    sponsorDebounceRef.current = setTimeout(() => {
+      validateSponsor({ silent: true, value: trimmed });
+      if (autoValidateIntervalRef.current) {
+        clearInterval(autoValidateIntervalRef.current);
+        autoValidateIntervalRef.current = null;
+      }
+      setAutoValidateSeconds(0);
+      sponsorDebounceRef.current = null;
+    }, 10_000);
+
+    return () => {
+      if (sponsorDebounceRef.current) {
+        clearTimeout(sponsorDebounceRef.current);
+        sponsorDebounceRef.current = null;
+      }
+      if (autoValidateIntervalRef.current) {
+        clearInterval(autoValidateIntervalRef.current);
+        autoValidateIntervalRef.current = null;
+      }
+    };
   }, [beneficiaryAddress, stakeType, validateSponsor]);
 
   // Validate registration sponsor (for registering unregistered beneficiary)
@@ -529,15 +606,68 @@ export default function StakeInvest() {
   );
 
   useEffect(() => {
-    if (!showRegisterModal) return;
+    if (!showRegisterModal) {
+      if (regSponsorDebounceRef.current) {
+        clearTimeout(regSponsorDebounceRef.current);
+        regSponsorDebounceRef.current = null;
+      }
+      if (regAutoValidateIntervalRef.current) {
+        clearInterval(regAutoValidateIntervalRef.current);
+        regAutoValidateIntervalRef.current = null;
+      }
+      setRegAutoValidateSeconds(0);
+      return;
+    }
     const trimmed = (registrationSponsor || '').trim();
+    if (regSponsorDebounceRef.current) {
+      clearTimeout(regSponsorDebounceRef.current);
+      regSponsorDebounceRef.current = null;
+    }
+    if (regAutoValidateIntervalRef.current) {
+      clearInterval(regAutoValidateIntervalRef.current);
+      regAutoValidateIntervalRef.current = null;
+    }
     if (!trimmed) {
       lastValidatedRegSponsorRef.current = '';
+      setRegAutoValidateSeconds(0);
       return;
     }
     if (trimmed === lastValidatedRegSponsorRef.current) return;
-    const handle = setTimeout(() => validateRegistrationSponsor({ silent: true, value: trimmed }), 700);
-    return () => clearTimeout(handle);
+
+    setRegAutoValidateSeconds(10);
+    regAutoValidateIntervalRef.current = setInterval(() => {
+      setRegAutoValidateSeconds((prev) => {
+        if (prev <= 1) {
+          if (regAutoValidateIntervalRef.current) {
+            clearInterval(regAutoValidateIntervalRef.current);
+            regAutoValidateIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    regSponsorDebounceRef.current = setTimeout(() => {
+      validateRegistrationSponsor({ silent: true, value: trimmed });
+      if (regAutoValidateIntervalRef.current) {
+        clearInterval(regAutoValidateIntervalRef.current);
+        regAutoValidateIntervalRef.current = null;
+      }
+      setRegAutoValidateSeconds(0);
+      regSponsorDebounceRef.current = null;
+    }, 10_000);
+
+    return () => {
+      if (regSponsorDebounceRef.current) {
+        clearTimeout(regSponsorDebounceRef.current);
+        regSponsorDebounceRef.current = null;
+      }
+      if (regAutoValidateIntervalRef.current) {
+        clearInterval(regAutoValidateIntervalRef.current);
+        regAutoValidateIntervalRef.current = null;
+      }
+    };
   }, [registrationSponsor, showRegisterModal, validateRegistrationSponsor]);
 
   const handleCancelRegistration = () => {
@@ -584,6 +714,7 @@ export default function StakeInvest() {
     setTxStage('initiated');
     setTxModalOpen(true);
     setShowRegisterModal(false);
+  try { financialSounds.playPortfolioUpdate(); } catch {}
 
     try {
       let response;
@@ -620,12 +751,14 @@ export default function StakeInvest() {
         setTxStage('error');
         setTxError('Unable to build registration transaction.');
         setIsStaking(false);
+        try { financialSounds.playMoneyOut(); } catch {}
       }
     } catch (err) {
       console.error('Registration failed:', err);
       setTxStage('error');
       setTxError(err?.message || 'Unexpected error during registration.');
       setIsStaking(false);
+      try { financialSounds.playMoneyOut(); } catch {}
     }
   };
 
@@ -659,6 +792,7 @@ export default function StakeInvest() {
     setIsStaking(true);
     setTxStage('initiated');
     setTxModalOpen(true);
+  try { financialSounds.playPortfolioUpdate(); } catch {}
 
     try {
       let response;
@@ -689,12 +823,14 @@ export default function StakeInvest() {
         setTxStage('error');
         setTxError('Unable to build staking transaction.');
         setIsStaking(false);
+        try { financialSounds.playMoneyOut(); } catch {}
       }
     } catch (err) {
       console.error('CreateNewPortFolio failed:', err);
       setTxStage('error');
       setTxError(err?.message || 'Unexpected error. Please try again.');
       setIsStaking(false);
+      try { financialSounds.playMoneyOut(); } catch {}
     }
   };
 
@@ -1002,7 +1138,25 @@ export default function StakeInvest() {
                       )}
                       <button
                         type="button"
-                        onClick={handlePasteAddress}
+                        onClick={async () => {
+                          try {
+                            const text = await navigator.clipboard.readText();
+                            setBeneficiaryAddress(text.trim());
+                            // clear any pending timers before manual immediate flows
+                            if (sponsorDebounceRef.current) {
+                              clearTimeout(sponsorDebounceRef.current);
+                              sponsorDebounceRef.current = null;
+                            }
+                            if (autoValidateIntervalRef.current) {
+                              clearInterval(autoValidateIntervalRef.current);
+                              autoValidateIntervalRef.current = null;
+                            }
+                            setAutoValidateSeconds(0);
+                            await validateSponsor({ silent: false, value: text.trim() });
+                          } catch (err) {
+                            console.error('Failed to read clipboard:', err);
+                          }
+                        }}
                         className="p-2 hover:bg-cyan-500/10 rounded-lg transition-colors group"
                         title="Paste from clipboard"
                       >
@@ -1010,7 +1164,19 @@ export default function StakeInvest() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => validateSponsor({ silent: false })}
+                        onClick={() => {
+                          // Manual validate: cancel pending timers and run immediately
+                          if (sponsorDebounceRef.current) {
+                            clearTimeout(sponsorDebounceRef.current);
+                            sponsorDebounceRef.current = null;
+                          }
+                          if (autoValidateIntervalRef.current) {
+                            clearInterval(autoValidateIntervalRef.current);
+                            autoValidateIntervalRef.current = null;
+                          }
+                          setAutoValidateSeconds(0);
+                          validateSponsor({ silent: false });
+                        }}
                         disabled={validationPending || !beneficiaryAddress.trim()}
                         className="p-2 hover:bg-cyan-500/10 rounded-lg transition-colors text-xs border border-cyan-500/30 text-cyan-100 disabled:opacity-50"
                         title="Validate beneficiary"
@@ -1019,6 +1185,11 @@ export default function StakeInvest() {
                       </button>
                     </div>
                   </div>
+                  {!sponsorError && !sponsorValidated && stakeType === 'other' && (beneficiaryAddress || '').trim().length > 0 && autoValidateSeconds > 0 && (
+                    <p className="mt-2 text-xs text-cyan-300/80">
+                      Auto-validation will start in {autoValidateSeconds}s… or click Validate to run now.
+                    </p>
+                  )}
                   {sponsorValidated && sponsorInfo && (
                     <div className="mt-2 p-2 rounded-lg flex items-center gap-2 text-sm bg-neon-green/10 text-neon-green">
                       <CheckCircle size={16} />
@@ -1459,6 +1630,15 @@ export default function StakeInvest() {
                     );
                   })}
                 </div>
+                <div className="w-full space-y-3">
+                  <button
+                    type="button"
+                    onClick={cancelTx}
+                    className="w-full py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all text-sm"
+                  >
+                    Cancel request
+                  </button>
+                </div>
                 <p className="text-xs text-cyan-300/70">Need to cancel? Reject the transaction in your wallet.</p>
               </div>
             )}
@@ -1569,6 +1749,16 @@ export default function StakeInvest() {
                             try {
                               const text = await navigator.clipboard.readText();
                               setRegistrationSponsor(text.trim());
+                              if (regSponsorDebounceRef.current) {
+                                clearTimeout(regSponsorDebounceRef.current);
+                                regSponsorDebounceRef.current = null;
+                              }
+                              if (regAutoValidateIntervalRef.current) {
+                                clearInterval(regAutoValidateIntervalRef.current);
+                                regAutoValidateIntervalRef.current = null;
+                              }
+                              setRegAutoValidateSeconds(0);
+                              await validateRegistrationSponsor({ silent: false, value: text.trim() });
                             } catch {}
                           }}
                           className="p-1.5 sm:p-2 hover:bg-cyan-500/10 rounded-lg transition-colors"
@@ -1578,7 +1768,18 @@ export default function StakeInvest() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => validateRegistrationSponsor({ silent: false })}
+                          onClick={() => {
+                            if (regSponsorDebounceRef.current) {
+                              clearTimeout(regSponsorDebounceRef.current);
+                              regSponsorDebounceRef.current = null;
+                            }
+                            if (regAutoValidateIntervalRef.current) {
+                              clearInterval(regAutoValidateIntervalRef.current);
+                              regAutoValidateIntervalRef.current = null;
+                            }
+                            setRegAutoValidateSeconds(0);
+                            validateRegistrationSponsor({ silent: false });
+                          }}
                           disabled={validatingRegistrationSponsor || !registrationSponsor.trim()}
                           className="px-2 py-1 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs border border-cyan-500/30 text-cyan-100 rounded-lg hover:bg-cyan-500/10 transition-colors disabled:opacity-50"
                         >
@@ -1586,6 +1787,11 @@ export default function StakeInvest() {
                         </button>
                       </div>
                     </div>
+                    {!registrationSponsorError && !registrationSponsorValidated && (registrationSponsor || '').trim().length > 0 && regAutoValidateSeconds > 0 && (
+                      <p className="text-[10px] sm:text-xs text-cyan-300/80">
+                        Auto-validation will start in {regAutoValidateSeconds}s… or click Validate to run now.
+                      </p>
+                    )}
                     {registrationSponsorError && (
                       <div className="flex items-center gap-2 text-[10px] sm:text-xs text-red-400">
                         <AlertCircle size={12} className="sm:w-3.5 sm:h-3.5" />
