@@ -88,8 +88,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New update available!',
-    icon: '/icon-192x192.png',
-    badge: '/icon-72x72.png',
+    icon: '/wave.png',
+    badge: '/wave.png',
     vibrate: [200, 100, 200],
     data: {
       dateOfArrival: Date.now(),

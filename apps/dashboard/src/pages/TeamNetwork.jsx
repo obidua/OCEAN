@@ -76,7 +76,7 @@ export default function TeamNetwork() {
   const baseUrl = typeof window !== 'undefined' && window.location?.origin
     ? window.location.origin
     : 'https://oceandefi.uk';
-  const referralLink = userAddress ? `${baseUrl}/invite/${userAddress}` : null;
+  const referralLink = userAddress ? `${baseUrl}/signup?ref=${userAddress}` : null;
 
   const loadNetwork = useCallback(async () => {
     if (!userAddress || !getTeamNetworkData) {
