@@ -135,6 +135,29 @@ const callWithDualRPC = async (contractMethod, methodName = 'unknown') => {
 const USD_MICRO = 1e6;
 const RAMA_DECIMALS = 1e18;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+// Default RAMA buffer in parts-per-million (PPM).
+// 1 PPM = 0.0001% top-up to avoid rounding/precision underflows against on-chain checks.
+const DEFAULT_RAMA_BUFFER_PPM = 1; // 0.0001%
+
+// Resolve buffer override from env: set VITE_RAMA_BUFFER_PPM or RAMA_BUFFER_PPM
+const getRamaBufferPpm = () => {
+  const raw = resolveEnvValue('RAMA_BUFFER_PPM');
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0 && n <= 100000) return Math.trunc(n);
+  return DEFAULT_RAMA_BUFFER_PPM;
+};
+
+// Add a tiny buffer to RAMA wei to ensure we don't fail min-stake checks due to rounding
+const addRamaBufferWei = (weiLike) => {
+  try {
+    const amt = toBigIntSafe(weiLike);
+    const ppm = BigInt(getRamaBufferPpm());
+    if (ppm <= 0n) return amt;
+    return amt + (amt * ppm) / 1000000n;
+  } catch {
+    return toBigIntSafe(weiLike);
+  }
+};
 
 const ROYALTY_TIER_NAMES = [
   'Coral Starter',
@@ -6751,13 +6774,20 @@ export const useStore = create((set, get) => ({
       const protFolioMicroUsd = portFolioAmtUsd * 1e6
       console.log(protFolioMicroUsd)
       const AmtInRamaWei = await contract.methods.getPackageValueInRAMA(protFolioMicroUsd).call();
+      const AmtInRamaWeiBuffered = addRamaBufferWei(AmtInRamaWei);
       const ramaAmt = parseInt(AmtInRamaWei) / 1e18
+      const ramaAmtBuffered = Number(AmtInRamaWeiBuffered) / 1e18
 
-      console.log(AmtInRamaWei)
+      console.log('[regPortFoliAmt] raw/ppmbuf:', {
+        ppm: getRamaBufferPpm(),
+        rawWei: String(AmtInRamaWei),
+        bufWei: AmtInRamaWeiBuffered.toString(),
+      })
 
       return {
         portFolioAmtUsd,
-        ramaAmt
+        ramaAmt,
+        ramaAmtBuffered
       };
 
     } catch (error) {
@@ -6799,12 +6829,18 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = BigInt(ramaWeiQuoteStr);
-      if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
+      const valueToSendRaw = BigInt(ramaWeiQuoteStr);
+      if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
+      const valueToSend = addRamaBufferWei(valueToSendRaw);
 
 
 
-      console.log(sponsorAddress, valueToSend.toString(), valueToSend);
+      console.log('[CreateportFolio]', {
+        sponsorAddress,
+        rawWei: valueToSendRaw.toString(),
+        bufferedWei: valueToSend.toString(),
+        bufferPPM: getRamaBufferPpm(),
+      });
 
       // --- 2) Build tx: RegisterAndActivate(referrer) PAYABLE (handles registration + first stake)
       const data = pm.methods.RegisterAndActivate(sponsorAddress).encodeABI();
@@ -6832,7 +6868,7 @@ export const useStore = create((set, get) => ({
         from: userAddress,
         to: Contract.PortFolioManager,   // ✅ correct target (PM)
         data,
-        value: valueToSend,       // ✅ must send RAMA wei
+  value: valueToSend,       // ✅ must send RAMA wei (buffered)
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
         // chainId: <your chain id> // optional, wallet usually fills it
@@ -6976,7 +7012,8 @@ export const useStore = create((set, get) => ({
       const contract = new web3.eth.Contract(PortFolioManagerABI, Contract["PortFolioManager"]);
       const usdMicro = amt * 1e6;
       const ramaWeiQuoteStr = await contract.methods.getPackageValueInRAMA(usdMicro.toString()).call();
-      const formattedAmt = parseFloat(ramaWeiQuoteStr) / 1e18
+      const bufferedWei = addRamaBufferWei(ramaWeiQuoteStr);
+      const formattedAmt = Number(bufferedWei) / 1e18
 
       return formattedAmt
 
@@ -7096,15 +7133,16 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = BigInt(ramaWeiQuoteStr);
-      if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
+      const valueToSendRaw = BigInt(ramaWeiQuoteStr);
+      if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
+      const valueToSend = addRamaBufferWei(valueToSendRaw);
 
 
 
-      console.log(valueToSend.toString(), valueToSend)
+      console.log('[CreateSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
       const data = pm.methods
-        .createPortfolio(valueToSend)
+  .createPortfolio(valueToSend)
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
@@ -7152,13 +7190,14 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = BigInt(ramaWeiQuoteStr);
-      if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
+      const valueToSendRaw = BigInt(ramaWeiQuoteStr);
+      if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
+      const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-      console.log(valueToSend.toString(), valueToSend)
+      console.log('[CreateOtherfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
       const data = pm.methods
-        .createPortfolioForOthers(toBeActivatedUSer, sponsorAddress)
+  .createPortfolioForOthers(toBeActivatedUSer, sponsorAddress)
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
@@ -7209,14 +7248,15 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = BigInt(ramaWeiQuoteStr);
-      if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
+      const valueToSendRaw = BigInt(ramaWeiQuoteStr);
+      if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
+      const valueToSend = addRamaBufferWei(valueToSendRaw);
 
 
 
-      console.log(valueToSend.toString(), valueToSend)
+      console.log('[SafeSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
-      const data = safeWallCont.methods.createPortfolioFromSafe(valueToSend).encodeABI();
+  const data = safeWallCont.methods.createPortfolioFromSafe(valueToSend).encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
 
@@ -7266,12 +7306,13 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = BigInt(ramaWeiQuoteStr);
-      if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
+      const valueToSendRaw = BigInt(ramaWeiQuoteStr);
+      if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
+      const valueToSend = addRamaBufferWei(valueToSendRaw);
 
 
 
-      console.log(valueToSend.toString(), valueToSend)
+      console.log('[SafeOtherPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
       console.log("========>",beneficiary, valueToSend, sponserAddress)
 
@@ -7374,10 +7415,11 @@ export const useStore = create((set, get) => ({
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
 
-      const valueToSend = BigInt(ramaWeiQuoteStr);
-      if (valueToSend <= 0) throw new Error('Invalid RAMA quote (0)');
+      const valueToSendRaw = BigInt(ramaWeiQuoteStr);
+      if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
+      const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-      console.log('Calling sponsorCreatePortfolioFor with:', { beneficiary, valueToSend: valueToSend.toString(), sponsor: sponsorAddress });
+      console.log('Calling sponsorCreatePortfolioFor with:', { beneficiary, rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), sponsor: sponsorAddress, bufferPPM: getRamaBufferPpm() });
 
       const data = safeWallCont.methods
         .sponsorCreatePortfolioFor(beneficiary, valueToSend, sponsorAddress)

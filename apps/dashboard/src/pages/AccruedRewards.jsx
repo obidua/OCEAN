@@ -113,7 +113,7 @@ const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
     // CONFIGURATION: Period conversion mode
     // TEST MODE: 10 minutes = 1 day (for testing)
     // LIVE MODE: 1 day = 1 day (for production)
-    const TEST_MODE = true; // Set to false for live/production
+    const TEST_MODE = false; // Switch to live mode
     
     let timestamp;
     if (TEST_MODE) {

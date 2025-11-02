@@ -1,13 +1,62 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
   <defs>
-    <linearGradient id="ocean-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Ocean gradient from cyan to deep blue -->
+    <linearGradient id="ocean-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#0891b2" />
+      <stop offset="100%" stop-color="#0e7490" />
+    </linearGradient>
+    
+    <!-- Wave gradient with neon glow -->
+    <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#11ffee" />
-      <stop offset="100%" stop-color="#0b4bff" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#11ffee" />
+    </linearGradient>
+    
+    <!-- Shimmer effect -->
+    <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#11ffee" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#11ffee" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#11ffee" stop-opacity="0.3" />
     </linearGradient>
   </defs>
-  <rect x="4" y="4" width="56" height="56" rx="16" fill="#020617" />
-  <path
-    d="M32 16c-8.837 0-16 7.163-16 16s7.163 16 16 16c6.139 0 11.438-3.433 14.159-8.491l-5.357-3.085A9.998 9.998 0 0 1 32 43.998c-6.075 0-11-4.925-11-11s4.925-10.998 11-10.998c3.492 0 6.593 1.637 8.587 4.187l5.357-3.088C43.438 19.427 38.139 16 32 16Z"
-    fill="url(#ocean-gradient)"
-  />
+  
+  <!-- Dark background -->
+  <rect width="64" height="64" rx="12" fill="#020617"/>
+  
+  <!-- Ocean background with gradient -->
+  <rect x="8" y="8" width="48" height="48" rx="8" fill="url(#ocean-gradient)"/>
+  
+  <!-- Dynamic wave layers - bottom wave -->
+  <path d="M 8 42 Q 14 38, 20 42 T 32 42 T 44 42 T 56 42 L 56 56 L 8 56 Z" 
+        fill="#0e7490" opacity="0.6"/>
+  
+  <!-- Middle wave with curve -->
+  <path d="M 8 36 Q 16 32, 24 36 T 40 36 T 56 36 L 56 56 L 8 56 Z" 
+        fill="#0891b2" opacity="0.7"/>
+  
+  <!-- Top wave with neon glow effect -->
+  <path d="M 8 30 Q 18 24, 28 30 T 48 30 T 56 30 L 56 56 L 8 56 Z" 
+        fill="url(#wave-gradient)" opacity="0.9"/>
+  
+  <!-- Animated wave crest with bright cyan -->
+  <path d="M 8 28 Q 20 22, 32 28 T 56 28" 
+        stroke="#11ffee" 
+        stroke-width="1.5" 
+        fill="none" 
+        opacity="0.8"/>
+  
+  <!-- Small wave details for depth -->
+  <circle cx="24" cy="26" r="1.5" fill="#11ffee" opacity="0.6"/>
+  <circle cx="40" cy="24" r="1.5" fill="#11ffee" opacity="0.6"/>
+  <circle cx="32" cy="32" r="1" fill="#11ffee" opacity="0.4"/>
+  
+  <!-- Shimmer effect on top -->
+  <path d="M 20 18 L 28 14 L 24 22 Z" fill="url(#shimmer)"/>
+  <path d="M 40 16 L 46 12 L 44 20 Z" fill="url(#shimmer)"/>
+  
+  <!-- Letter "O" for Ocean with wave integration -->
+  <circle cx="32" cy="20" r="8" fill="none" stroke="#11ffee" stroke-width="2.5" opacity="0.9"/>
+  <circle cx="32" cy="20" r="5" fill="none" stroke="#06b6d4" stroke-width="1.5"/>
 </svg>
