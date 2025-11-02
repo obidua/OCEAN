@@ -308,7 +308,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-cyan-500/20">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Waves className="text-cyan-400" size={28} />
@@ -323,14 +323,6 @@ export default function Home() {
               <ul className="space-y-2">
                 <li><Link to="/about" className="text-cyan-300/70 hover:text-neon-green transition-colors text-sm">About</Link></li>
                 <li><Link to="/login" className="text-cyan-300/70 hover:text-neon-green transition-colors text-sm">Dashboard</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-cyan-300 font-bold mb-4">Programs</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-cyan-300/70 hover:text-neon-green transition-colors text-sm">Slab Income</a></li>
-                <li><a href="#" className="text-cyan-300/70 hover:text-neon-green transition-colors text-sm">Royalty Program</a></li>
-                <li><a href="#" className="text-cyan-300/70 hover:text-neon-green transition-colors text-sm">One-Time Rewards</a></li>
               </ul>
             </div>
             <div>
