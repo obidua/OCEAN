@@ -117,6 +117,7 @@ export default function Dashboard() {
   const getDirectsPortfolioBreakdown = useStore(
     (s) => s.getDirectsPortfolioBreakdown
   );
+  const getRoyaltyOverview = useStore((s) => s.getRoyaltyOverview);
   const userAddressStore = useStore((s) => s.userAddress);
   const [comprehensiveCapStatus, setComprehensiveCapStatus] = useState(null);
   const [comprehensiveCapError, setComprehensiveCapError] = useState(null);
@@ -129,6 +130,8 @@ export default function Dashboard() {
 
   const [teamSummary, setTeamSummary] = useState(null);
   const [teamMemberDetails, setTeamMemberDetails] = useState(null);
+  const [royaltyDetails, setRoyaltyDetails] = useState(null);
+  const [royaltyLoading, setRoyaltyLoading] = useState(false);
   const userAddress =
     userAddressStore ||
     (typeof window !== "undefined"
@@ -594,6 +597,32 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, [userAddress, getVolumeAnalytics]);
+
+  // Load royalty overview from RoyaltyManager
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRoyaltyData() {
+      if (!userAddress || typeof getRoyaltyOverview !== "function") {
+        setRoyaltyDetails(null);
+        return;
+      }
+      try {
+        setRoyaltyLoading(true);
+        const overview = await getRoyaltyOverview(userAddress);
+        if (cancelled) return;
+        setRoyaltyDetails(overview ?? null);
+      } catch (e) {
+        if (cancelled) return;
+        console.error("[Dashboard] Royalty overview error:", e);
+      } finally {
+        if (!cancelled) setRoyaltyLoading(false);
+      }
+    }
+    loadRoyaltyData();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getRoyaltyOverview]);
 
   // Check for capped portfolio and show funnel
   useEffect(() => {
@@ -1177,11 +1206,31 @@ export default function Dashboard() {
     DashBoardDetail?.slabPanel?.qualifiedVolumeUsd ??
     DashBoardDetail?.totals?.qualifiedVolumeUsd ??
     0;
-  const royaltyLevel =
-    teamMemberDetails?.royaltyLevel ??
-    userStatus?.royaltyLevel ??
-    DashBoardDetail?.totals?.royaltyLevel ??
-    0;
+  
+  // Calculate royalty level from achievedStages (same logic as RoyaltyProgram.jsx)
+  const ROYALTY_TIER_NAMES = [
+    'Coral Starter', 'Pearl Diver', 'Sea Explorer', 'Wave Rider',
+    'Tide Surge', 'Deep Blue', 'Ocean Guardian', 'Marine Commander',
+    'Aqua Captain', 'Current Master', 'Sea Legend', 'Trident Icon',
+    'Poseidon Crown', 'Ocean Supreme'
+  ];
+  
+  const achievedStagesArray = Array.isArray(royaltyDetails?.achievedStages) 
+    ? royaltyDetails.achievedStages.map(s => Number(s)).filter(s => Number.isFinite(s) && s >= 0)
+    : [];
+  
+  // Current tier is the highest achieved stage (0-indexed)
+  const normalizedTierIndex = achievedStagesArray.length > 0
+    ? Math.max(...achievedStagesArray)
+    : 0;
+  
+  // Clamp to valid tier range
+  const clampedTierIndex = Math.min(Math.max(normalizedTierIndex, 0), ROYALTY_TIER_NAMES.length - 1);
+  
+  // Display level is 1-indexed for user (Tier 1, Tier 2, etc.)
+  const royaltyLevel = achievedStagesArray.length > 0 ? clampedTierIndex + 1 : 0;
+  const royaltyTierName = achievedStagesArray.length > 0 ? ROYALTY_TIER_NAMES[clampedTierIndex] : null;
+  
   const royaltyPayouts = summaryReady ? royaltyUsd : null;
   const combinedBackendUsd = slabUsd + royaltyUsd + overrideUsd;
   const readyToClaimUsd = totalClaimableUsd;
@@ -2625,62 +2674,63 @@ export default function Dashboard() {
           
           {/* Enhanced Royalty Display */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold text-cyan-300">
-                Level {royaltyLevel || "—"}
-              </p>
-              {royaltyLevel > 0 && (
-                <div className="px-2 py-1 bg-neon-orange/20 rounded-full border border-neon-orange/30">
-                  <span className="text-xs font-medium text-neon-orange">
-                    {(() => {
-                      const ROYALTY_TIER_NAMES = [
-                        'Coral Starter', 'Pearl Diver', 'Sea Explorer', 'Wave Rider',
-                        'Tide Surge', 'Deep Blue', 'Ocean Guardian', 'Marine Commander',
-                        'Aqua Captain', 'Current Master', 'Sea Legend', 'Trident Icon',
-                        'Poseidon Crown', 'Ocean Supreme'
-                      ];
-                      return ROYALTY_TIER_NAMES[royaltyLevel - 1] || 'Unknown';
-                    })()}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* Current Tier Monthly Amount */}
-            {royaltyLevel > 0 && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-cyan-300/80">Monthly:</span>
-                <span className="font-semibold text-neon-orange">
-                  {(() => {
-                    const monthlyAmounts = [
-                      30, 100, 250, 500, 1000, 2500, 5000, 12500, 25000, 
-                      50000, 125000, 250000, 500000, 1000000
-                    ];
-                    const amount = monthlyAmounts[royaltyLevel - 1];
-                    return amount ? formatUSD(amount) : '—';
-                  })()} /mo
-                </span>
-              </div>
-            )}
-            
-            {/* Lifetime Earnings */}
-            <p className="text-xs text-cyan-300/90">
-              {royaltyPayouts != null
-                ? `${formatUSD(royaltyPayouts)} lifetime earned`
-                : "Royalty data synchronizing..."}
-            </p>
-            
-            {/* Achievement Status */}
-            {royaltyLevel > 0 ? (
-              <div className="flex items-center gap-1 mt-2">
-                <CheckCircle className="text-neon-green" size={12} />
-                <span className="text-xs text-neon-green font-medium">Qualified</span>
+            {royaltyLoading ? (
+              <div className="flex items-center gap-2 text-cyan-300">
+                <Loader2 className="animate-spin" size={16} />
+                <span className="text-sm">Loading royalty tier...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1 mt-2">
-                <Lock className="text-cyan-400/60" size={12} />
-                <span className="text-xs text-cyan-400/60">Not Qualified</span>
-              </div>
+              <>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-cyan-300">
+                    Level {royaltyLevel || "—"}
+                  </p>
+                  {royaltyLevel > 0 && royaltyTierName && (
+                    <div className="px-2 py-1 bg-neon-orange/20 rounded-full border border-neon-orange/30">
+                      <span className="text-xs font-medium text-neon-orange">
+                        {royaltyTierName}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Current Tier Monthly Amount */}
+                {royaltyLevel > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-cyan-300/80">Monthly:</span>
+                    <span className="font-semibold text-neon-orange">
+                      {(() => {
+                        const monthlyAmounts = [
+                          30, 100, 250, 500, 1000, 2500, 5000, 12500, 25000, 
+                          50000, 125000, 250000, 500000, 1000000
+                        ];
+                        const amount = monthlyAmounts[royaltyLevel - 1];
+                        return amount ? formatUSD(amount) : '—';
+                      })()} /mo
+                    </span>
+                  </div>
+                )}
+                
+                {/* Lifetime Earnings */}
+                <p className="text-xs text-cyan-300/90">
+                  {royaltyPayouts != null
+                    ? `${formatUSD(royaltyPayouts)} lifetime earned`
+                    : "Royalty data synchronizing..."}
+                </p>
+                
+                {/* Achievement Status */}
+                {royaltyLevel > 0 ? (
+                  <div className="flex items-center gap-1 mt-2">
+                    <CheckCircle className="text-neon-green" size={12} />
+                    <span className="text-xs text-neon-green font-medium">Qualified</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 mt-2">
+                    <Lock className="text-cyan-400/60" size={12} />
+                    <span className="text-xs text-cyan-400/60">Not Qualified</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

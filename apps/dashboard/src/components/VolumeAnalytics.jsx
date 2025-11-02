@@ -3,7 +3,7 @@ import { TrendingUp, Users, BarChart3, PieChart, Target, AlertCircle, Loader2, T
 import { formatUSD, formatRAMA } from '../utils/contractData';
 import { useStore } from '../../store/useUserInfoStore';
 
-const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => {
+const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10, customTier = null, customMilestone = null }) => {
   const [volumeData, setVolumeData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -187,10 +187,16 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10 }) => 
             <div className="p-2 bg-neon-green/20 rounded-lg flex-shrink-0 border border-neon-green/30">
               <Activity className="text-neon-green" size={16} />
             </div>
-            <p className="text-[9px] lg:text-xs font-medium text-neon-green uppercase tracking-wide">Current Slab</p>
+            <p className="text-[9px] lg:text-xs font-medium text-neon-green uppercase tracking-wide">
+              {customMilestone ? 'Current Milestone' : (customTier ? 'Current Royalty Tier' : 'Current Slab')}
+            </p>
           </div>
-          <p className="text-[12px] lg:text-xl font-bold text-neon-green">Level {currentSlabIndex || 0}</p>
-          <p className="text-xs text-neon-green/70 mt-1">Achievement level</p>
+          <p className="text-[12px] lg:text-xl font-bold text-neon-green">
+            Level {customMilestone?.level ?? customTier?.level ?? currentSlabIndex ?? 0}
+          </p>
+          <p className="text-xs text-neon-green/70 mt-1">
+            {customMilestone?.name ?? customTier?.name ?? 'Achievement level'}
+          </p>
         </div>
 
         <div className="cyber-glass rounded-xl p-4 border border-neon-orange/30 hover:border-neon-orange/80 relative overflow-hidden transition-all">

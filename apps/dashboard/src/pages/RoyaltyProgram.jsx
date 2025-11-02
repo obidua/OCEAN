@@ -891,12 +891,20 @@ export default function RoyaltyProgram() {
                   Enhanced Volume Analytics
                 </p>
                 <p className="text-xs text-cyan-300/80">
-                  Real-time business volume tracking from SlabManager
+                  Real-time business volume tracking with royalty tier status
                 </p>
               </div>
             </div>
             <div className="relative z-10">
-              <VolumeAnalytics userAddress={userAddress} showDetailed={true} maxLegs={8} />
+              <VolumeAnalytics 
+                userAddress={userAddress} 
+                showDetailed={true} 
+                maxLegs={8}
+                customTier={{ 
+                  level: displayCurrentLevel, 
+                  name: currentTierName 
+                }}
+              />
             </div>
           </div>
         </div>

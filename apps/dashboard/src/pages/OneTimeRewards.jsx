@@ -39,6 +39,8 @@ export default function OneTimeRewards() {
   const [claimError, setClaimError] = useState(null);
   const [teamVolume, setTeamVolume] = useState(null);
   const [loadingTeamVolume, setLoadingTeamVolume] = useState(false);
+  const [royaltyDetails, setRoyaltyDetails] = useState(null);
+  const [royaltyLoading, setRoyaltyLoading] = useState(false);
 
   const getOneTimeRewardsOverview = useStore((s) => s.getOneTimeRewardsOverview);
   const getGlobalOneTimeMilestones = useStore((s) => s.getGlobalOneTimeMilestones);
@@ -46,6 +48,7 @@ export default function OneTimeRewards() {
   const claimOneTimeReward = useStore((s) => s.claimOneTimeReward);
   const getRewardClaimHistory = useStore((s) => s.getRewardClaimHistory);
   const getVolumeAnalytics = useStore((s) => s.getVolumeAnalytics);
+  const getRoyaltyOverview = useStore((s) => s.getRoyaltyOverview);
 
   const { data: txHash, sendTransaction } = useSendTransaction();
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -158,6 +161,31 @@ export default function OneTimeRewards() {
       cancelled = true;
     };
   }, [userAddress, getVolumeAnalytics]);
+
+  // Load royalty overview (for royalty tier via achievedStages)
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRoyalty() {
+      if (!userAddress || typeof getRoyaltyOverview !== 'function') {
+        setRoyaltyDetails(null);
+        return;
+      }
+      try {
+        setRoyaltyLoading(true);
+        const res = await getRoyaltyOverview(userAddress);
+        if (!cancelled) setRoyaltyDetails(res || null);
+      } catch (e) {
+        if (!cancelled) setRoyaltyDetails(null);
+        console.warn('[OneTimeRewards] Royalty overview load failed:', e);
+      } finally {
+        if (!cancelled) setRoyaltyLoading(false);
+      }
+    }
+    loadRoyalty();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getRoyaltyOverview]);
 
   const handleClaimReward = async () => {
     if (!userAddress || !connectedAddress) {
@@ -301,6 +329,55 @@ export default function OneTimeRewards() {
 
   const remainingUsd = overview?.remainingUsd ?? fallbackTotals?.totalPotentialUsd ?? 0;
   const canClaim = pendingRewardUsd > 0 && userAddress && connectedAddress;
+
+  // Royalty tier from achievedStages (0-indexed -> display 1-indexed)
+  const ROYALTY_TIER_NAMES = useMemo(
+    () => [
+      'Coral Starter',
+      'Pearl Diver',
+      'Sea Explorer',
+      'Wave Rider',
+      'Tide Surge',
+      'Deep Blue',
+      'Ocean Guardian',
+      'Marine Commander',
+      'Aqua Captain',
+      'Current Master',
+      'Sea Legend',
+      'Trident Icon',
+      'Poseidon Crown',
+      'Ocean Supreme',
+    ],
+    []
+  );
+
+  const achievedStagesArray = useMemo(() => (
+    Array.isArray(royaltyDetails?.achievedStages)
+      ? royaltyDetails.achievedStages
+          .map((s) => Number(s))
+          .filter((s) => Number.isFinite(s) && s >= 0)
+      : []
+  ), [royaltyDetails?.achievedStages]);
+
+  const normalizedTierIndex = achievedStagesArray.length > 0 ? Math.max(...achievedStagesArray) : 0;
+  const clampedTierIndex = Math.min(Math.max(normalizedTierIndex, 0), ROYALTY_TIER_NAMES.length - 1);
+  const displayCurrentLevel = achievedStagesArray.length > 0 ? clampedTierIndex + 1 : 0;
+  const currentTierName = achievedStagesArray.length > 0
+    ? (ROYALTY_TIER_NAMES[clampedTierIndex] ?? `Tier ${clampedTierIndex + 1}`)
+    : null;
+  const customRoyaltyTier = achievedStagesArray.length > 0
+    ? { level: displayCurrentLevel, name: currentTierName }
+    : null;
+
+  // Determine current milestone for display in analytics card (One-Time Rewards context)
+  const currentMilestoneForCard = useMemo(() => {
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    const firstNotAchieved = milestones.findIndex((m) => !m.achieved);
+    const idx = firstNotAchieved === -1 ? milestones.length - 1 : firstNotAchieved;
+    const level = idx + 1;
+    const name = milestones[idx]?.name ?? `Milestone ${level}`;
+    return { level, name };
+  }, [milestones]);
 
   const STATUS_META = {
     claimed: {
@@ -478,7 +555,12 @@ export default function OneTimeRewards() {
               </div>
             </div>
             <div className="relative z-10">
-              <VolumeAnalytics userAddress={userAddress} showDetailed={true} maxLegs={8} />
+              <VolumeAnalytics
+                userAddress={userAddress}
+                showDetailed={true}
+                maxLegs={8}
+                customMilestone={currentMilestoneForCard}
+              />
             </div>
           </div>
         </div>
