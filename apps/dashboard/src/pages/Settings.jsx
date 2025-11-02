@@ -571,10 +571,6 @@ export default function Settings() {
                 <a href="https://blockchain2.ramestta.com" target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-cyan-400 hover:text-neon-green transition-colors">https://blockchain2.ramestta.com</a>
               </div>
               <div>
-                <p className="text-cyan-300/90 mb-1 uppercase tracking-wide text-xs">RPC Endpoint 3 (Fallback)</p>
-                <a href="https://testrpc.bidua.in" target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-cyan-400 hover:text-neon-green transition-colors">https://testrpc.bidua.in</a>
-              </div>
-              <div>
                 <p className="text-cyan-300/90 mb-1 uppercase tracking-wide text-xs">Block Explorer</p>
                 <a href="https://ramascan.com" target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-cyan-400 hover:text-neon-green transition-colors">https://ramascan.com</a>
               </div>

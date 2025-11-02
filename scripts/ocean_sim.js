@@ -29,7 +29,6 @@ const REGISTER_CSV = path.join(DATA_DIR, 'ocean_registrations.csv');
 const RPC_URLS = [
   process.env.RPC_URL || 'https://blockchain.ramestta.com',
   process.env.RPC_URL_2 || 'https://blockchain2.ramestta.com',
-  process.env.RPC_URL_3 || 'https://testrpc.bidua.in',
 ].filter(url => url && url.startsWith('http'));
 
 console.log('Available RPC URLs:', RPC_URLS);

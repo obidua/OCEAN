@@ -13,6 +13,12 @@
   "categories": ["finance", "business", "productivity"],
   "icons": [
     {
+      "src": "/wave.png",
+      "sizes": "512x512 192x192 180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/favicon-16x16.png",
       "sizes": "16x16",
       "type": "image/png",
@@ -49,21 +55,21 @@
       "short_name": "Dashboard",
       "description": "View your Ocean DeFi dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/wave.png", "sizes": "192x192" }]
     },
     {
       "name": "Stake & Invest",
       "short_name": "Stake",
       "description": "Stake your RAMA tokens",
       "url": "/dashboard/stake",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/wave.png", "sizes": "192x192" }]
     },
     {
       "name": "Team Network",
       "short_name": "Network",
       "description": "View your team network",
       "url": "/dashboard/team",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/wave.png", "sizes": "192x192" }]
     }
   ],
   "screenshots": [

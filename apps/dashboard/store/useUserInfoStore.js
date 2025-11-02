@@ -117,7 +117,6 @@ const envRpcUrls = getRPCUrls(); // Use the centralized utility
 const defaultRpcUrls = [
   "https://blockchain.ramestta.com",
   "https://blockchain2.ramestta.com", 
-  "https://testrpc.bidua.in",
 ];
 
 const RPC_URLs = envRpcUrls.length > 0 ? envRpcUrls : defaultRpcUrls;

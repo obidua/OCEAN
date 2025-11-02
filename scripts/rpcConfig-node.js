@@ -73,7 +73,6 @@ function getRPCUrls() {
     console.warn('No RPC URLs found in environment variables, using fallback');
     rpcs.push('https://blockchain.ramestta.com');
     rpcs.push('https://blockchain2.ramestta.com');
-    rpcs.push('https://testrpc.bidua.in');
   }
   
   console.log('Available RPC URLs:', rpcs);

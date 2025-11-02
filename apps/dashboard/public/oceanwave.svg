@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ocean DeFi Wave Logo">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#0b1b2a"/>
+      <stop offset="60%" stop-color="#081523"/>
+      <stop offset="100%" stop-color="#061120"/>
+    </radialGradient>
+    <linearGradient id="wave" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#0891b2"/>
+      <stop offset="100%" stop-color="#16f2b0"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#13c4a3" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg)"/>
+
+  <!-- Outer neon ring (stylized O) -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="url(#ring)" stroke-width="18" opacity="0.9" filter="url(#softGlow)"/>
+
+  <!-- Ocean wave -->
+  <path d="M92 308c36-28 72-42 108-42 47 0 66 24 104 24 40 0 70-26 116-80 0 0-6 120-120 146-57 13-92-12-132-12-28 0-52 8-76 24 0 0-2-28 0-60z" fill="url(#wave)"/>
+
+  <!-- Crest highlights -->
+  <path d="M128 292c22-16 46-24 72-24 18 0 33 4 48 9" fill="none" stroke="#a7f3d0" stroke-opacity="0.65" stroke-width="8" stroke-linecap="round"/>
+  <path d="M292 290c18 4 36 6 56 2" fill="none" stroke="#99f6e4" stroke-opacity="0.7" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Inner subtle ring -->
+  <circle cx="256" cy="256" r="110" fill="none" stroke="#22d3ee" stroke-opacity="0.3" stroke-width="6"/>
+
+  <!-- Center dot -->
+  <circle cx="256" cy="256" r="6" fill="#22d3ee" opacity="0.8"/>
+</svg>

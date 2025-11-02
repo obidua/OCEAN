@@ -117,7 +117,6 @@ CORECONFIG=0xA84e8Be27898E5EC51e16A2298BEDf5Ef5ecB34d
 # Network
 RPC_URL=https://blockchain.ramestta.com
 RPC_URL_2=https://blockchain2.ramestta.com
-RPC_URL_3=https://testrpc.bidua.in   # temporary fallback
 
 # Explorer (for ABI fetching)
 EXPLORER_API_URL=https://latest-backendapi.ramascan.com/api/v2/
@@ -138,7 +137,6 @@ VITE_USERREGISTRY=0x246c7317F4093065B96c2b0DC65A63De395444ed
 VITE_PORTFOLIOMANAGER=0xC73f964eA7bC04a2c7455CAf6107238147c88365
 VITE_RPC_URL=https://blockchain.ramestta.com
 VITE_RPC_URL_2=https://blockchain2.ramestta.com
-VITE_RPC_URL_3=https://testrpc.bidua.in
 # ... more VITE_ prefixed vars ...
 ```
 
