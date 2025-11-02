@@ -389,15 +389,43 @@ export default function RoyaltyProgram() {
     }));
   }, [royaltyDetails]);
 
-  const rawCurrentLevel = Number(royaltyDetails?.currentLevel);
+  // Determine current tier from achievedStages array
+  // achievedStages: [0, 1] means stages 0 and 1 are achieved
+  // The highest achieved stage number represents the current tier index (0-indexed)
+  const achievedStagesArray = Array.isArray(royaltyDetails?.achievedStages) 
+    ? royaltyDetails.achievedStages.map(s => Number(s)).filter(s => Number.isFinite(s) && s >= 0)
+    : [];
+  
   const hasTiers = Array.isArray(tiers) && tiers.length > 0;
-  const normalizedTierIndex = hasTiers
-    ? Math.min(Math.max(Number.isFinite(rawCurrentLevel) ? Math.floor(rawCurrentLevel) : 0, 0), tiers.length - 1)
-    : Math.max(Number.isFinite(rawCurrentLevel) ? Math.floor(rawCurrentLevel) : 0, 0);
-  const displayCurrentLevel = Math.max(1, normalizedTierIndex + 1);
-  const currentTier = hasTiers ? tiers[normalizedTierIndex] : null;
+  
+  // Current tier is the highest achieved stage (0-indexed)
+  // If achievedStages is [0, 1], highest is 1, so normalizedTierIndex = 1
+  const normalizedTierIndex = achievedStagesArray.length > 0
+    ? Math.max(...achievedStagesArray)
+    : 0;
+  
+  // Clamp to valid tier range
+  const clampedTierIndex = hasTiers
+    ? Math.min(Math.max(normalizedTierIndex, 0), tiers.length - 1)
+    : normalizedTierIndex;
+  
+  // Display level is 1-indexed for user (Tier 1, Tier 2, etc.)
+  const displayCurrentLevel = clampedTierIndex + 1;
+  
+  // Debug log to verify tier calculation
+  console.log('🏆 Royalty Tier Debug:', {
+    achievedStages: royaltyDetails?.achievedStages,
+    achievedStagesArray,
+    highestAchieved: normalizedTierIndex,
+    clampedIndex: clampedTierIndex,
+    displayLevel: displayCurrentLevel,
+    tierName: ROYALTY_TIER_NAMES[clampedTierIndex],
+    achievedAt: royaltyDetails?.achievedAt,
+  });
+  
+  const currentTier = hasTiers ? tiers[clampedTierIndex] : null;
   const currentTierName =
-    ROYALTY_TIER_NAMES[normalizedTierIndex] ?? `Tier ${displayCurrentLevel}`;
+    ROYALTY_TIER_NAMES[clampedTierIndex] ?? `Tier ${displayCurrentLevel}`;
   const payoutsReceived = royaltyDetails?.paidMonths ?? 0;
   const canClaim = royaltyDetails?.canClaim ?? false;
   const paused = royaltyDetails?.paused ?? false;
@@ -635,7 +663,7 @@ export default function RoyaltyProgram() {
       const achieved = achievedSet.has(idx);
       const status = achieved
         ? 'achieved'
-        : idx === normalizedTierIndex
+        : idx === clampedTierIndex
         ? 'current'
         : 'locked';
       const achievedTs = achievedTimestamps.get(idx) ?? null;
@@ -652,7 +680,7 @@ export default function RoyaltyProgram() {
         thresholdUsd: tier.thresholdUsd ?? 0,
       };
     });
-  }, [tiers, achievedStageIds, achievedTimestamps, normalizedTierIndex]);
+  }, [tiers, achievedStageIds, achievedTimestamps, clampedTierIndex]);
 
   const achievedStageCount = achievementStages.filter(
     (stage) => stage.status === 'achieved'
@@ -720,7 +748,7 @@ export default function RoyaltyProgram() {
       
       // Extract claim parameters from royaltyDetails
       const monthId = royaltyDetails?.nextMonthEpoch || 0;
-      const tierIdx = normalizedTierIndex;
+      const tierIdx = clampedTierIndex;
       const amountRama = royaltyDetails?.royaltyIncomeRama || 0;
       const amountInUSD = royaltyDetails?.royaltyIncomeUsd || 0;
       const proof = []; // Placeholder: replace with actual Merkle proof from backend
@@ -1160,9 +1188,9 @@ export default function RoyaltyProgram() {
                 thresholdUsd > 0 && Number(qualifiedVolumeUsd) >= thresholdUsd;
 
               let status = 'locked';
-              if (hasCleared || idx < normalizedTierIndex) {
+              if (hasCleared || idx < clampedTierIndex) {
                 status = 'achieved';
-              } else if (idx === normalizedTierIndex) {
+              } else if (idx === clampedTierIndex) {
                 status = 'current';
               }
 
