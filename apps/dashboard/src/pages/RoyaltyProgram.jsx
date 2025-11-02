@@ -467,7 +467,7 @@ export default function RoyaltyProgram() {
       ? Number(royaltyDetails?.qualifiedVolumeUsd)
       : Number(volumeAnalytics?.totalQualified) > 0
       ? Number(volumeAnalytics?.totalQualified)
-      : analyticsTeamBreakdown?.totalUsd ?? 0;
+      : 0;
 
   const fallbackRoyaltyIncomeUsd =
     qualifiedVolumeUsd > 0 ? qualifiedVolumeUsd * 0.05 : 0;

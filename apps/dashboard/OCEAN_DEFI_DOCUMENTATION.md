@@ -14,7 +14,7 @@
 
 ### What is OCEAN DeFi?
 
-OCEAN DeFi is a revolutionary decentralized finance platform built on the Ramestta Blockchain that combines passive income generation with team-building rewards. The platform uses the RAMA token and offers six distinct income streams.
+OCEAN DeFi is a revolutionary decentralized finance platform built on the Ramestta Blockchain that combines passive income generation with team-building rewards. The platform uses the RAMA Coin and offers six distinct income streams.
 
 ### Key Features
 
@@ -28,7 +28,7 @@ OCEAN DeFi is a revolutionary decentralized finance platform built on the Ramest
 
 - **Blockchain**: Ramestta Blockchain
 - **Native Token**: RAMA
-- **Minimum Stake**: $50 USD in RAMA tokens
+- **Minimum Stake**: $10 USD in RAMA Coin
 - **Maximum Return**: 4x your initial stake
 - **Total Income Streams**: 6
 
@@ -42,7 +42,7 @@ OCEAN DeFi is a revolutionary decentralized finance platform built on the Ramest
 Earn 0.5% of your staked amount every day (or 1% with Booster status).
 
 **How it Works:**
-- Stake minimum $50 in RAMA tokens
+- Stake minimum $10 in RAMA Coin
 - Receive 0.5% daily growth automatically
 - Earnings accumulate until you claim them
 - Maximum 4x your initial stake
@@ -68,7 +68,7 @@ Earn instant 5% commission on every direct referral who stakes.
 
 **How it Works:**
 1. Share your unique referral link
-2. When someone joins using your link and stakes (minimum $50)
+2. When someone joins using your link and stakes (minimum $10)
 3. You receive 5% of their stake amount instantly to your Safe Wallet
 
 **Payment Details:**
@@ -257,13 +257,13 @@ Monthly recurring income for 24 months based on qualified team volume.
 
 1. Download a Web3 wallet (MetaMask recommended)
 2. Configure it for Ramestta Blockchain
-3. Acquire RAMA tokens (minimum $50 worth)
+3. Acquire RAMA Coin (minimum $10 worth)
 
 ### Step 2: Connect & Stake
 
 1. Visit the OCEAN DeFi platform
 2. Connect your wallet
-3. Choose your stake amount (minimum $50)
+3. Choose your stake amount (minimum $10)
 4. Confirm the transaction
 
 ### Step 3: Start Earning
@@ -298,7 +298,7 @@ Monthly recurring income for 24 months based on qualified team volume.
 
 ### Token Economics
 
-**RAMA Token:**
+**RAMA Coin:**
 - Native platform currency
 - Used for all transactions
 - Staking and rewards
@@ -388,7 +388,7 @@ If you have 4 or more active legs:
 ## Frequently Asked Questions
 
 ### Q: What is the minimum stake?
-**A:** Minimum $50 USD worth of RAMA tokens.
+**A:** Minimum $10 USD worth of RAMA Coin.
 
 ### Q: How do I qualify for Booster status?
 **A:** Activate 5+ direct referrals within 10 days AND ensure your team volume ≥ your stake amount.

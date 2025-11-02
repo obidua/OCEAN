@@ -457,7 +457,7 @@ export default function Settings() {
             <h2 className="text-lg font-semibold text-cyan-300 mb-4 uppercase tracking-wide">Contract Rules Reference</h2>
             <div className="space-y-4">
               {[
-                { title: 'Rule 1: Minimum Stake', desc: '$50 minimum for ID activation' },
+                { title: 'Rule 1: Minimum Stake', desc: '$10 minimum for ID activation' },
                 { title: 'Rule 2: Slab Claim Requirement', desc: 'Requires 1 new $50 direct before slab claim' },
                 { title: 'Rule 3: Qualified Volume', desc: 'Adaptive caps — strongest leg max 40%, each additional leg max 30% (same as 40:30:30 when you have 3 directs)' },
                 { title: 'Rule 4: Withdrawal Fee', desc: '5% fee on external wallet claims' },
@@ -608,7 +608,7 @@ export default function Settings() {
             <p className="text-sm font-medium text-neon-green mb-2 uppercase tracking-wide">Investment Tiers</p>
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-cyan-300/90">Tier 1 ($50+)</span>
+                <span className="text-cyan-300/90">Tier 1 ($10+)</span>
                 <span className="font-bold text-cyan-300">0.33%</span>
               </div>
               <div className="flex justify-between text-xs">

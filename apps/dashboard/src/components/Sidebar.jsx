@@ -44,7 +44,6 @@ const menuSections = [
       { path: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp, color: 'text-neon-green' },
       { path: '/dashboard/presentation', label: 'Presentation', icon: Presentation, color: 'text-violet-300' },
       { path: '/dashboard/about', label: 'About & Vision', icon: Info, color: 'text-indigo-300' },
-      { path: '/dashboard/debug', label: 'Debug Panel', icon: Settings, color: 'text-red-400' },
     ],
   },
 ];

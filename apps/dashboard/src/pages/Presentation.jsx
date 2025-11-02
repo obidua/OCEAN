@@ -626,9 +626,9 @@ function Presentation() {
               <div className="cyber-glass border border-cyan-500/30 rounded-lg p-4 animate-slide-in-left" style={{animationDelay: '0.2s', animationFillMode: 'both'}}>
                 <h4 className="font-bold text-cyan-300 mb-2 flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-neon-green text-dark-950 flex items-center justify-center text-sm font-bold">2</div>
-                  They Stake (Min $50)
+                  They Stake (Min $10)
                 </h4>
-                <p className="text-sm text-cyan-300/90">When someone joins using your link and stakes minimum $50 in RAMA coins, they activate their portfolio.</p>
+                <p className="text-sm text-cyan-300/90">When someone joins using your link and stakes minimum $10 in RAMA coins, they activate their portfolio.</p>
               </div>
               <div className="cyber-glass border border-cyan-500/30 rounded-lg p-4 animate-slide-in-left" style={{animationDelay: '0.3s', animationFillMode: 'both'}}>
                 <h4 className="font-bold text-cyan-300 mb-2 flex items-center gap-2">
@@ -700,7 +700,7 @@ function Presentation() {
                   <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-neon-green rounded-full flex items-center justify-center flex-shrink-0 text-dark-950 font-bold">2</div>
                   <div>
                     <p className="text-cyan-300 font-semibold text-sm">They Stake</p>
-                    <p className="text-cyan-300/80 text-xs">Minimum $50 activation</p>
+                    <p className="text-cyan-300/80 text-xs">Minimum $10 activation</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 animate-fade-in" style={{animationDelay: '0.4s', animationFillMode: 'both'}}>
@@ -1328,7 +1328,7 @@ function Presentation() {
             <div className="cyber-glass border border-cyan-500/30 rounded-xl p-5 animate-scale-in" style={{animationDelay: '0.4s', animationFillMode: 'both'}}>
               <h3 className="text-lg font-bold text-neon-orange mb-3">Requirements</h3>
               <ul className="space-y-2 text-sm text-cyan-300/90">
-                <li>✓ Min stake: $50</li>
+                <li>✓ Min stake: $10</li>
                 <li>✓ Slab claim: 1 new $50 direct</li>
                 <li>✓ Booster: 5 directs in 10 days</li>
                 <li>✓ Qualified volume: 40% strongest leg, 30% per additional leg</li>
@@ -1391,7 +1391,7 @@ function Presentation() {
                 2
               </div>
               <h3 className="text-xl font-bold text-neon-green mb-3">Stake RAMA</h3>
-              <p className="text-sm text-cyan-300/80">Deposit minimum $50 to activate your portfolio</p>
+              <p className="text-sm text-cyan-300/80">Deposit minimum $10 to activate your portfolio</p>
             </div>
             <div className="cyber-glass border-2 border-neon-purple rounded-xl p-6 text-center animate-scale-in" style={{animationDelay: '0.3s', animationFillMode: 'both'}}>
               <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-neon-green rounded-full flex items-center justify-center mx-auto mb-4 text-dark-950 font-bold text-2xl">
@@ -1886,7 +1886,7 @@ export default Presentation;
 //           <div className="grid md:grid-cols-3 gap-6 animate-fade-in-up">
 //             {[
 //               { num: 1, title: "Create Account", desc: "Sign up and connect your wallet to get started", icon: "🔐" },
-//               { num: 2, title: "Stake RAMA", desc: "Deposit minimum $50 to activate your portfolio", icon: "💰" },
+//               { num: 2, title: "Stake RAMA", desc: "Deposit minimum $10 to activate your portfolio", icon: "💰" },
 //               { num: 3, title: "Start Earning", desc: "Watch your daily growth compound automatically!", icon: "🚀" }
 //             ].map((step, i) => (
 //               <div

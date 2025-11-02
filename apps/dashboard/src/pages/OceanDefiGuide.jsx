@@ -37,7 +37,7 @@ export default function OceanDefiGuide() {
                   <p className="text-sm text-cyan-300">Trust Policy</p>
                 </div>
                 <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4 text-center">
-                  <p className="text-3xl font-bold text-neon-green mb-2">$50</p>
+                  <p className="text-3xl font-bold text-neon-green mb-2">$10</p>
                   <p className="text-sm text-cyan-300">Minimum Stake</p>
                 </div>
               </div>
@@ -207,7 +207,7 @@ export default function OceanDefiGuide() {
                       </div>
                       <div>
                         <p className="text-cyan-300 font-semibold mb-1">They Stake</p>
-                        <p className="text-cyan-300/80 text-sm">When they activate with a stake (minimum $50)</p>
+                        <p className="text-cyan-300/80 text-sm">When they activate with a stake (minimum $10)</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -709,7 +709,7 @@ export default function OceanDefiGuide() {
                     <h4 className="text-lg font-bold text-cyan-300 mb-2">Minimum Requirements</h4>
                     <p className="text-sm text-cyan-300/90 mb-2">Getting started:</p>
                     <ul className="text-xs text-cyan-300/80 space-y-1">
-                      <li>• Minimum stake: $50 USD in RAMA</li>
+                      <li>• Minimum stake: $10 USD in RAMA</li>
                       <li>• Slab claim needs 1 new $50 direct</li>
                       <li>• Booster needs 5 directs in 10 days</li>
                       <li>• Total team ≥ personal stake for booster</li>

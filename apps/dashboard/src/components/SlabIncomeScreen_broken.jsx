@@ -206,7 +206,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                 Available Rewards
               </p>
               <p className="text-xs text-cyan-300/90">
-                Claimable RAMA tokens
+                Claimable RAMA Coin
               </p>
             </div>
           </div>

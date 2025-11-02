@@ -243,7 +243,7 @@ export default function CappedPortfolioFunnel({
                       How to Continue Earning?
                     </h3>
                     <p className="text-xs sm:text-sm text-cyan-300/80 ml-7 sm:ml-8 mb-2">
-                      Simply stake additional RAMA tokens to create a new portfolio with fresh earning limits:
+                      Simply stake additional RAMA Coin to create a new portfolio with fresh earning limits:
                     </p>
                     <ul className="text-xs sm:text-sm text-cyan-300/70 ml-7 sm:ml-8 space-y-1">
                       <li className="flex items-center gap-2">

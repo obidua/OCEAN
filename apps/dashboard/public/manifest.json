@@ -60,7 +60,7 @@
     {
       "name": "Stake & Invest",
       "short_name": "Stake",
-      "description": "Stake your RAMA tokens",
+      "description": "Stake your RAMA Coin",
       "url": "/dashboard/stake",
       "icons": [{ "src": "/wave.png", "sizes": "192x192" }]
     },

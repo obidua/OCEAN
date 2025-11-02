@@ -1,5 +1,5 @@
 export const generateOceanDefiPDF = () => {
-  const content = `╔═══════════════════════════════════════════════════════════════════╗
+   const content = `╔═══════════════════════════════════════════════════════════════════╗
 ║                      OCEAN DeFi Platform                          ║
 ║              Complete Documentation & Income Guide                ║
 ║                   Built on Ramestta Blockchain                    ║
@@ -9,26 +9,27 @@ export const generateOceanDefiPDF = () => {
 📊 PLATFORM OVERVIEW
 ═══════════════════════════════════════════════════════════════════
 
-OCEAN DeFi is a revolutionary decentralized finance platform that
-combines passive income generation with team-building rewards.
+OCEAN DeFi is a validator-backed, auto-compounding DeFi ecosystem
+that combines passive income generation with powerful team rewards.
 
 • Blockchain: Ramestta Blockchain
+• Chain ID: 1370 | ~2s blocks | ~$0.001 fees
 • Native Coin: RAMA
-• Minimum Stake: $50 USD
-• Maximum Return: 4x (or 5x with Booster)
-• Total Income Streams: 6
+• Minimum Stake: $10 USD
+• Self Income Cap: 200% (250% with Booster)
+• Global Cap: 4x lifetime earnings based on total staked
+• Total Income Streams: 7
 
 ═══════════════════════════════════════════════════════════════════
-💰 INCOME STREAM 1: DAILY GROWTH INCOME
+💰 INCOME STREAM 1: DAILY GROWTH (SELF INCOME)
 ═══════════════════════════════════════════════════════════════════
 
-Regular Rate: 0.5% daily
-Booster Rate: 1.0% daily (doubles your daily income!)
-Maximum Cap: 4x your stake (5x with Booster)
+Tiered daily growth with auto-compounding.
+• Tier 1: 0.33% per day ($10 - $5,000)
+• Tier 2: 0.40% per day ($5,010+)
+• Cap: 200% of personal stake (250% with Booster)
 
-BOOSTER QUALIFICATION:
-✓ 5+ direct referrals within 10 days
-✓ Team volume ≥ your stake amount
+Note: Booster Mode enhances the above rates; see Stream 7.
 
 EXAMPLES:
 $100 stake → $0.50/day (Regular) or $1.00/day (Booster)
@@ -36,7 +37,7 @@ $500 stake → $2.50/day (Regular) or $5.00/day (Booster)
 $1,000 stake → $5.00/day (Regular) or $10.00/day (Booster)
 
 ═══════════════════════════════════════════════════════════════════
-🤝 INCOME STREAM 2: DIRECT INCOME
+🤝 INCOME STREAM 2: DIRECT INCOME (SPOT)
 ═══════════════════════════════════════════════════════════════════
 
 Commission: 5% instant on every direct referral
@@ -96,7 +97,7 @@ Earn from downline members at the same slab level as you.
 • L3 (Third Wave): 5% override
 
 ═══════════════════════════════════════════════════════════════════
-👑 INCOME STREAM 5: MONTHLY ROYALTY PROGRAM
+👑 INCOME STREAM 5: MONTHLY ROYALTY PROGRAM (LIFETIME)
 ═══════════════════════════════════════════════════════════════════
 
 Recurring monthly income for LIFETIME based on team volume.
@@ -124,15 +125,14 @@ Duration: UNLIMITED - Payments continue for life as long as growth requirement i
 │ 14   │ Ocean Supreme      │ $100M        │ $100,000 │ LIFETIME ∞  │
 └──────┴────────────────────┴──────────────┴──────────┴─────────────┘
 
-NOTE: Total potential is UNLIMITED! Unlike the old 24-month program,
-these royalties now pay MONTHLY FOR LIFE. The top tier of $100,000/month
-continues indefinitely as long as you maintain 10% growth every 2 months.
+NOTE: Payments are MONTHLY FOR LIFE. The top tier of $100,000/month
+continues indefinitely while you maintain 10% growth every 2 months.
 
 ═══════════════════════════════════════════════════════════════════
 🏆 INCOME STREAM 6: ONE-TIME ACHIEVEMENT REWARDS
 ═══════════════════════════════════════════════════════════════════
 
-14 milestone bonuses paid once when you reach team volume targets.
+15 milestone bonuses paid once when you reach team volume targets.
 
 ┌──────┬─────────────────────┬──────────────┬────────────┐
 │ #    │ Milestone           │ Team Volume  │ Reward     │
@@ -151,9 +151,25 @@ continues indefinitely as long as you maintain 10% growth every 2 months.
 │ 12   │ Poseidon's Favor    │ $60M         │ $150,000   │
 │ 13   │ Neptune Scepter     │ $200M        │ $500,000   │
 │ 14   │ Ocean Infinity      │ $500M        │ $1,500,000 │
+│ 15   │ Legendary Wave      │ $1B          │ $3,000,000 │
 └──────┴─────────────────────┴──────────────┴────────────┘
 
-TOTAL POTENTIAL: $2,348,550 from all 14 milestones
+TOTAL POTENTIAL: cumulative rewards from all 15 milestones
+
+═══════════════════════════════════════════════════════════════════
+⚡ INCOME STREAM 7: BOOSTER MODE (RATE MULTIPLIER)
+═══════════════════════════════════════════════════════════════════
+
+Boost your daily rate by meeting time-bound referral goals:
+• Qualification: 5+ directs within 10 days of activation
+• Team volume ≥ your portfolio value
+• Each direct ≥ your portfolio value
+
+Enhanced Daily Rates:
+• Tier 1 Booster: 0.66% per day | 250% Cap
+• Tier 2 Booster: 0.80% per day | 250% Cap
+
+Booster is a performance multiplier on top of your tiered self income.
 
 ═══════════════════════════════════════════════════════════════════
 🚀 GETTING STARTED
@@ -162,12 +178,12 @@ TOTAL POTENTIAL: $2,348,550 from all 14 milestones
 STEP 1: WALLET SETUP
 1. Download a Web3 wallet (MetaMask recommended)
 2. Configure for Ramestta Blockchain
-3. Acquire minimum $50 worth of RAMA coins
+3. Acquire minimum $10 worth of RAMA coins
 
 STEP 2: STAKE & ACTIVATE
 1. Visit OCEAN DeFi platform
 2. Connect your wallet
-3. Choose stake amount (minimum $50)
+3. Choose stake amount (minimum $10)
 4. Confirm transaction
 
 STEP 3: START EARNING
@@ -179,9 +195,10 @@ STEP 3: START EARNING
 📊 KEY NUMBERS & LIMITS
 ═══════════════════════════════════════════════════════════════════
 
-• Minimum Stake: $50
-• Maximum Return: 4x your stake (5x with Booster)
-• Daily Rate: 0.5% (1% with Booster)
+• Minimum Stake: $10
+• Self Income Cap: 200% (250% with Booster)
+• Daily Rates: 0.33% (Tier 1), 0.40% (Tier 2)
+• Booster Rates: 0.66% (T1), 0.80% (T2)
 • Direct Commission: 5%
 • Slab Pool: 60% of daily growth
 • Safe Wallet Fee: 0%
@@ -189,6 +206,7 @@ STEP 3: START EARNING
 • Principal Withdrawal: 20% fee + 72-hour freeze
 • Minimum Claim: $10
 • Business Counting: Adaptive caps (40% max from strongest leg, 30% per additional leg; reaches 100% with well-balanced teams)
+• Slab Claim Cooldown: 24 hours between claims
 
 ═══════════════════════════════════════════════════════════════════
 🛡️ SECURITY FEATURES
@@ -215,7 +233,7 @@ PLATFORM SUSTAINABILITY:
 ═══════════════════════════════════════════════════════════════════
 
 Q: What is the minimum stake?
-A: Minimum $50 USD worth of RAMA coins
+A: Minimum $10 USD worth of RAMA coins
 
 Q: How do I qualify for Booster?
 A: Activate 5+ direct referrals within 10 days AND ensure
@@ -225,12 +243,13 @@ Q: Can I withdraw my stake?
 A: Yes, with 20% deduction and 72-hour freeze period. You can
    cancel within 72 hours to continue earning.
 
-Q: How long to reach 4x cap?
-A: Regular rate (0.5%): 800 days
-   Booster rate (1.0%): 400 days
+Q: What are the daily rates and caps?
+A: Tier 1 = 0.33%/day, Tier 2 = 0.40%/day; cap is 200%.
+   With Booster: 0.66%/day (T1) or 0.80%/day (T2); cap is 250%.
 
-Q: What happens after 4x cap?
-A: Daily growth stops, but you continue earning from:
+Q: What happens after personal cap?
+A: Self daily growth stops at 200% (or 250% with Booster),
+   but you continue earning from:
    - Direct Income (5% commissions)
    - Slab Income (60% pool distribution)
    - Royalty Program (LIFETIME monthly payments - NO LIMIT!)
@@ -274,10 +293,9 @@ For more information:
 © 2025 OCEAN DeFi - All Rights Reserved
 Built on Ramestta Blockchain | Powered by RAMA Coin
 
-This document contains comprehensive information about the OCEAN
-DeFi platform. All income projections are based on platform
-mechanics and actual results may vary based on team performance
-and market conditions.
+This document summarizes the current live system. All income examples
+are illustrative; actual results depend on market conditions, team
+performance, and adherence to program rules.
 
 ═══════════════════════════════════════════════════════════════════`;
 

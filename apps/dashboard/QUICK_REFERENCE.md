@@ -97,7 +97,7 @@
 
 ## ⚡ Key Numbers
 
-- **Min Stake**: $50
+- **Min Stake**: $10
 - **Daily Rate**: 0.5% (1% Booster)
 - **Max Return**: 4x stake
 - **Direct Commission**: 5%
@@ -193,7 +193,7 @@
 ## 🚀 Getting Started (3 Steps)
 
 1. **Connect Wallet** → MetaMask or compatible
-2. **Stake Minimum $50** → In RAMA tokens
+2. **Stake Minimum $10** → In RAMA Coin
 3. **Start Earning** → Share referral link
 
 ---
