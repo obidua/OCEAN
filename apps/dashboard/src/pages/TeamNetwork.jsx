@@ -26,7 +26,7 @@ const normalizeUsdDisplay = (value) => {
   return amount;
 };
 
-const LEVEL_KEYS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'L10'];
+const LEVEL_KEYS = Array.from({ length: 50 }, (_, index) => `L${index + 1}`);
 
 const EMPTY_LEVEL_DATA = LEVEL_KEYS.reduce((acc, key) => {
   acc[key] = [];
@@ -46,6 +46,7 @@ export default function TeamNetwork() {
   const getVolumeAnalytics = useStore((state) => state.getVolumeAnalytics);
   const getDirectsPortfolioBreakdown = useStore((state) => state.getDirectsPortfolioBreakdown);
   const getDashboardDetails = useStore((state) => state.getDashboardDetails);
+  const resolveUserSearchTarget = useStore((state) => state.resolveUserSearchTarget);
 
   const navigate = useNavigate();
 
@@ -65,9 +66,15 @@ export default function TeamNetwork() {
   const [detailedVolumeData, setDetailedVolumeData] = useState(null);
   const [volumeLoading, setVolumeLoading] = useState(false);
   const [dashboardSummary, setDashboardSummary] = useState(null);
+  const [activeUserAddress, setActiveUserAddress] = useState(null);
+  const [activeUserMeta, setActiveUserMeta] = useState(null);
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const [isGlobalSearching, setIsGlobalSearching] = useState(false);
+  const [globalSearchError, setGlobalSearchError] = useState(null);
   const directListRef = useRef(null);
   const autoScrollFrame = useRef(null);
   const autoScrollPaused = useRef(false);
+  const activeUserAddressRef = useRef(null);
 
   const userAddressFromStore = useStore((state) => state.userAddress);
   const userAddress =
@@ -77,81 +84,181 @@ export default function TeamNetwork() {
     ? window.location.origin
     : 'https://oceandefi.uk';
   const referralLink = userAddress ? `${baseUrl}/signup?ref=${userAddress}` : null;
+  const normalizedUserAddress =
+    typeof userAddress === 'string' ? userAddress.toLowerCase() : null;
+  const normalizedActiveAddress =
+    typeof activeUserAddress === 'string' ? activeUserAddress.toLowerCase() : null;
+  const isViewingOwnAccount =
+    Boolean(
+      normalizedUserAddress &&
+      normalizedActiveAddress &&
+      normalizedActiveAddress === normalizedUserAddress
+    );
+  const formattedActiveUserId = activeUserMeta?.userId
+    ? `USR-${String(activeUserMeta.userId).padStart(4, '0')}`
+    : null;
 
-  const loadNetwork = useCallback(async () => {
-    if (!userAddress || !getTeamNetworkData) {
-      setNetwork(null);
-      setDirectVolumesMap(null);
-      setDashboardSummary(null);
-      return;
-    }
-    setIsLoading(true);
+  const loadNetwork = useCallback(
+    async (overrideAddress = null, metaOverride) => {
+      const fallbackAddress =
+        activeUserAddressRef.current ??
+        userAddress ??
+        null;
+      const targetAddress = overrideAddress ?? fallbackAddress;
+
+      if (!targetAddress || !getTeamNetworkData) {
+        if (!overrideAddress) {
+          setNetwork(null);
+          setDirectVolumesMap(null);
+          setDashboardSummary(null);
+        }
+        if (!targetAddress) {
+          setError(null);
+        }
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+      try {
+        const dashboardPromise = getDashboardDetails
+          ? getDashboardDetails(targetAddress).catch((err) => {
+              console.warn('Failed to fetch dashboard summary for team network:', err);
+              return null;
+            })
+          : Promise.resolve(null);
+        const [data, dashboard] = await Promise.all([
+          getTeamNetworkData(targetAddress, {
+            maxDepth: 50,
+            detailLimit: 100,
+          }),
+          dashboardPromise,
+        ]);
+        // Also fetch directs' self/team volumes from ComprehensiveView and keep a quick lookup map
+        let volMap = null;
+        if (getDirectsPortfolioAndTeamVolumes) {
+          try {
+            const volumes = await getDirectsPortfolioAndTeamVolumes(targetAddress);
+            volMap = volumes?.map ?? null;
+          } catch (e) {
+            console.warn('Failed to fetch directs volumes:', e);
+          }
+        }
+        setDirectVolumesMap(volMap);
+
+        setNetwork(data);
+        setDashboardSummary(dashboard);
+        setGlobalSearchError(null);
+
+        // Load detailed volume analytics from SlabManager
+        if (getVolumeAnalytics) {
+          try {
+            setVolumeLoading(true);
+            const volumeAnalytics = await getVolumeAnalytics(targetAddress);
+            setDetailedVolumeData(volumeAnalytics);
+          } catch (volErr) {
+            console.warn('Failed to fetch volume analytics:', volErr);
+            setDetailedVolumeData(null);
+          } finally {
+            setVolumeLoading(false);
+          }
+        }
+
+        setActiveUserAddress(targetAddress);
+        activeUserAddressRef.current = targetAddress;
+
+        const targetAddressLower =
+          typeof targetAddress === 'string' ? targetAddress.toLowerCase() : null;
+        const userAddressLower =
+          typeof userAddress === 'string' ? userAddress.toLowerCase() : null;
+
+        if (metaOverride !== undefined) {
+          setActiveUserMeta(metaOverride);
+        } else if (userAddressLower && targetAddressLower === userAddressLower) {
+          setActiveUserMeta(null);
+        }
+      } catch (err) {
+        console.error('TeamNetwork load error:', err);
+        setError(err?.message || 'Failed to load team network data');
+        setNetwork(null);
+        setDirectVolumesMap(null);
+        setDashboardSummary(null);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [userAddress, getTeamNetworkData, getDirectsPortfolioAndTeamVolumes, getDashboardDetails, getVolumeAnalytics]
+  );
+
+  const handleGlobalSearch = useCallback(
+    async (event) => {
+      event?.preventDefault();
+      if (!globalSearchTerm.trim()) {
+        setGlobalSearchError('Enter a wallet address or user ID.');
+        return;
+      }
+      if (!resolveUserSearchTarget) {
+        setGlobalSearchError('Global search is unavailable at the moment.');
+        return;
+      }
+      setIsGlobalSearching(true);
+      setGlobalSearchError(null);
+      try {
+        const meta = await resolveUserSearchTarget(globalSearchTerm.trim());
+        await loadNetwork(meta.address, meta);
+        setGlobalSearchTerm('');
+      } catch (err) {
+        const message =
+          err?.message && typeof err.message === 'string'
+            ? err.message
+            : 'Unable to load data for that user.';
+        setGlobalSearchError(message);
+      } finally {
+        setIsGlobalSearching(false);
+      }
+    },
+    [globalSearchTerm, resolveUserSearchTarget, loadNetwork]
+  );
+
+  const handleResetSearch = useCallback(() => {
+    setGlobalSearchTerm('');
+    setGlobalSearchError(null);
     setError(null);
-    try {
-      const dashboardPromise = getDashboardDetails
-        ? getDashboardDetails(userAddress).catch((err) => {
-            console.warn('Failed to fetch dashboard summary for team network:', err);
-            return null;
-          })
-        : Promise.resolve(null);
-      const [data, dashboard] = await Promise.all([
-        getTeamNetworkData(userAddress, {
-          maxDepth: 10,
-          detailLimit: 100,
-        }),
-        dashboardPromise,
-      ]);
-      // Also fetch directs' self/team volumes from ComprehensiveView and keep a quick lookup map
-      let volMap = null;
-      if (getDirectsPortfolioAndTeamVolumes) {
-        try {
-          const volumes = await getDirectsPortfolioAndTeamVolumes(userAddress);
-          volMap = volumes?.map ?? null;
-        } catch (e) {
-          console.warn('Failed to fetch directs volumes:', e);
-        }
-      }
-      setDirectVolumesMap(volMap);
-
-      console.log("this is team network data",data);
-      setNetwork(data);
-      setDashboardSummary(dashboard);
-
-      // Load detailed volume analytics from SlabManager
-      if (getVolumeAnalytics) {
-        try {
-          setVolumeLoading(true);
-          const volumeAnalytics = await getVolumeAnalytics(userAddress);
-          setDetailedVolumeData(volumeAnalytics);
-        } catch (volErr) {
-          console.warn('Failed to fetch volume analytics:', volErr);
-          setDetailedVolumeData(null);
-        } finally {
-          setVolumeLoading(false);
-        }
-      }
-    } catch (err) {
-      console.error('TeamNetwork load error:', err);
-      setError(err?.message || 'Failed to load team network data');
+    if (userAddress) {
+      loadNetwork(userAddress, null);
+    } else {
+      setActiveUserAddress(null);
+      activeUserAddressRef.current = null;
+      setActiveUserMeta(null);
       setNetwork(null);
       setDirectVolumesMap(null);
       setDashboardSummary(null);
-    } finally {
-      setIsLoading(false);
+      setDetailedVolumeData(null);
+      setError(null);
     }
-  }, [userAddress, getTeamNetworkData, getDirectsPortfolioAndTeamVolumes, getDashboardDetails]);
+  }, [userAddress, loadNetwork]);
 
   useEffect(() => {
-    loadNetwork();
-  }, [loadNetwork]);
+    if (userAddress) {
+      loadNetwork(userAddress, null);
+    } else {
+      setActiveUserAddress(null);
+      activeUserAddressRef.current = null;
+      setActiveUserMeta(null);
+      setNetwork(null);
+      setDirectVolumesMap(null);
+      setDashboardSummary(null);
+      setDetailedVolumeData(null);
+      setError(null);
+    }
+  }, [userAddress, loadNetwork]);
 
   // Load leg cap percentages
   useEffect(() => {
-    if (!userAddress || !getLegCapPercentages) return;
+    if (!activeUserAddress || !getLegCapPercentages) return;
     
     const loadLegCaps = async () => {
       try {
-        const caps = await getLegCapPercentages(userAddress);
+        const caps = await getLegCapPercentages(activeUserAddress);
         setLegCapData(caps);
       } catch (err) {
         console.error('Failed to load leg caps:', err);
@@ -160,7 +267,7 @@ export default function TeamNetwork() {
     };
     
     loadLegCaps();
-  }, [userAddress, getLegCapPercentages]);
+  }, [activeUserAddress, getLegCapPercentages]);
 
   useEffect(() => {
     if (!network?.levels) return;
@@ -420,11 +527,12 @@ export default function TeamNetwork() {
 
   useEffect(()=>{
     const fetchTeamInfo=async()=>{
-      if(!userAddress)return;
+      if(!activeUserAddress){
+        setTeamInfo(null);
+        return;
+      }
       try{
-        const info=await getDirectsPortfolioBreakdown(userAddress);
-
-        console.log("this is team info data",info);
+        const info=await getDirectsPortfolioBreakdown(activeUserAddress);
         setTeamInfo(info);
       }catch(err){
         console.error('Failed to fetch team info:',err);
@@ -432,9 +540,8 @@ export default function TeamNetwork() {
       }
     };
 
-
     fetchTeamInfo();
-  },[userAddress,getDirectsPortfolioBreakdown])
+  },[activeUserAddress,getDirectsPortfolioBreakdown])
 
 
   return (
@@ -454,20 +561,20 @@ export default function TeamNetwork() {
           <p className="text-cyan-300/90 mt-1">
             Manage your referral network and team structure
           </p>
-        </div>
-        <div className="flex gap-2">
-          {referralLink && (
-            <button
-              onClick={handleCopy}
+      </div>
+      <div className="flex gap-2">
+        {referralLink && (
+          <button
+            onClick={handleCopy}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cyber-glass border border-cyan-500/30 hover:border-cyan-500/50"
             >
               {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
               {copied ? 'Copied' : 'Copy Link'}
-            </button>
-          )}
-          <button
-            onClick={() => setViewMode('overview')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+          </button>
+        )}
+        <button
+          onClick={() => setViewMode('overview')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               viewMode === 'overview'
                 ? 'bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950'
                 : 'cyber-glass text-cyan-400 border border-cyan-500/30 hover:border-cyan-500/50'
@@ -488,7 +595,7 @@ export default function TeamNetwork() {
             <span className="hidden sm:inline">Matrix View</span>
           </button>
           <button
-            onClick={loadNetwork}
+            onClick={() => loadNetwork(activeUserAddress ?? userAddress ?? null, activeUserMeta ?? undefined)}
             disabled={isLoading}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 disabled:opacity-60"
           >
@@ -496,6 +603,54 @@ export default function TeamNetwork() {
             Refresh
           </button>
         </div>
+      </div>
+
+      <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4 space-y-3">
+        <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleGlobalSearch}>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-300/70" size={18} />
+            <input
+              type="text"
+              value={globalSearchTerm}
+              onChange={(event) => setGlobalSearchTerm(event.target.value)}
+              placeholder="Search by wallet address or user ID (e.g., USR-0007)"
+              className="w-full pl-10 pr-4 py-2.5 cyber-glass border border-cyan-500/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-cyan-300/50"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={isGlobalSearching || isLoading}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isGlobalSearching ? 'Searching...' : 'Search'}
+            </button>
+            {userAddress && !isViewingOwnAccount && activeUserAddress && (
+              <button
+                type="button"
+                onClick={handleResetSearch}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all cyber-glass border border-cyan-500/30 text-cyan-300 hover:border-cyan-500/50"
+              >
+                My Team
+              </button>
+            )}
+          </div>
+        </form>
+        {globalSearchError && (
+          <p className="text-xs text-red-300">{globalSearchError}</p>
+        )}
+        {activeUserAddress && (
+          <div className="text-xs text-cyan-300/80 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>Viewing:</span>
+            {formattedActiveUserId && (
+              <span className="font-mono text-cyan-100">{formattedActiveUserId}</span>
+            )}
+            <span className="font-mono text-cyan-100">{truncateAddress(activeUserAddress)}</span>
+            <span className="text-cyan-500/60">
+              {isViewingOwnAccount ? '(your account)' : '(global search)'}
+            </span>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -508,9 +663,9 @@ export default function TeamNetwork() {
         </div>
       )}
 
-      {!userAddress && (
+      {!activeUserAddress && !isLoading && (
         <div className="cyber-glass border border-cyan-500/30 rounded-xl p-4 text-cyan-300">
-          Connect your wallet or log in to view your team network.
+          Connect your wallet to view your own team network, or use the global search above to explore another account.
         </div>
       )}
 
@@ -886,24 +1041,29 @@ export default function TeamNetwork() {
                 {totalTeamMembers} members • {activeMembers} active • {inactiveMembers} inactive
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {LEVEL_KEYS.map((level) => (
-                <button
-                  key={level}
-                  onClick={() => setActiveLevel(level)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    activeLevel === level
-                      ? 'bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950'
-                      : 'cyber-glass border border-cyan-500/30 text-cyan-300 hover:border-cyan-500/50'
-                  }`}
-                >
-                  {level}
-                  <span className={`ml-2 px-1.5 py-0.5 bg-white/20 rounded text-[11px] ${
-                    activeLevel === level ?"text-black": "text-white/90"}`}>
+            <div className="w-full overflow-x-auto">
+              <div className="flex gap-2 py-1 min-w-max">
+                {LEVEL_KEYS.map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => setActiveLevel(level)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      activeLevel === level
+                        ? 'bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950'
+                        : 'cyber-glass border border-cyan-500/30 text-cyan-300 hover:border-cyan-500/50'
+                    }`}
+                  >
+                    {level}
+                    <span
+                      className={`ml-2 px-1.5 py-0.5 bg-white/20 rounded text-[11px] ${
+                        activeLevel === level ? 'text-black' : 'text-white/90'
+                      }`}
+                    >
                       {levelData[level]?.length ?? 0}
-                  </span>
-                </button>
-              ))}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

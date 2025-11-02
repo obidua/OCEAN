@@ -5688,6 +5688,74 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  resolveUserSearchTarget: async (identifier) => {
+    const rawInput = typeof identifier === "string" ? identifier.trim() : "";
+    if (!rawInput) {
+      throw new Error("Enter a wallet address or user ID to search.");
+    }
+
+    const userRegistry = makeContract(
+      UserRegistryABI,
+      Contract["UserRegistry"]
+    );
+    if (!userRegistry) {
+      throw new Error("UserRegistry contract unavailable");
+    }
+
+    const pickField = (record, key, index) => {
+      if (!record) return null;
+      if (record[key] != null) return record[key];
+      if (Array.isArray(record) && record[index] != null) return record[index];
+      return null;
+    };
+
+    const normalizeMeta = async (address) => {
+      const targetAddress =
+        typeof address === "string" ? address.trim() : "";
+      if (!hasAddress(targetAddress)) {
+        throw new Error("Invalid wallet address.");
+      }
+      let record;
+      try {
+        record = await userRegistry.methods.getUser(targetAddress).call();
+      } catch (err) {
+        console.warn("UserRegistry.getUser failed during search:", err);
+        throw new Error("Unable to load user details from registry.");
+      }
+      const registered = Boolean(pickField(record, "registered", 0));
+      const userId = toNumber(pickField(record, "id", 1));
+      if (!registered || userId <= 0) {
+        throw new Error("User not found or not registered yet.");
+      }
+      return { address: targetAddress, userId };
+    };
+
+    if (hasAddress(rawInput)) {
+      return normalizeMeta(rawInput);
+    }
+
+    const digits = rawInput.replace(/[^0-9]/g, "");
+    if (!digits) {
+      throw new Error("Enter a valid wallet address or numeric user ID.");
+    }
+
+    const userIdNumber = Number(digits);
+    if (!Number.isFinite(userIdNumber) || userIdNumber <= 0) {
+      throw new Error("User ID must be a positive number.");
+    }
+
+    const addressById = await userRegistry.methods
+      .idToAddress(userIdNumber)
+      .call()
+      .catch(() => ZERO_ADDRESS);
+
+    if (!hasAddress(addressById)) {
+      throw new Error("No registered user found for the provided ID.");
+    }
+
+    return normalizeMeta(addressById);
+  },
+
   getTeamNetworkData: async (userAddress, options = {}) => {
     try {
       if (!hasAddress(userAddress)) {
@@ -5714,15 +5782,42 @@ export const useStore = create((set, get) => ({
       const maxDepthInput = Number.isFinite(Number(options.maxDepth))
         ? Number(options.maxDepth)
         : 5;
-      const maxDepth = Math.min(Math.max(maxDepthInput, 1), 10);
+      let maxDepth = Math.min(Math.max(maxDepthInput, 1), 50);
       const detailLimit = Number.isFinite(Number(options.detailLimit))
         ? Math.max(1, Number(options.detailLimit))
         : 50;
 
-      const [directAddressesRaw, levelCountsRaw] = await Promise.all([
-        userRegistry.methods.getDirectTeam(userAddress).call(),
-        userRegistry.methods.getLevelTeamCounts(userAddress, maxDepth).call(),
-      ]);
+      const directAddressesRaw = await userRegistry.methods
+        .getDirectTeam(userAddress)
+        .call();
+
+      let levelCountsRaw;
+      try {
+        levelCountsRaw = await userRegistry.methods
+          .getLevelTeamCounts(userAddress, maxDepth)
+          .call();
+      } catch (err) {
+        console.warn(
+          `UserRegistry.getLevelTeamCounts failed for depth ${maxDepth}, attempting fallback:`,
+          err
+        );
+        if (maxDepth > 10) {
+          try {
+            levelCountsRaw = await userRegistry.methods
+              .getLevelTeamCounts(userAddress, 10)
+              .call();
+            maxDepth = 10;
+          } catch (fallbackErr) {
+            console.warn(
+              'UserRegistry.getLevelTeamCounts fallback to depth 10 failed:',
+              fallbackErr
+            );
+            throw fallbackErr;
+          }
+        } else {
+          throw err;
+        }
+      }
 
       const directAddresses = Array.isArray(directAddressesRaw)
         ? directAddressesRaw.filter(hasAddress)
