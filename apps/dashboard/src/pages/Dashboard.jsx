@@ -29,6 +29,7 @@ import { Link } from "react-router-dom";
 import { formatUSD, formatRAMA } from "../utils/contractData";
 import NumberPopup from "../components/NumberPopup";
 import LivePriceFeed from "../components/LivePriceFeed";
+import { computeSevenDayTrend } from "../utils/earningsTrends";
 import IncomeNotificationOverlay from "../components/IncomeNotificationOverlay";
 import {
   LineChart,
@@ -88,6 +89,7 @@ export default function Dashboard() {
   const getPortFoliById = useStore((s) => s.getPortFoliById);
   const getDashboardDetails = useStore((s) => s.getDashboardDetails);
   const get7DayEarningTrend = useStore((s) => s.get7DayEarningTrend);
+  const getTransactionHistory = useStore((s) => s.getTransactionHistory);
   const convertRamaToUsd = useStore((s) => s.RamaTOUsd);
   const getIncomeTotals = useStore((s) => s.getIncomeTotals);
   const getComprehensiveCapStatus = useStore(
@@ -225,14 +227,13 @@ export default function Dashboard() {
         const [
           portfolioInfo,
           dashboardInfo,
-          earningsTrend,
           capStatus,
           teamSum,
           teamDet,
+          trendCombined,
         ] = await Promise.all([
           getTOtalPortFolio(userAddress),
           getDashboardDetails(userAddress),
-          get7DayEarningTrend(userAddress),
           getComprehensiveCapStatus(userAddress),
           typeof getTeamSummary === "function"
             ? getTeamSummary(userAddress, 50)
@@ -240,6 +241,11 @@ export default function Dashboard() {
           typeof getTeamMemberDetails === "function"
             ? getTeamMemberDetails(userAddress)
             : null,
+          computeSevenDayTrend({
+            userAddress,
+            get7DayEarningTrend,
+            getTransactionHistory,
+          }),
         ]);
 
         console.log("#########", dashboardInfo);
@@ -267,7 +273,7 @@ export default function Dashboard() {
           return ids[0];
         });
 
-        setDashboardDetails(dashboardInfo ?? null);
+  setDashboardDetails(dashboardInfo ?? null);
         if (aggregatedPortfolios.length > 0) {
           const initialPid =
             aggregatedPortfolios.length &&
@@ -284,7 +290,7 @@ export default function Dashboard() {
 
           console.log(portfolioInfo?.ProtFolioDetail)
         }
-        setLast7Days(Array.isArray(earningsTrend) ? earningsTrend : []);
+  setLast7Days(Array.isArray(trendCombined) ? trendCombined : []);
         setComprehensiveCapStatus(capStatus ?? null);
         setTeamSummary(teamSum ?? null);
         setTeamMemberDetails(teamDet ?? null);
@@ -1537,7 +1543,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <Link
           to="/dashboard"
           id="staked-portfolio"
@@ -1899,6 +1905,42 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {/* Mobile-only referral card placed immediately before the 7-day trend */}
+          <div className="block lg:hidden">
+            <div className="cyber-glass border border-neon-green/50 hover:border-neon-green rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden group transition-all">
+              <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-cyan-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/70 to-transparent" />
+
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="p-2 bg-neon-green/20 rounded-lg flex-shrink-0 border border-neon-green/40">
+                  <User2Icon size={20} className="text-neon-green" />
+                </div>
+                <div>
+                  <p className="text-sm text-neon-green font-medium uppercase tracking-wide">
+                    Your Referral Link
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative z-10">
+                <div className="bg-slate-900/50 border border-cyan-500/30 rounded-lg p-3 flex items-center justify-between gap-2">
+                  <span className="text-xs sm:text-sm text-cyan-300 truncate">
+                    {`${window.location.origin}/signup?ref=${
+                      userAddress.slice(0, 5) + "...." + userAddress.slice(-4)
+                    }`}
+                  </span>
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1 text-xs font-medium text-neon-green hover:text-white transition-colors"
+                  >
+                    <Copy size={14} />
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-cyan-500/30 hover:border-cyan-500/80 relative overflow-hidden transition-all">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -2414,7 +2456,8 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-4 sm:space-y-6">
-          <div className="cyber-glass border border-neon-green/50 hover:border-neon-green rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden group transition-all">
+          {/* Desktop-only referral card with link and copy button */}
+          <div className="hidden lg:block cyber-glass border border-neon-green/50 hover:border-neon-green rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden group transition-all">
             <div className="absolute inset-0 bg-gradient-to-br from-neon-green/10 to-cyan-500/10 opacity-50 group-hover:opacity-70 transition-opacity" />
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-green/70 to-transparent" />
 

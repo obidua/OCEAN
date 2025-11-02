@@ -89,12 +89,13 @@ const menuSections = [
         icon: Shield,
         color: "text-emerald-400",
       },
-      {
-        path: "/dashboard/transaction-history",
-        label: "Transaction History",
-        icon: History,
-        color: "text-fuchsia-400",
-      },
+      // Intentionally hidden from mobile menu per request; route remains available at /dashboard/transaction-history
+      // {
+      //   path: "/dashboard/transaction-history",
+      //   label: "Transaction History",
+      //   icon: History,
+      //   color: "text-fuchsia-400",
+      // },
     ],
   },
   {

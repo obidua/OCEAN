@@ -903,6 +903,32 @@ export default function StakeInvest() {
         <p className="text-cyan-300/90 mt-1 text-sm sm:text-base">Activate or top-up your portfolio</p>
       </div>
 
+      {/* Live RAMA Price */}
+      <div className="cyber-glass rounded-lg p-3 sm:p-4 border border-cyan-500/30 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="text-neon-green" size={18} />
+            <span className="text-cyan-300 font-medium text-sm sm:text-base">Live RAMA Price</span>
+          </div>
+          <div className="text-right">
+            {ramaPrice > 0 ? (
+              <div className="flex items-baseline space-x-1">
+                <span className="text-cyan-400/80 text-xs sm:text-sm">1 RAMA =</span>
+                <span className="text-neon-green font-bold text-base sm:text-lg">
+                  ${ramaPrice.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 })}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 text-cyan-400/60 text-sm">
+                <Loader2 className="animate-spin" size={14} />
+                <span>Loading...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <div className="cyber-glass rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-cyan-500/30 relative overflow-hidden">

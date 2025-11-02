@@ -35,7 +35,8 @@ const menuSections = [
     items: [
       { path: '/dashboard/team', label: 'Team Network', icon: Users, color: 'text-sky-400' },
       { path: '/dashboard/safe-wallet', label: 'Safe Wallet', icon: Shield, color: 'text-emerald-400' },
-      { path: '/dashboard/transaction-history', label: 'Income & Trx History', icon: History, color: 'text-fuchsia-400' },
+      // Intentionally hidden from menu per request; route remains available at /dashboard/transaction-history
+      // { path: '/dashboard/transaction-history', label: 'Income & Trx History', icon: History, color: 'text-fuchsia-400' },
     ],
   },
   {
