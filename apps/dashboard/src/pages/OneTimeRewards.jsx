@@ -28,6 +28,7 @@ export default function OneTimeRewards() {
   const userAddressStore = useStore((s) => s.userAddress);
   const userAddress =
     connectedAddress || userAddressStore || (typeof window !== 'undefined' ? localStorage.getItem('userAddress') : null);
+  const getUserMilestoneStatus = useStore((s) => s.getUserMilestoneStatus);
   
   const [overview, setOverview] = useState(null);
   const [rewardTotals, setRewardTotals] = useState(null);
@@ -41,6 +42,8 @@ export default function OneTimeRewards() {
   const [loadingTeamVolume, setLoadingTeamVolume] = useState(false);
   const [royaltyDetails, setRoyaltyDetails] = useState(null);
   const [royaltyLoading, setRoyaltyLoading] = useState(false);
+  const [milestoneStatus, setMilestoneStatus] = useState([]);
+  const [milestoneStatusLoading, setMilestoneStatusLoading] = useState(false);
 
   const getOneTimeRewardsOverview = useStore((s) => s.getOneTimeRewardsOverview);
   const getGlobalOneTimeMilestones = useStore((s) => s.getGlobalOneTimeMilestones);
@@ -187,6 +190,31 @@ export default function OneTimeRewards() {
     };
   }, [userAddress, getRoyaltyOverview]);
 
+  // Load RewardVault milestone status (bool[]) to compute current milestone accurately
+  useEffect(() => {
+    let cancelled = false;
+    async function loadStatus() {
+      if (!userAddress || typeof getUserMilestoneStatus !== 'function') {
+        setMilestoneStatus([]);
+        return;
+      }
+      try {
+        setMilestoneStatusLoading(true);
+        const status = await getUserMilestoneStatus(userAddress);
+        if (!cancelled) setMilestoneStatus(Array.isArray(status) ? status : []);
+      } catch (e) {
+        console.warn('[OneTimeRewards] milestone status load failed:', e);
+        if (!cancelled) setMilestoneStatus([]);
+      } finally {
+        if (!cancelled) setMilestoneStatusLoading(false);
+      }
+    }
+    loadStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, getUserMilestoneStatus]);
+
   const handleClaimReward = async () => {
     if (!userAddress || !connectedAddress) {
       setClaimError('Please connect your wallet to claim rewards.');
@@ -330,6 +358,26 @@ export default function OneTimeRewards() {
   const remainingUsd = overview?.remainingUsd ?? fallbackTotals?.totalPotentialUsd ?? 0;
   const canClaim = pendingRewardUsd > 0 && userAddress && connectedAddress;
 
+  // Compute current milestone for analytics card: first unclaimed milestone (fallback to claimedCount)
+  // Compute current milestone for analytics card using RewardVault status: first false index (no +1)
+  const currentMilestone = useMemo(() => {
+    if (Array.isArray(milestoneStatus) && milestoneStatus.length > 0) {
+      const firstFalseIdx = milestoneStatus.findIndex((v) => !v);
+      const idx = firstFalseIdx >= 0 ? firstFalseIdx : milestoneStatus.length - 1;
+      const level = idx; // use as-is (no +1)
+      const name = REWARD_NAMES[idx] ?? `Milestone ${level}`;
+      return { level, name };
+    }
+    if (Array.isArray(milestones) && milestones.length > 0) {
+      const firstUnclaimedIdx = milestones.findIndex((m) => !m?.claimed);
+      const idx = firstUnclaimedIdx >= 0 ? firstUnclaimedIdx : milestones.length - 1;
+      const level = idx; // use as-is (no +1)
+      const name = REWARD_NAMES[idx] ?? milestones[idx]?.name ?? `Milestone ${level}`;
+      return { level, name };
+    }
+    return null;
+  }, [milestoneStatus, milestones]);
+
   // Royalty tier from achievedStages (0-indexed -> display 1-indexed)
   const ROYALTY_TIER_NAMES = useMemo(
     () => [
@@ -368,16 +416,6 @@ export default function OneTimeRewards() {
   const customRoyaltyTier = achievedStagesArray.length > 0
     ? { level: displayCurrentLevel, name: currentTierName }
     : null;
-
-  // Determine current milestone for display in analytics card (One-Time Rewards context)
-  const currentMilestoneForCard = useMemo(() => {
-    if (!Array.isArray(milestones) || milestones.length === 0) return null;
-    const firstNotAchieved = milestones.findIndex((m) => !m.achieved);
-    const idx = firstNotAchieved === -1 ? milestones.length - 1 : firstNotAchieved;
-    const level = idx + 1;
-    const name = milestones[idx]?.name ?? `Milestone ${level}`;
-    return { level, name };
-  }, [milestones]);
 
   const STATUS_META = {
     claimed: {
@@ -559,7 +597,7 @@ export default function OneTimeRewards() {
                 userAddress={userAddress}
                 showDetailed={true}
                 maxLegs={8}
-                customMilestone={currentMilestoneForCard}
+                customMilestone={currentMilestone}
               />
             </div>
           </div>

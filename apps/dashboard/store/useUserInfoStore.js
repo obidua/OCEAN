@@ -8412,6 +8412,30 @@ export const useStore = create((set, get) => ({
     }));
   },
 
+  // RewardVault: user milestone status (bool[]), index is milestone (0-based)
+  getUserMilestoneStatus: async (userAddress) => {
+    try {
+      if (!hasAddress(userAddress)) throw new Error("Missing or invalid user address");
+
+      const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
+      if (!rewardVault) throw new Error("RewardVault contract not available");
+
+      const status = await callWithDualRPC(
+        () => rewardVault.methods.getUserMilestoneStatus(userAddress).call(),
+        'getUserMilestoneStatus'
+      );
+
+      // Normalize to boolean array
+      if (Array.isArray(status)) return status.map((v) => Boolean(v));
+      // Some providers may return an object with numbered keys; convert it
+      const vals = Object.values(status || {});
+      return vals.map((v) => Boolean(v));
+    } catch (error) {
+      console.error('[Store] getUserMilestoneStatus error:', error);
+      return [];
+    }
+  },
+
 
   getUserSlabView: async (userAddress) => {
     try {

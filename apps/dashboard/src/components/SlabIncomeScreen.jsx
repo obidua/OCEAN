@@ -73,12 +73,20 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
     contractSlabIndex
   } = SlabIncomeData;
 
-  // Debug log for slab level (can be removed after testing)
-  const effectiveContractIndex = Number.isFinite(contractSlabIndex)
+  // Local reader-driven state from SlabManagerReader.getUserOverview
+  const [slabInfo, setSlabInfo] = useState([]); // achievedSlabs array
+  const [readerContractIndex, setReaderContractIndex] = useState(undefined); // currentSlabIdx from reader
+  const getUserSlabView = useStore((s) => s.getUserSlabView);
+
+  // Derived display values: prefer reader outputs when available
+  const displaySlabLevel = Array.isArray(slabInfo) ? slabInfo.length : 0; // array formula
+  const effectiveContractIndex = Number.isFinite(readerContractIndex)
+    ? Number(readerContractIndex)
+    : Number.isFinite(contractSlabIndex)
     ? Number(contractSlabIndex)
-    : Math.max(0, (Number(slabLevel) || 1) - 1);
+    : Math.max(0, (Number(displaySlabLevel || slabLevel || 1) - 1));
   console.log('🎯 SlabIncomeScreen Debug:', {
-    displayLevel: slabLevel,
+    displayLevel: displaySlabLevel,
     contractIndex: effectiveContractIndex,
   });
 
@@ -96,7 +104,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
     };
   };
 
-  const currentSlabInfo = getSlabInfo(slabLevel);
+  const currentSlabInfo = getSlabInfo(displaySlabLevel || slabLevel);
 
   // Force slab income card values to zero (no distribution released yet)
   const displaySlabIncomeUsd = 0;
@@ -129,32 +137,28 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
     );
   };
 
-
-
-
- const [slabInfo,setSlabInfo]= useState([]);
-  const getUserSlabView = useStore((s) => s.getUserSlabView);
-
-
   const fetchSlabInfo = async () => {
     try {
       if(!userAddress) return;
 
       const response = await getUserSlabView(userAddress);
-      console.log("=====+Fetched slab info:", response.achievedSlabs);
-      setSlabInfo(response.achievedSlabs);
+      console.log("=====+Fetched slab info:", response);
+      setSlabInfo(response?.achievedSlabs || []);
+      setReaderContractIndex(
+        Number.isFinite(Number(response?.currentSlabIdx))
+          ? Number(response.currentSlabIdx)
+          : undefined
+      );
     } catch (error) {
       console.error("Error fetching slab info:", error);
     }
   };
 
-
- useEffect(()=>{
-
-  if(userAddress){
-    fetchSlabInfo();
-  }
- },[userAddress,currentSlabInfo.displayLevel])
+  useEffect(()=>{
+    if(userAddress){
+      fetchSlabInfo();
+    }
+  },[userAddress])
 
 
   return (
@@ -189,7 +193,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
             </div>
           </div>
           <p className="text-5xl font-bold mb-2 text-neon-green relative z-10">
-            {slabInfo ? slabInfo.length : "—"}
+            {Array.isArray(slabInfo) ? slabInfo.length : "—"}
           </p>
           <p className="text-lg text-cyan-300 relative z-10">
             {currentSlabInfo.isValid && currentSlabInfo.slabData
@@ -347,8 +351,8 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
             <tbody>
               {SLAB_LEVELS.map((slab, idx) => {
                 const slabNum = idx + 1;
-                const isCurrent = slabNum === slabLevel;
-                const isAchieved = slabNum < slabLevel;
+                const isCurrent = slabNum === (displaySlabLevel || slabLevel);
+                const isAchieved = slabNum < (displaySlabLevel || slabLevel);
                 const requiredVolume = Number(slab.requiredVolumeUSD) || 0;
                 const rawProgress =
                   requiredVolume > 0
@@ -625,7 +629,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                           </thead>
                           <tbody>
                             {slabPercents.map((percent, idx) => {
-                              const isCurrentLevel = (idx + 1) === slabLevel;
+                              const isCurrentLevel = (idx + 1) === (displaySlabLevel || slabLevel);
                               return (
                                 <tr 
                                   key={idx} 
@@ -640,7 +644,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
                                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                                         isCurrentLevel 
                                           ? "bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950" 
-                                          : (idx + 1) < slabLevel
+                                          : (idx + 1) < (displaySlabLevel || slabLevel)
                                           ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white"
                                           : "bg-cyan-500/20 text-cyan-400"
                                       }`}>

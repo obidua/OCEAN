@@ -188,7 +188,11 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10, custo
               <Activity className="text-neon-green" size={16} />
             </div>
             <p className="text-[9px] lg:text-xs font-medium text-neon-green uppercase tracking-wide">
-              {customMilestone ? 'Current Milestone' : (customTier ? 'Current Royalty Tier' : 'Current Slab')}
+              {customMilestone
+                ? 'Current Milestone'
+                : customTier
+                ? 'Current Royalty Tier'
+                : 'Current Slab'}
             </p>
           </div>
           <p className="text-[12px] lg:text-xl font-bold text-neon-green">
