@@ -702,7 +702,6 @@ export default function StakeInvest() {
     }
 
     setIsStaking(true);
-    setTxStage('initiated');
     setTxModalOpen(true);
     setShowRegisterModal(false);
   try { financialSounds.playPortfolioUpdate(); } catch {}
@@ -739,15 +738,13 @@ export default function StakeInvest() {
         sponsorValidatedRef.current = true;
         lastValidatedRef.current = unregisteredBeneficiary;
       } else {
-        setTxStage('error');
-        setTxError('Unable to build registration transaction.');
+        toast.error('Unable to build registration transaction.');
         setIsStaking(false);
         try { financialSounds.playMoneyOut(); } catch {}
       }
     } catch (err) {
       console.error('Registration failed:', err);
-      setTxStage('error');
-      setTxError(err?.message || 'Unexpected error during registration.');
+      toast.error(err?.message || 'Unexpected error during registration.');
       setIsStaking(false);
       try { financialSounds.playMoneyOut(); } catch {}
     }
@@ -781,7 +778,6 @@ export default function StakeInvest() {
     }
 
     setIsStaking(true);
-    setTxStage('initiated');
     setTxModalOpen(true);
   try { financialSounds.playPortfolioUpdate(); } catch {}
 
@@ -811,15 +807,13 @@ export default function StakeInvest() {
       if (response) {
         setTrxData(response);
       } else {
-        setTxStage('error');
-        setTxError('Unable to build staking transaction.');
+        toast.error('Unable to build staking transaction.');
         setIsStaking(false);
         try { financialSounds.playMoneyOut(); } catch {}
       }
     } catch (err) {
       console.error('CreateNewPortFolio failed:', err);
-      setTxStage('error');
-      setTxError(err?.message || 'Unexpected error. Please try again.');
+      toast.error(err?.message || 'Unexpected error. Please try again.');
       setIsStaking(false);
       try { financialSounds.playMoneyOut(); } catch {}
     }
@@ -1757,7 +1751,12 @@ export default function StakeInvest() {
                           <span className="text-xs sm:text-sm font-bold text-cyan-100">${stakeAmountNum.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] sm:text-xs uppercase tracking-wider text-cyan-300/70">Required RAMA</span>
+                          <span className="text-[10px] sm:text-xs uppercase tracking-wider text-cyan-300/70 flex items-center gap-1">
+                            Required RAMA
+                            <Tooltip content="Includes +0.0001% RAMA buffer like signup to avoid rounding issues.">
+                              <Info size={12} className="text-cyan-400/70" />
+                            </Tooltip>
+                          </span>
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs sm:text-sm font-bold text-neon-green">
                               {ramaStake ? Number(ramaStake).toFixed(4) : '—'} RAMA

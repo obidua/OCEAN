@@ -550,7 +550,7 @@ const ProgressiveTransactionModal = ({
                   View on Ramascan
                 </a>
                 <a
-                  href="/"
+                  href="/dashboard"
                   className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-neon-green to-cyan-500 text-dark-950 rounded-xl font-semibold hover:shadow-lg hover:shadow-neon-green/50 transition-all"
                 >
                   <Award size={16} />
@@ -606,7 +606,7 @@ const ProgressiveTransactionModal = ({
                   View on Ramascan
                 </a>
                 <a
-                  href="/"
+                  href="/dashboard"
                   className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-semibold hover:shadow-lg hover:shadow-neon-green/50 transition-all"
                 >
                   <Award size={16} />
