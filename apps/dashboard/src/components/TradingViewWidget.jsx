@@ -8,10 +8,18 @@ function TradingViewWidget() {
 
   useEffect(
     () => {
-      if (!container.current) return;
+      // Ensure container is mounted in the DOM
+      if (!container.current || !container.current.isConnected) return;
 
       // Clear any existing content
       container.current.innerHTML = '';
+
+      // Ensure expected inner widget container exists before loading script
+      const widgetHost = document.createElement('div');
+      widgetHost.className = 'tradingview-widget-container__widget';
+      widgetHost.style.height = 'calc(100% - 32px)';
+      widgetHost.style.width = '100%';
+      container.current.appendChild(widgetHost);
 
       const script = document.createElement("script");
       script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
@@ -64,7 +72,16 @@ function TradingViewWidget() {
       });
 
       try {
-        container.current.appendChild(script);
+        // Append after a frame to avoid race conditions with DOM
+        requestAnimationFrame(() => {
+          if (!container.current || !container.current.isConnected) return;
+          try {
+            container.current.appendChild(script);
+          } catch (error) {
+            console.warn('Error appending TradingView script:', error);
+            setLoadError(true);
+          }
+        });
       } catch (error) {
         console.warn('Error appending TradingView script:', error);
         setLoadError(true);
@@ -103,7 +120,6 @@ function TradingViewWidget() {
         </div>
       ) : (
         <>
-          <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
           <div className="tradingview-widget-copyright" style={{ fontSize: "11px", color: "rgba(8, 145, 178, 0.6)", textAlign: "center", padding: "4px 0" }}>
             <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank" style={{ color: "rgba(8, 145, 178, 0.8)", textDecoration: "none" }}>
               <span>Track all markets on TradingView</span>

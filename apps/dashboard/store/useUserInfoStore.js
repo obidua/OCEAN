@@ -1962,14 +1962,21 @@ export const useStore = create((set, get) => ({
                 .getTotals(userAddress)
                 .call();
               if (totals) {
-                const [
-                  ramaWei,
-                  roiUsdWad,
-                  creditsUsdWad,
-                  creditsRamaWei,
-                  debitsUsdWad,
-                  debitsRamaWei,
-                ] = totals;
+                // Support both tuple-array and named-object returns
+                const pickTotals = (rec, key, index) => {
+                  if (!rec) return 0;
+                  if (rec[key] != null) return rec[key];
+                  if (Array.isArray(rec) && rec[index] != null) return rec[index];
+                  return 0;
+                };
+
+                const ramaWei = pickTotals(totals, "_ramaBalance", 0);
+                const roiUsdWad = pickTotals(totals, "_roiUsdPaid", 1);
+                const creditsUsdWad = pickTotals(totals, "_totalCreditsUSD", 2);
+                const creditsRamaWei = pickTotals(totals, "_totalCreditsRAMA", 3);
+                const debitsUsdWad = pickTotals(totals, "_totalDebitsUSD", 4);
+                const debitsRamaWei = pickTotals(totals, "_totalDebitsRAMA", 5);
+
                 safeWalletTotals = {
                   ramaWei,
                   roiUsd: fromWadToUsd(roiUsdWad),
@@ -3257,6 +3264,9 @@ export const useStore = create((set, get) => ({
 
       if (oceanViewV2) {
         try {
+          if (!oceanViewV2?.methods?.getPortfolioCards) {
+            throw new Error("oceanViewV2.getPortfolioCards not available on this ABI");
+          }
           const [cardsRaw] = await oceanViewV2.methods
             .getPortfolioCards(userAddress)
             .call();
@@ -3755,6 +3765,9 @@ export const useStore = create((set, get) => ({
 
       if (oceanViewV2) {
         try {
+          if (!oceanViewV2?.methods?.getPortfolioCards) {
+            throw new Error("oceanViewV2.getPortfolioCards not available on this ABI");
+          }
           const [, lifetimeCapRaw] = await oceanViewV2.methods
             .getPortfolioCards(userAddress)
             .call();
