@@ -58,7 +58,7 @@ class IncomeTracker {
     const increase = newValue - previousValue;
 
     if (increase > 0) {
-      console.log(`💰 Income detected: ${type} +$${increase.toFixed(2)} (${key})`);
+      // console.log(`💰 Income detected: ${type} +$${increase.toFixed(2)} (${key})`);
       
       // Store new value
       this.previousValues.set(key, newValue);

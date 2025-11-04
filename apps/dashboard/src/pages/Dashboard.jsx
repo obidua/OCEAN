@@ -248,7 +248,7 @@ export default function Dashboard() {
           }),
         ]);
 
-        console.log("#########", dashboardInfo);
+        // console.log("#########", dashboardInfo);
 
         if (cancelled) return;
 
@@ -288,7 +288,7 @@ export default function Dashboard() {
         } else {
           setFortFolioDetails(portfolioInfo?.ProtFolioDetail ?? null);
 
-          console.log(portfolioInfo?.ProtFolioDetail)
+          // console.log(portfolioInfo?.ProtFolioDetail)
         }
   setLast7Days(Array.isArray(trendCombined) ? trendCombined : []);
         setComprehensiveCapStatus(capStatus ?? null);
@@ -695,7 +695,7 @@ export default function Dashboard() {
           throw new Error('No claimable periods available');
         }
         
-        console.log('[Dashboard] Auto window info loaded:', autoWindow);
+        // console.log('[Dashboard] Auto window info loaded:', autoWindow);
       } catch (autoErr) {
         console.error('[Dashboard] Failed to load auto window info:', autoErr);
         setClaimError(autoErr?.message || 'Failed to load claiming information');
@@ -743,7 +743,7 @@ export default function Dashboard() {
     try {
       // Prevent multiple calls
       if (successHandledRef.current) {
-        console.log('Success already handled, skipping...');
+        // console.log('Success already handled, skipping...');
         return;
       }
       successHandledRef.current = true;
@@ -849,7 +849,7 @@ export default function Dashboard() {
   // Monitor claim transaction
   useEffect(() => {
     if (isSuccess && receipt && isClaimingGrowth) {
-      console.log("Claim successful, refreshing dashboard data...");
+      // console.log("Claim successful, refreshing dashboard data...");
       setIsClaimingGrowth(false);
       setClaimError(null);
     }
@@ -1500,7 +1500,7 @@ export default function Dashboard() {
       }
       try {
         const data = await getDirectsPortfolioBreakdown(userAddress);
-        console.log("Direct Team Info:", data);
+        // console.log("Direct Team Info:", data);
         if (cancelled) return;
         setDirecTeamInfo(data || null);
       } catch (err) {

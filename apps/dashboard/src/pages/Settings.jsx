@@ -70,7 +70,7 @@ export default function Settings() {
       const success = await enableAudio();
       setAudioInitialized(success);
       if (success) {
-        console.log('Audio system initialized for mobile/PWA');
+        // console.log('Audio system initialized for mobile/PWA');
         // Play a welcome sound if available
         if (window.financialSounds && soundEnabled) {
           window.financialSounds.playCoinDrop(1);
@@ -151,7 +151,7 @@ export default function Settings() {
 
       const res = await getTOtalPortFolio(userAddress);
 
-      console.log(res?.ProtFolioDetail)
+      // console.log(res?.ProtFolioDetail)
       // normalize to strings (handles numbers, BigInt, BN, etc.)
       const idList = (res?.ArrPortfolio ?? []).map((pid) => String(pid));
 

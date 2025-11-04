@@ -160,7 +160,7 @@ export default function StakeInvest() {
   const GetUsdToRama = async (amt) => {
     try {
       const res = await usdToRama(amt);
-      console.log(res)
+      // console.log(res)
       SetramaStake(res);
     } catch (error) {
       console.log(error)
@@ -170,7 +170,7 @@ export default function StakeInvest() {
   const GetRamaToUsd = async () => {
     try {
       const res = await RamaTOUsd(1);
-      console.log(res)
+      // console.log(res)
       setRamaPrice(res)
     } catch (error) {
       console.log(error)
@@ -251,9 +251,9 @@ export default function StakeInvest() {
         setLoadingLastOther(true);
         const passedAddr = stakeType === 'other' ?  beneficiaryAddress: addr;
 
-        console.log("passedAddr",passedAddr);
+        // console.log("passedAddr",passedAddr);
         const got = await getLastPortfolioAmountUsd(passedAddr);
-        console.log("got",got);
+        // console.log("got",got);
         if (!cancelled) setLastOtherInfo(got || { pid: null, amountUsd: 0, hasPortfolio: false });
       } catch (e) {
         if (!cancelled) setLastOtherInfo({ pid: null, amountUsd: 0, hasPortfolio: false });
@@ -709,22 +709,22 @@ export default function StakeInvest() {
     try {
       let response;
 
-      console.log("registrationSponsor");
+      // console.log("registrationSponsor");
       
       if (stakeType === 'self' && useWallet === 'external') {
-        console.log("self external----->",address, stakeAmountNum);
+        // console.log("self external----->",address, stakeAmountNum);
         response = await CreateSelfPort(address, stakeAmountNum);
 
       } else if (stakeType === 'other' && useWallet === 'external') {
-        console.log("other external----->",address, beneficiaryAddress, stakeAmountNum,registrationSponsor);
+        // console.log("other external----->",address, beneficiaryAddress, stakeAmountNum,registrationSponsor);
         response = await CreateOtherfPort(address,beneficiaryAddress, stakeAmountNum,registrationSponsor);
 
       } else if (stakeType === 'self' && useWallet === 'safe') {
-        console.log("self safe----->",address, stakeAmountNum);
+        // console.log("self safe----->",address, stakeAmountNum);
         response = await SafeSelfPort(address, stakeAmountNum);
 
       } else if (stakeType === 'other' && useWallet === 'safe') {
-        console.log("other safe--->" ,registrationSponsor, beneficiaryAddress,stakeAmountNum);
+        // console.log("other safe--->" ,registrationSponsor, beneficiaryAddress,stakeAmountNum);
 
 
         response = await SafeOtherPort(address,registrationSponsor, beneficiaryAddress, stakeAmountNum);
@@ -784,22 +784,22 @@ export default function StakeInvest() {
     try {
       let response;
 
-      console.log("stakeType,useWallet");
+      // console.log("stakeType,useWallet");
 
       if (stakeType === 'self' && useWallet === 'external') {
-        console.log("self external----->",address, stakeAmountNum);
+        // console.log("self external----->",address, stakeAmountNum);
 
         response = await CreateSelfPort(address, stakeAmountNum);
       } else if (stakeType === 'other' && useWallet === 'external') {
-        console.log("other external----->",address, beneficiaryAddress, stakeAmountNum, address);
+        // console.log("other external----->",address, beneficiaryAddress, stakeAmountNum, address);
 
         response = await CreateOtherfPort(address, beneficiaryAddress, stakeAmountNum, address);
       } else if (stakeType === 'self' && useWallet === 'safe') {
-        console.log("self safe----->",address, stakeAmountNum);
+        // console.log("self safe----->",address, stakeAmountNum);
 
         response = await SafeSelfPort(address, stakeAmountNum);
       } else if (stakeType === 'other' && useWallet === 'safe') {
-        console.log("other safe--->", address, beneficiaryAddress, stakeAmountNum);
+        // console.log("other safe--->", address, beneficiaryAddress, stakeAmountNum);
 
         response = await SafeOtherPort(address,address, beneficiaryAddress, stakeAmountNum);
       }
@@ -826,7 +826,7 @@ export default function StakeInvest() {
         return
       }
       const res = await GetchStakeInvest(userAddress);
-      console.log(res);
+      // console.log(res);
       setSafeWalletBalance(res)
     } catch (error) {
       console.log(error)

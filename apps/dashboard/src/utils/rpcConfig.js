@@ -70,7 +70,7 @@ export const getNetworkConfig = () => {
  */
 export const createWeb3Instance = (operationName = 'Web3') => {
   const primaryRPC = getPrimaryRPC();
-  console.log(`${operationName}: Creating Web3 instance with primary RPC: ${primaryRPC}`);
+  // console.log(`${operationName}: Creating Web3 instance with primary RPC: ${primaryRPC}`);
   return new Web3(primaryRPC);
 };
 
@@ -86,7 +86,7 @@ export const callWithDualRPC = async (contractCall, operationName = 'Contract Ca
   
   for (let i = 0; i < rpcUrls.length; i++) {
     try {
-      console.log(`${operationName}: Attempting with RPC ${i + 1}: ${rpcUrls[i]}`);
+      // console.log(`${operationName}: Attempting with RPC ${i + 1}: ${rpcUrls[i]}`);
       
       // Create a new Web3 instance for this RPC attempt
       const web3Instance = new Web3(rpcUrls[i]);
@@ -97,14 +97,14 @@ export const callWithDualRPC = async (contractCall, operationName = 'Contract Ca
       // Execute the contract call with this web3 instance
       const result = await contractCall();
       
-      console.log(`${operationName}: Success with RPC ${i + 1}`);
+      // console.log(`${operationName}: Success with RPC ${i + 1}`);
       return result;
     } catch (error) {
       console.warn(`${operationName}: RPC ${i + 1} failed:`, error.message);
       lastError = error;
       
       if (i < rpcUrls.length - 1) {
-        console.log(`${operationName}: Trying next RPC...`);
+        // console.log(`${operationName}: Trying next RPC...`);
       }
     }
   }
@@ -183,21 +183,21 @@ export const createProviderWithFallbackNode = (operationName = 'Script') => {
     
     for (let i = 0; i < rpcUrls.length; i++) {
       try {
-        console.log(`${operationName}: Attempting with RPC ${i + 1}: ${rpcUrls[i]}`);
+        // console.log(`${operationName}: Attempting with RPC ${i + 1}: ${rpcUrls[i]}`);
         const web3 = new Web3(rpcUrls[i]);
         
         // Test connection first
         await web3.eth.getBlockNumber();
         
         const result = await contractCall(web3);
-        console.log(`${operationName}: Success with RPC ${i + 1}`);
+        // console.log(`${operationName}: Success with RPC ${i + 1}`);
         return result;
       } catch (error) {
         console.warn(`${operationName}: RPC ${i + 1} failed:`, error.message);
         lastError = error;
         
         if (i < rpcUrls.length - 1) {
-          console.log(`${operationName}: Trying next RPC...`);
+          // console.log(`${operationName}: Trying next RPC...`);
         }
       }
     }

@@ -46,7 +46,7 @@ const getContractInterface = async () => {
   try {
     // Add cache busting for fresh contract data
     const cacheBuster = Date.now();
-    console.log(`🔄 Initializing contracts (v${cacheBuster})`);
+    // console.log(`🔄 Initializing contracts (v${cacheBuster})`);
     
     const oceanicView = new web3.eth.Contract(OceanicViewABI, Contract["Oceanicview"]);
     const portfolioManager = new web3.eth.Contract(PortFolioManagerABI, Contract["PortFolioManager"]);
@@ -757,7 +757,7 @@ export const useStore = create((set, get) => ({
         rama: fromWeiToRama(rama ?? 0),
       };
       
-      console.log('getTotalsClaimedFromDistributor result:', { raw: result, parsed: claimedData });
+      // console.log('getTotalsClaimedFromDistributor result:', { raw: result, parsed: claimedData });
       
       return claimedData;
     } catch (error) {
@@ -818,7 +818,7 @@ export const useStore = create((set, get) => ({
           hasValidPortfolios = portfolioIds && portfolioIds.length > 0;
           
           if (!hasValidPortfolios) {
-            console.log(`getPortfolioIds: no valid portfolios found for ${address}`);
+            // console.log(`getPortfolioIds: no valid portfolios found for ${address}`);
             return { map: new Map(), fromPeriod: 0, lastPeriod: 0, portfolioIds: [] };
           }
         } catch (portfolioError) {
@@ -1395,7 +1395,7 @@ export const useStore = create((set, get) => ({
   },
 
   RegisterUser: async (userAddress, value) => {
-    console.log('RegisterUser args:', userAddress, value);
+    // console.log('RegisterUser args:', userAddress, value);
     try {
       if (!userAddress || typeof userAddress !== 'string' || !userAddress.startsWith('0x')) {
         throw new Error('Invalid user address');
@@ -1543,7 +1543,7 @@ export const useStore = create((set, get) => ({
         'isUserRegistered'
       );
 
-      console.log('User registration status:', isUserExist);
+      // console.log('User registration status:', isUserExist);
       return isUserExist;
     } catch (error) {
       console.error("Error checking user registration:", error);
@@ -1604,7 +1604,7 @@ export const useStore = create((set, get) => ({
         .filter((id) => Number.isFinite(id) && id > 0);
       
       if (validIds.length === 0) {
-        console.log(`getPortfolioIds: no valid portfolios found for ${userAddress}`);
+        // console.log(`getPortfolioIds: no valid portfolios found for ${userAddress}`);
       }
       
       return validIds;
@@ -2005,7 +2005,7 @@ export const useStore = create((set, get) => ({
 
           const cap_used= await cappingIncomeManager.methods.getEarnedByKind(userAddress).call();
 
-          console.log("cap_used",cap_used)
+          // console.log("cap_used",cap_used)
           return {
             cap_used,
             totals: {
@@ -4208,14 +4208,14 @@ export const useStore = create((set, get) => ({
         };
       }
 
-      console.log("🔗 Fetching SlabManager data for:", userAddress);
-      console.log("📍 SlabManager contract address:", Contract["SlabManager"]);
+      // console.log("🔗 Fetching SlabManager data for:", userAddress);
+      // console.log("📍 SlabManager contract address:", Contract["SlabManager"]);
 
       // Get comprehensive user overview from SlabManager with error handling
       let userOverview;
       try {
         userOverview = await slabManager.methods.getUserOverview(userAddress).call();
-        console.log("✅ SlabManager.getUserOverview success:", userOverview);
+        // console.log("✅ SlabManager.getUserOverview success:", userOverview);
       } catch (overviewError) {
         console.error("❌ SlabManager.getUserOverview failed:", overviewError);
         
@@ -4251,7 +4251,7 @@ export const useStore = create((set, get) => ({
             new50DirectsSinceClaim: 0
           };
 
-          console.log("🔄 Fallback data retrieved:", userOverview);
+          // console.log("🔄 Fallback data retrieved:", userOverview);
         } catch (fallbackError) {
           console.error("❌ Fallback calls failed:", fallbackError);
           throw new Error(`SlabManager contract calls failed: ${fallbackError.message}`);
@@ -4502,7 +4502,7 @@ export const useStore = create((set, get) => ({
         }
       };
 
-      console.log("✅ getSlabIncomeOverview result:", result);
+      // console.log("✅ getSlabIncomeOverview result:", result);
       return result;
 
     } catch (error) {
@@ -4576,7 +4576,7 @@ export const useStore = create((set, get) => ({
         };
       }
 
-      console.log("🔗 Fetching SlabManager details for:", userAddress);
+      // console.log("🔗 Fetching SlabManager details for:", userAddress);
 
       // Get additional data in parallel with individual error handling
       const results = await Promise.allSettled([
@@ -4639,7 +4639,7 @@ export const useStore = create((set, get) => ({
         canClaim
       };
 
-      console.log("✅ getSlabManagerDetails result:", detailsResult);
+      // console.log("✅ getSlabManagerDetails result:", detailsResult);
       return detailsResult;
 
     } catch (error) {
@@ -4976,7 +4976,7 @@ export const useStore = create((set, get) => ({
         };
       }
 
-      console.log('🔍 Getting comprehensive slab user overview for:', userAddress);
+      // console.log('🔍 Getting comprehensive slab user overview for:', userAddress);
       
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) {
@@ -4985,7 +4985,7 @@ export const useStore = create((set, get) => ({
 
       // Use the comprehensive getUserOverview function from the contract
       const userOverview = await slabManager.methods.getUserOverview(userAddress).call();
-      console.log('📊 Raw user overview from contract:', userOverview);
+      // console.log('📊 Raw user overview from contract:', userOverview);
 
       // Process the comprehensive data
       const result = {
@@ -5048,7 +5048,7 @@ export const useStore = create((set, get) => ({
         new50DirectsSinceClaim: Number(userOverview.new50DirectsSinceClaim || 0)
       };
 
-      console.log('✅ Processed slab user overview:', result);
+      // console.log('✅ Processed slab user overview:', result);
       
       return {
         success: true,
@@ -5079,7 +5079,7 @@ export const useStore = create((set, get) => ({
         };
       }
 
-      console.log('🎯 Getting detailed achievement progress for:', userAddress, 'kind:', achievementKind);
+      // console.log('🎯 Getting detailed achievement progress for:', userAddress, 'kind:', achievementKind);
       
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) {
@@ -5088,7 +5088,7 @@ export const useStore = create((set, get) => ({
 
       // Get next achievement requirements
       const progressData = await slabManager.methods.getRemainingForNext(userAddress, achievementKind).call();
-      console.log('📈 Raw progress data:', progressData);
+      // console.log('📈 Raw progress data:', progressData);
 
       const result = {
         targetUSD: Number(progressData.progress?.targetUSD || progressData.targetUSD || 0),
@@ -5107,7 +5107,7 @@ export const useStore = create((set, get) => ({
         result.progressPercentage = Math.min(100, (achieved / result.targetUSD) * 100);
       }
 
-      console.log('✅ Processed achievement progress:', result);
+      // console.log('✅ Processed achievement progress:', result);
       
       return {
         success: true,
@@ -5170,7 +5170,7 @@ export const useStore = create((set, get) => ({
         };
       }
 
-      console.log("🔗 Fetching achievement progress for:", userAddress);
+      // console.log("🔗 Fetching achievement progress for:", userAddress);
 
       // Get progress for different achievement types with individual error handling
       const results = await Promise.allSettled([
@@ -5229,7 +5229,7 @@ export const useStore = create((set, get) => ({
         nextRoyalty: processProgress(results[2], 'ROYALTY')
       };
 
-      console.log("✅ getNextAchievementProgress result:", progressResult);
+      // console.log("✅ getNextAchievementProgress result:", progressResult);
       return progressResult;
 
     } catch (error) {
@@ -6879,17 +6879,17 @@ export const useStore = create((set, get) => ({
 
       const portFolioAmtUsd = 10
       const protFolioMicroUsd = portFolioAmtUsd * 1e6
-      console.log(protFolioMicroUsd)
+      // console.log(protFolioMicroUsd)
       const AmtInRamaWei = await contract.methods.getPackageValueInRAMA(protFolioMicroUsd).call();
       const AmtInRamaWeiBuffered = addRamaBufferWei(AmtInRamaWei);
       const ramaAmt = parseInt(AmtInRamaWei) / 1e18
       const ramaAmtBuffered = Number(AmtInRamaWeiBuffered) / 1e18
 
-      console.log('[regPortFoliAmt] raw/ppmbuf:', {
-        ppm: getRamaBufferPpm(),
-        rawWei: String(AmtInRamaWei),
-        bufWei: AmtInRamaWeiBuffered.toString(),
-      })
+      // console.log('[regPortFoliAmt] raw/ppmbuf:', {
+      //   ppm: getRamaBufferPpm(),
+      //   rawWei: String(AmtInRamaWei),
+      //   bufWei: AmtInRamaWeiBuffered.toString(),
+      // })
 
       return {
         portFolioAmtUsd,
@@ -6903,7 +6903,7 @@ export const useStore = create((set, get) => ({
   },
 
   CreateportFolio: async (userAddress, sponsorInput,amt=10) => {
-    console.log('CreateportFolio args:', userAddress, sponsorInput);
+    // console.log('CreateportFolio args:', userAddress, sponsorInput);
     try {
       if (!userAddress || typeof userAddress !== 'string' || !userAddress.startsWith('0x')) {
         throw new Error('Invalid user address');
@@ -6942,12 +6942,12 @@ export const useStore = create((set, get) => ({
 
 
 
-      console.log('[CreateportFolio]', {
-        sponsorAddress,
-        rawWei: valueToSendRaw.toString(),
-        bufferedWei: valueToSend.toString(),
-        bufferPPM: getRamaBufferPpm(),
-      });
+      // console.log('[CreateportFolio]', {
+      //   sponsorAddress,
+      //   rawWei: valueToSendRaw.toString(),
+      //   bufferedWei: valueToSend.toString(),
+      //   bufferPPM: getRamaBufferPpm(),
+      // });
 
       // --- 2) Build tx: RegisterAndActivate(referrer) PAYABLE (handles registration + first stake)
       const data = pm.methods.RegisterAndActivate(sponsorAddress).encodeABI();
@@ -7165,7 +7165,7 @@ export const useStore = create((set, get) => ({
 
 
   InvestInPortFolio: async (userAddress, Amt) => {
-    console.log('InvestInPortFolio args:', userAddress, Amt);
+    // console.log('InvestInPortFolio args:', userAddress, Amt);
     try {
 
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
@@ -7181,7 +7181,7 @@ export const useStore = create((set, get) => ({
       const tol = ramaWei / 200; // 0.5%
       const valueToSend = (ramaWei + tol).toString();
 
-      console.log(sponsorAddress, valueToSend.toString(), ramaWei)
+      // console.log(sponsorAddress, valueToSend.toString(), ramaWei)
 
       const data = pm.methods
         .createPortfolio(sponsorAddress, valueToSend)
@@ -7230,7 +7230,7 @@ export const useStore = create((set, get) => ({
   // ==========================================================================
 
   CreateSelfPort: async (userAddress, Amt) => {
-    console.log('CreateSelfPort args:', userAddress, Amt);
+    // console.log('CreateSelfPort args:', userAddress, Amt);
     try {
 
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
@@ -7246,7 +7246,7 @@ export const useStore = create((set, get) => ({
 
 
 
-      console.log('[CreateSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
+      // console.log('[CreateSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
       const data = pm.methods
   .createPortfolio(valueToSend)
@@ -7288,7 +7288,7 @@ export const useStore = create((set, get) => ({
   },
 
   CreateOtherfPort: async (userAddress, toBeActivatedUSer, Amt,sponsorAddress) => {
-    console.log('userAddress, toBeActivatedUSer, Amt,sponsorAddress args:', userAddress, toBeActivatedUSer, Amt,sponsorAddress);
+    // console.log('userAddress, toBeActivatedUSer, Amt,sponsorAddress args:', userAddress, toBeActivatedUSer, Amt,sponsorAddress);
     try {
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
 
@@ -7301,7 +7301,7 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-      console.log('[CreateOtherfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
+      // console.log('[CreateOtherfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
       const data = pm.methods
   .createPortfolioForOthers(toBeActivatedUSer, sponsorAddress)
@@ -7343,7 +7343,7 @@ export const useStore = create((set, get) => ({
   },
 
   SafeSelfPort: async (userAddress, Amt) => {
-    console.log('SafeSelfPort args:', userAddress, Amt);
+    // console.log('SafeSelfPort args:', userAddress, Amt);
     try {
 
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
@@ -7361,7 +7361,7 @@ export const useStore = create((set, get) => ({
 
 
 
-      console.log('[SafeSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
+      // console.log('[SafeSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
   const data = safeWallCont.methods.createPortfolioFromSafe(valueToSend).encodeABI();
 
@@ -7401,7 +7401,7 @@ export const useStore = create((set, get) => ({
   },
 
   SafeOtherPort: async (userAddress,sponserAddress, beneficiary, Amt) => {
-    console.log('SafeOtherPort args:', userAddress, beneficiary, Amt);
+    // console.log('SafeOtherPort args:', userAddress, beneficiary, Amt);
     try {
 
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
@@ -7419,9 +7419,9 @@ export const useStore = create((set, get) => ({
 
 
 
-      console.log('[SafeOtherPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
+      // console.log('[SafeOtherPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
-      console.log("========>",beneficiary, valueToSend, sponserAddress)
+      // console.log("========>",beneficiary, valueToSend, sponserAddress)
 
       const data = safeWallCont.methods
         .sponsorCreatePortfolioFor(beneficiary, valueToSend, sponserAddress)
@@ -7477,13 +7477,13 @@ export const useStore = create((set, get) => ({
       );
 
 
-      console.log(userAddress, kind, limit, offset)
+      // console.log(userAddress, kind, limit, offset)
 
       const response = await CompView.methods
         .getIncomeHistoryByKind(userAddress, kind, offset, limit)
         .call();
 
-      console.log(response)
+      // console.log(response)
 
       return response;
     } catch (error) {
@@ -7494,7 +7494,7 @@ export const useStore = create((set, get) => ({
 
   // Safe Wallet registration with custom sponsor
   SafeRegisterAndActivate: async (userAddress, beneficiary, sponsor, Amt) => {
-    console.log('SafeRegisterAndActivate args:', { userAddress, beneficiary, sponsor, Amt });
+    // console.log('SafeRegisterAndActivate args:', { userAddress, beneficiary, sponsor, Amt });
     try {
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
       const safeWallCont = new web3.eth.Contract(SafeWalletABI, Contract.SafeWallet);
@@ -7526,7 +7526,7 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-      console.log('Calling sponsorCreatePortfolioFor with:', { beneficiary, rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), sponsor: sponsorAddress, bufferPPM: getRamaBufferPpm() });
+      // console.log('Calling sponsorCreatePortfolioFor with:', { beneficiary, rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), sponsor: sponsorAddress, bufferPPM: getRamaBufferPpm() });
 
       const data = safeWallCont.methods
         .sponsorCreatePortfolioFor(beneficiary, valueToSend, sponsorAddress)
@@ -7629,7 +7629,7 @@ export const useStore = create((set, get) => ({
 
   // Cache Management Methods
   clearCache: async () => {
-    console.log('[Store] Clearing all cached data...');
+    // console.log('[Store] Clearing all cached data...');
     
     try {
       // Clear local storage data
@@ -7651,14 +7651,14 @@ export const useStore = create((set, get) => ({
         await initState();
       }
       
-      console.log('[Store] Cache cleared successfully');
+      // console.log('[Store] Cache cleared successfully');
     } catch (error) {
       console.error('[Store] Error clearing cache:', error);
     }
   },
 
   invalidateContractCache: async () => {
-    console.log('[Store] Invalidating contract cache...');
+    // console.log('[Store] Invalidating contract cache...');
     
     try {
       // Clear contract-specific cached data
@@ -7684,7 +7684,7 @@ export const useStore = create((set, get) => ({
         await initContracts();
       }
       
-      console.log('[Store] Contract cache invalidated and contracts re-initialized');
+      // console.log('[Store] Contract cache invalidated and contracts re-initialized');
     } catch (error) {
       console.error('[Store] Error invalidating contract cache:', error);
     }
@@ -7695,8 +7695,8 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching CappingIncomeManager data for:', userAddress);
-      console.log('[Store] Using dual RPC endpoints for faster response');
+      // console.log('[Store] Fetching CappingIncomeManager data for:', userAddress);
+      // console.log('[Store] Using dual RPC endpoints for faster response');
 
       // Create dual contract instances
       const cappingIncomeContracts = makeDualContracts(
@@ -7708,7 +7708,7 @@ export const useStore = create((set, get) => ({
         throw new Error("CappingIncomeManager contract not available");
       }
 
-      console.log('[Store] CappingIncomeManager address:', Contract["CappingIncomeManager"]);
+      // console.log('[Store] CappingIncomeManager address:', Contract["CappingIncomeManager"]);
 
       // Use dual RPC for faster response
       const earnedByKind = await callWithDualRPC(
@@ -7716,7 +7716,7 @@ export const useStore = create((set, get) => ({
         'getEarnedByKind'
       );
 
-      console.log('[Store] CappingIncomeManager earnedByKind raw response:', earnedByKind);
+      // console.log('[Store] CappingIncomeManager earnedByKind raw response:', earnedByKind);
 
       // Extract values (they should be in USD6 format - 6 decimal places)
       const roiUSD6 = BigInt(earnedByKind[0] || '0');
@@ -7730,13 +7730,13 @@ export const useStore = create((set, get) => ({
       // Convert from USD6 (micro USD) to regular USD
       const totalEarnedUSD = fromMicroUSD(totalEarnedUSD6);
       
-      console.log('[Store] CappingIncomeManager breakdown:', {
-        roi: fromMicroUSD(roiUSD6),
-        direct: fromMicroUSD(directUSD6),
-        slab: fromMicroUSD(slabUSD6),
-        slabOverride: fromMicroUSD(slabOverrideUSD6),
-        total: totalEarnedUSD
-      });
+      // console.log('[Store] CappingIncomeManager breakdown:', {
+      //   roi: fromMicroUSD(roiUSD6),
+      //   direct: fromMicroUSD(directUSD6),
+      //   slab: fromMicroUSD(slabUSD6),
+      //   slabOverride: fromMicroUSD(slabOverrideUSD6),
+      //   total: totalEarnedUSD
+      // });
 
       const result = {
         breakdown: {
@@ -7755,7 +7755,7 @@ export const useStore = create((set, get) => ({
         }
       };
 
-      console.log('[Store] CappingIncomeManager final result:', result);
+      // console.log('[Store] CappingIncomeManager final result:', result);
       return result;
     } catch (error) {
       console.error('[Store] Error fetching CappingIncomeManager data:', error);
@@ -7786,8 +7786,8 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching directs portfolio breakdown for:', userAddress);
-      console.log('[Store] Using dual RPC endpoints for faster response');
+      // console.log('[Store] Fetching directs portfolio breakdown for:', userAddress);
+      // console.log('[Store] Using dual RPC endpoints for faster response');
 
       // Create dual contract instances
       const oceanicViewContracts = makeDualContracts(OceanicViewABI, Contract["Oceanicview"]);
@@ -7795,7 +7795,7 @@ export const useStore = create((set, get) => ({
         throw new Error("OceanicView contract not available");
       }
 
-      console.log('[Store] OceanicView address:', Contract["Oceanicview"]);
+      // console.log('[Store] OceanicView address:', Contract["Oceanicview"]);
 
       // Use dual RPC for faster response
       const result = await callWithDualRPC(
@@ -7875,18 +7875,18 @@ export const useStore = create((set, get) => ({
       // Sort directs by total business (self + team) for better display
       directsData.sort((a, b) => b.totalBusiness - a.totalBusiness);
 
-      console.log('[Store] Processed directs portfolio breakdown:', {
-        directsData: directsData.slice(0, 3), // Log first 3 for brevity
-        summary,
-        totalDirects: directsData.length
-      });
+      // console.log('[Store] Processed directs portfolio breakdown:', {
+      //   directsData: directsData.slice(0, 3), // Log first 3 for brevity
+      //   summary,
+      //   totalDirects: directsData.length
+      // });
 
       // Team business calculation example based on your data:
       // User 0x8e12c1204d29A5B236A866B470279B52C0707472:
       // - Self Portfolio: 110000000000000000 (0.11 USD)
       // - Team Volume: 2500000000 (0.0000025 USD) 
       // - Total Business: 0.11 + 0.0000025 = 0.1100025 USD
-      console.log('[Store] Team business calculation example:');
+      // console.log('[Store] Team business calculation example:');
       directsData.forEach((direct, index) => {
         if (index < 3) { // Log first 3 examples
           console.log(`Direct ${index + 1} (${direct.address.slice(0, 6)}...${direct.address.slice(-4)}):
@@ -7935,7 +7935,7 @@ export const useStore = create((set, get) => ({
   // Enhanced ROI Distribution functions with multi-day claiming support
   getMaxPeriodsPerClaim: async () => {
     try {
-      console.log('[Store] Fetching max periods per claim...');
+      // console.log('[Store] Fetching max periods per claim...');
       
       const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
       if (roiDistributorContracts.length === 0) {
@@ -7947,7 +7947,7 @@ export const useStore = create((set, get) => ({
         'maxPeriodsPerClaim'
       );
 
-      console.log('[Store] Max periods per claim:', maxPeriods);
+      // console.log('[Store] Max periods per claim:', maxPeriods);
       return Number(maxPeriods);
     } catch (error) {
       console.error('[Store] Error fetching max periods per claim:', error);
@@ -7960,7 +7960,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching auto window for:', userAddress);
+      // console.log('[Store] Fetching auto window for:', userAddress);
       
       const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
       if (roiDistributorContracts.length === 0) {
@@ -7981,7 +7981,7 @@ export const useStore = create((set, get) => ({
         }),
       ]);
 
-      console.log('[Store] Raw auto window data:', autoWindow);
+      // console.log('[Store] Raw auto window data:', autoWindow);
 
       const fromPeriod = Number(autoWindow.fromPeriod || autoWindow[0]);
       const lastPeriod = Number(autoWindow.lastPeriod || autoWindow[1]);
@@ -8035,7 +8035,7 @@ export const useStore = create((set, get) => ({
         rpcOptimized: true
       };
 
-      console.log('[Store] Processed auto window:', result);
+      // console.log('[Store] Processed auto window:', result);
       return result;
     } catch (error) {
       console.error('[Store] Error fetching auto window:', error);
@@ -8059,8 +8059,8 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching per-day ROI breakdown for:', userAddress);
-      console.log('[Store] Period range:', { fromPeriod, toPeriod });
+      // console.log('[Store] Fetching per-day ROI breakdown for:', userAddress);
+      // console.log('[Store] Period range:', { fromPeriod, toPeriod });
 
       const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
       if (roiDistributorContracts.length === 0) {
@@ -8098,7 +8098,7 @@ export const useStore = create((set, get) => ({
         actualFromPeriod = fromPeriod || Number(autoWindow.fromPeriod);
         actualToPeriod = toPeriod || Number(autoWindow.lastPeriod);
         
-        console.log('[Store] Auto window:', { actualFromPeriod, actualToPeriod });
+        // console.log('[Store] Auto window:', { actualFromPeriod, actualToPeriod });
       }
 
       // Get per-period preview
@@ -8111,7 +8111,7 @@ export const useStore = create((set, get) => ({
         'perPeriodPreview'
       );
 
-      console.log('[Store] Raw per-period data:', perPeriodData);
+      // console.log('[Store] Raw per-period data:', perPeriodData);
 
       const [periodIds, usdPerPeriod, ramaPerPeriod, epochsCount] = perPeriodData;
 
@@ -8146,11 +8146,11 @@ export const useStore = create((set, get) => ({
         averageDailyRama: totalRama > 0 ? totalRama / dailyBreakdown.length : 0
       };
 
-      console.log('[Store] Processed daily breakdown:', {
-        summary,
-        totalDays: dailyBreakdown.length,
-        sampleDays: dailyBreakdown.slice(0, 3)
-      });
+      // console.log('[Store] Processed daily breakdown:', {
+      //   summary,
+      //   totalDays: dailyBreakdown.length,
+      //   sampleDays: dailyBreakdown.slice(0, 3)
+      // });
 
       return {
         dailyBreakdown,
@@ -8185,7 +8185,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching detailed unclaimed ROI for:', userAddress);
+      // console.log('[Store] Fetching detailed unclaimed ROI for:', userAddress);
 
       const roiDistributorViewContracts = makeDualContracts(RoiDistributionViewABI, Contract["RoiDistributionView"]);
       if (roiDistributorViewContracts.length === 0) {
@@ -8197,7 +8197,7 @@ export const useStore = create((set, get) => ({
         'getUnclaimedROI'
       );
 
-      console.log('[Store] Raw unclaimed ROI data:', unclaimedData);
+      // console.log('[Store] Raw unclaimed ROI data:', unclaimedData);
 
       const [usdTotalMicro, ramaTotalWei, fromPeriod, lastPeriod, epochsCount] = unclaimedData;
 
@@ -8221,7 +8221,7 @@ export const useStore = create((set, get) => ({
         rpcOptimized: true
       };
 
-      console.log('[Store] Processed unclaimed ROI:', result);
+      // console.log('[Store] Processed unclaimed ROI:', result);
       return result;
     } catch (error) {
       console.error('[Store] Error fetching detailed unclaimed ROI:', error);
@@ -8249,7 +8249,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching portfolio claim preview for:', userAddress);
+      // console.log('[Store] Fetching portfolio claim preview for:', userAddress);
 
       const roiDistributorViewContracts = makeDualContracts(RoiDistributionViewABI, Contract["RoiDistributionView"]);
       if (roiDistributorViewContracts.length === 0) {
@@ -8261,7 +8261,7 @@ export const useStore = create((set, get) => ({
         'previewClaimPerPortfolio'
       );
 
-      console.log('[Store] Raw portfolio preview:', portfolioPreview);
+      // console.log('[Store] Raw portfolio preview:', portfolioPreview);
 
       const [pids, usdTotals, ramaTotals, epochCounts, fromPeriod, lastPeriod] = portfolioPreview;
 
@@ -8296,7 +8296,7 @@ export const useStore = create((set, get) => ({
         rpcOptimized: true
       };
 
-      console.log('[Store] Processed portfolio preview:', result);
+      // console.log('[Store] Processed portfolio preview:', result);
       return result;
     } catch (error) {
       console.error('[Store] Error fetching portfolio claim preview:', error);
@@ -8324,7 +8324,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!fromAddress) throw new Error("Missing sender address");
 
-      console.log('[Store] Creating claimROI transaction for:', fromAddress);
+      // console.log('[Store] Creating claimROI transaction for:', fromAddress);
 
       // Get auto window to determine periods (for display purposes only)
       const autoWindow = await get().getAutoWindow(fromAddress);
@@ -8332,7 +8332,7 @@ export const useStore = create((set, get) => ({
         throw new Error("No claimable periods available");
       }
 
-      console.log('[Store] Auto window result:', autoWindow);
+      // console.log('[Store] Auto window result:', autoWindow);
 
       const roiDistributor = makeContract(RoiDistributionABI, Contract["RoiDistribution"]);
       if (!roiDistributor) {
@@ -8346,7 +8346,7 @@ export const useStore = create((set, get) => ({
       let gasEstimate;
       try {
         gasEstimate = await transaction.estimateGas({ from: fromAddress });
-        console.log('[Store] claimROI gas estimate:', gasEstimate);
+        // console.log('[Store] claimROI gas estimate:', gasEstimate);
       } catch (err) {
         console.error('Gas estimation failed for claimROI:', err);
         gasEstimate = 300000; // Fallback gas limit (reduced since claimROI is more efficient)
@@ -8377,7 +8377,7 @@ export const useStore = create((set, get) => ({
         }
       };
 
-      console.log('[Store] claimROI transaction object:', txObject);
+      // console.log('[Store] claimROI transaction object:', txObject);
       return txObject;
     } catch (error) {
       console.error('claimAccruedROISmart error:', error);
@@ -8389,7 +8389,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!fromAddress) throw new Error("Missing sender address");
 
-      console.log('[Store] Creating claimROI transaction for:', fromAddress);
+      // console.log('[Store] Creating claimROI transaction for:', fromAddress);
 
       const roiDistributor = makeContract(RoiDistributionABI, Contract["RoiDistribution"]);
       if (!roiDistributor) {
@@ -8403,7 +8403,7 @@ export const useStore = create((set, get) => ({
       let gasEstimate;
       try {
         gasEstimate = await transaction.estimateGas({ from: fromAddress });
-        console.log('[Store] claimROI gas estimate:', gasEstimate);
+        // console.log('[Store] claimROI gas estimate:', gasEstimate);
       } catch (err) {
         console.error('Gas estimation failed for claimROI:', err);
         gasEstimate = 300000; // Fallback gas limit
@@ -8417,7 +8417,7 @@ export const useStore = create((set, get) => ({
         gasPrice: await web3.eth.getGasPrice(),
       };
 
-      console.log('[Store] claimROI transaction object:', txObject);
+      // console.log('[Store] claimROI transaction object:', txObject);
       return txObject;
     } catch (error) {
       console.error('claimAllROI error:', error);
@@ -8430,7 +8430,7 @@ export const useStore = create((set, get) => ({
       if (!fromAddress) throw new Error("Missing sender address");
       if (!maxPeriods || maxPeriods <= 0) throw new Error("Invalid maxPeriods");
 
-      console.log('[Store] Creating claimROIUpTo transaction for:', fromAddress, 'maxPeriods:', maxPeriods);
+      // console.log('[Store] Creating claimROIUpTo transaction for:', fromAddress, 'maxPeriods:', maxPeriods);
 
       const roiDistributor = makeContract(RoiDistributionABI, Contract["RoiDistribution"]);
       if (!roiDistributor) {
@@ -8444,7 +8444,7 @@ export const useStore = create((set, get) => ({
       let gasEstimate;
       try {
         gasEstimate = await transaction.estimateGas({ from: fromAddress });
-        console.log('[Store] claimROIUpTo gas estimate:', gasEstimate);
+        // console.log('[Store] claimROIUpTo gas estimate:', gasEstimate);
       } catch (err) {
         console.error('Gas estimation failed for claimROIUpTo:', err);
         gasEstimate = 350000; // Fallback gas limit (higher than claimROI)
@@ -8458,7 +8458,7 @@ export const useStore = create((set, get) => ({
         gasPrice: await web3.eth.getGasPrice(),
       };
 
-      console.log('[Store] claimROIUpTo transaction object:', txObject);
+      // console.log('[Store] claimROIUpTo transaction object:', txObject);
       return txObject;
     } catch (error) {
       console.error('claimROIUpTo error:', error);
@@ -8471,7 +8471,7 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching ROI claim history for:', userAddress);
+      // console.log('[Store] Fetching ROI claim history for:', userAddress);
 
       const roiDistributorViewContracts = makeDualContracts(RoiDistributionViewABI, Contract["RoiDistributionView"]);
       if (roiDistributorViewContracts.length === 0) {
@@ -8500,7 +8500,7 @@ export const useStore = create((set, get) => ({
         'getClaimHistorySlice'
       );
 
-      console.log('[Store] Raw claim history data:', historyData);
+      // console.log('[Store] Raw claim history data:', historyData);
 
       // Process claim history
       const claimHistory = historyData.map((claim) => ({
@@ -8528,7 +8528,7 @@ export const useStore = create((set, get) => ({
         rpcOptimized: true
       };
 
-      console.log('[Store] Processed claim history:', result);
+      // console.log('[Store] Processed claim history:', result);
       return result;
     } catch (error) {
       console.error('[Store] Error fetching ROI claim history:', error);
@@ -8545,7 +8545,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetStore: () => {
-    console.log('[Store] Resetting store to initial state...');
+    // console.log('[Store] Resetting store to initial state...');
     
     set(state => ({
       ...state,
@@ -8588,10 +8588,10 @@ export const useStore = create((set, get) => ({
 
   getUserSlabView: async (userAddress) => {
     try {
-      console.log("this is Slab View of user,",userAddress);
+      // console.log("this is Slab View of user,",userAddress);
       if (!userAddress) throw new Error("Missing user address");
 
-      console.log('[Store] Fetching detailed getUserSlabView for:-->', userAddress);
+      // console.log('[Store] Fetching detailed getUserSlabView for:-->', userAddress);
 
       const SlabManagerReaderCont = makeDualContracts(SlabManagerReader, Contract["SlabReader"]);
       

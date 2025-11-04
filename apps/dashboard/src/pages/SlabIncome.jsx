@@ -41,7 +41,7 @@ const SlabIncome = () => {
       try {
         // Load basic overview first
         const overview = await getSlabIncomeOverview(userAddress);
-        console.log("Loaded slab income overview:", overview);
+        // console.log("Loaded slab income overview:", overview);
         if (!cancelled) setSlabDetails(overview);
         
         // Then load additional data in parallel
@@ -61,7 +61,7 @@ const SlabIncome = () => {
           // console.log("this is manager details", managerDetails);
           setSlabManagerDetails(managerDetails);
           setNextAchievements(achievements);
-          console.log("Comprehensive slab data loaded:", { overview, managerDetails, achievements });
+          // console.log("Comprehensive slab data loaded:", { overview, managerDetails, achievements });
         }
       } catch (err) {
         console.error("Error loading slab data:", err);

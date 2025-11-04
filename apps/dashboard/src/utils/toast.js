@@ -43,7 +43,7 @@ const initializeAudioContext = async () => {
 export const enableAudio = async () => {
   const context = await initializeAudioContext();
   if (context && context.state === 'running') {
-    console.log('Audio system enabled for mobile/PWA');
+    // console.log('Audio system enabled for mobile/PWA');
     return true;
   }
   return false;
@@ -203,7 +203,7 @@ const createToastElement = (type, title, message, duration, options = {}) => {
   const existingToasts = container.querySelectorAll('.toast-message');
   for (let existing of existingToasts) {
     if (existing.textContent === message) {
-      console.log('Duplicate toast prevented:', message);
+      // console.log('Duplicate toast prevented:', message);
       return existing.closest('[id^="toast-"]');
     }
   }

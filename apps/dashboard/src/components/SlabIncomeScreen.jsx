@@ -85,10 +85,10 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
     : Number.isFinite(contractSlabIndex)
     ? Number(contractSlabIndex)
     : Math.max(0, (Number(displaySlabLevel || slabLevel || 1) - 1));
-  console.log('🎯 SlabIncomeScreen Debug:', {
-    displayLevel: displaySlabLevel,
-    contractIndex: effectiveContractIndex,
-  });
+  // console.log('🎯 SlabIncomeScreen Debug:', {
+  //   displayLevel: displaySlabLevel,
+  //   contractIndex: effectiveContractIndex,
+  // });
 
   // Helper function to get slab info safely
   const getSlabInfo = (level) => {
@@ -142,7 +142,7 @@ export default function SlabIncomeScreen({SlabIncomeData}) {
       if(!userAddress) return;
 
       const response = await getUserSlabView(userAddress);
-      console.log("=====+Fetched slab info:", response);
+      // console.log("=====+Fetched slab info:", response);
       setSlabInfo(response?.achievedSlabs || []);
       setReaderContractIndex(
         Number.isFinite(Number(response?.currentSlabIdx))

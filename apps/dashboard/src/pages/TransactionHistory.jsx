@@ -187,11 +187,11 @@ export default function TransactionHistory() {
         if (lookup) kind = SAFEWALLET_KINDS[lookup[0]];
 
         const offset = page * pageSize;
-        console.log("Fetching:", { userAddress, kind, pageSize, offset });
+        // console.log("Fetching:", { userAddress, kind, pageSize, offset });
 
         // FIX: positional params instead of object
         const result = await getIncomeTransaction(userAddress, kind, pageSize, offset);
-        console.log("Result:", result);
+        // console.log("Result:", result);
 
         const slices = result[0] || result.slice || [];
         const total = Number(result[1] || result.total || 0);

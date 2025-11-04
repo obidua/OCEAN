@@ -48,7 +48,7 @@ export default function Login() {
 
     if (userId.trim()) {
       const response = await getUserDetails(userId);
-      console.log(response?.UserAddress)
+      // console.log(response?.UserAddress)
 
       if (response) {
         setUserAddress(response?.UserAddress.trim())

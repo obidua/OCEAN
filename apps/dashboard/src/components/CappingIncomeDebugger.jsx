@@ -18,9 +18,9 @@ const CappingIncomeDebugger = ({ userAddress }) => {
     setError(null);
     
     try {
-      console.log('[CappingIncomeDebugger] Testing for address:', userAddress);
+      // console.log('[CappingIncomeDebugger] Testing for address:', userAddress);
       const data = await getCappingIncomeData(userAddress);
-      console.log('[CappingIncomeDebugger] Result:', data);
+      // console.log('[CappingIncomeDebugger] Result:', data);
       setCappingData(data);
     } catch (err) {
       console.error('[CappingIncomeDebugger] Error:', err);

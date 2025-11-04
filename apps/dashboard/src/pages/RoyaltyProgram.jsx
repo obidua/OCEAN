@@ -348,7 +348,7 @@ export default function RoyaltyProgram() {
     try {
       // Fetch royalty transactions specifically (kind = 2 for ROYALTY)
       const result = await getIncomeTransaction(userAddress, SAFEWALLET_KINDS.ROYALTY, 100, 0);
-      console.log("Royalty transactions result:", result);
+      // console.log("Royalty transactions result:", result);
 
       const slices = result[0] || result.slice || [];
       const transformed = slices.map(transformTransactionEntry).filter(tx => tx.isCredit); // Only include claimed/credited royalties
@@ -413,15 +413,15 @@ export default function RoyaltyProgram() {
   const displayCurrentLevel = clampedTierIndex + 1;
   
   // Debug log to verify tier calculation
-  console.log('🏆 Royalty Tier Debug:', {
-    achievedStages: royaltyDetails?.achievedStages,
-    achievedStagesArray,
-    highestAchieved: normalizedTierIndex,
-    clampedIndex: clampedTierIndex,
-    displayLevel: displayCurrentLevel,
-    tierName: ROYALTY_TIER_NAMES[clampedTierIndex],
-    achievedAt: royaltyDetails?.achievedAt,
-  });
+  // console.log('🏆 Royalty Tier Debug:', {
+  //   achievedStages: royaltyDetails?.achievedStages,
+  //   achievedStagesArray,
+  //   highestAchieved: normalizedTierIndex,
+  //   clampedIndex: clampedTierIndex,
+  //   displayLevel: displayCurrentLevel,
+  //   tierName: ROYALTY_TIER_NAMES[clampedTierIndex],
+  //   achievedAt: royaltyDetails?.achievedAt,
+  // });
   
   const currentTier = hasTiers ? tiers[clampedTierIndex] : null;
   const currentTierName =

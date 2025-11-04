@@ -28,7 +28,7 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10, custo
         if (getVolumeAnalytics) {
           try {
             analytics = await getVolumeAnalytics(userAddress);
-            console.log('✅ getVolumeAnalytics success:', analytics);
+            // console.log('✅ getVolumeAnalytics success:', analytics);
           } catch (err) {
             console.warn('⚠️ getVolumeAnalytics failed, trying fallback:', err);
           }
@@ -38,7 +38,7 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10, custo
         if (!analytics && getLegsDetailedVolume) {
           try {
             const legsData = await getLegsDetailedVolume(userAddress);
-            console.log('🔄 Using legs detailed fallback:', legsData);
+            // console.log('🔄 Using legs detailed fallback:', legsData);
             
             // Transform legs data to analytics format
             analytics = {
@@ -84,7 +84,7 @@ const VolumeAnalytics = ({ userAddress, showDetailed = true, maxLegs = 10, custo
         
         // Final fallback with minimal data
         if (!analytics) {
-          console.log('🔄 Using minimal fallback data');
+          // console.log('🔄 Using minimal fallback data');
           analytics = {
             legs: [],
             cappedVolumes: { L1: 0, L2: 0, Lrest: 0 },

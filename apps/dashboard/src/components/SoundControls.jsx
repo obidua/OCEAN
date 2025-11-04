@@ -31,7 +31,7 @@ const SoundControls = ({
       setAudioInitialized(success);
       
       if (success) {
-        console.log('Audio system initialized for mobile/PWA');
+        // console.log('Audio system initialized for mobile/PWA');
         // Play a welcome sound if sound is enabled
         if (soundEnabled && window.financialSounds) {
           // Small delay to ensure audio context is ready

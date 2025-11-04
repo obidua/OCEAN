@@ -30,27 +30,27 @@ const SlabManagerDebugger = () => {
     try {
       // Environment check
       const envCheck = checkEnvironmentConfig();
-      console.log('Environment Check Result:', envCheck);
+      // console.log('Environment Check Result:', envCheck);
       
       // Contract address resolution
       const slabManagerAddress = resolveContractAddress('SLABMANAGER');
-      console.log('SlabManager Address:', slabManagerAddress);
+      // console.log('SlabManager Address:', slabManagerAddress);
       
       let contractTests = {};
       
       if (isWalletConnected && userAddress) {
-        console.log('🔍 Testing SlabManager functions for user:', userAddress);
+        // console.log('🔍 Testing SlabManager functions for user:', userAddress);
         
         // Test each function individually
         try {
-          console.log('Testing getSlabIncomeOverview...');
+          // console.log('Testing getSlabIncomeOverview...');
           const overview = await getSlabIncomeOverview();
           contractTests.slabIncomeOverview = {
             success: true,
             data: overview,
             timestamp: new Date().toISOString()
           };
-          console.log('✅ getSlabIncomeOverview success:', overview);
+          // console.log('✅ getSlabIncomeOverview success:', overview);
         } catch (error) {
           contractTests.slabIncomeOverview = {
             success: false,
@@ -61,14 +61,14 @@ const SlabManagerDebugger = () => {
         }
         
         try {
-          console.log('Testing getSlabManagerDetails...');
+          // console.log('Testing getSlabManagerDetails...');
           const details = await getSlabManagerDetails();
           contractTests.slabManagerDetails = {
             success: true,
             data: details,
             timestamp: new Date().toISOString()
           };
-          console.log('✅ getSlabManagerDetails success:', details);
+          // console.log('✅ getSlabManagerDetails success:', details);
         } catch (error) {
           contractTests.slabManagerDetails = {
             success: false,
@@ -79,14 +79,14 @@ const SlabManagerDebugger = () => {
         }
         
         try {
-          console.log('Testing getNextAchievementProgress...');
+          // console.log('Testing getNextAchievementProgress...');
           const progress = await getNextAchievementProgress();
           contractTests.nextAchievementProgress = {
             success: true,
             data: progress,
             timestamp: new Date().toISOString()
           };
-          console.log('✅ getNextAchievementProgress success:', progress);
+          // console.log('✅ getNextAchievementProgress success:', progress);
         } catch (error) {
           contractTests.nextAchievementProgress = {
             success: false,
@@ -98,7 +98,7 @@ const SlabManagerDebugger = () => {
 
         // Test new comprehensive functions
         try {
-          console.log('Testing getSlabUserOverview...');
+          // console.log('Testing getSlabUserOverview...');
           const userOverview = await getSlabUserOverview(userAddress);
           contractTests.slabUserOverview = {
             success: userOverview.success,
@@ -106,7 +106,7 @@ const SlabManagerDebugger = () => {
             error: userOverview.error,
             timestamp: userOverview.timestamp
           };
-          console.log('✅ getSlabUserOverview result:', userOverview);
+          // console.log('✅ getSlabUserOverview result:', userOverview);
         } catch (error) {
           contractTests.slabUserOverview = {
             success: false,
@@ -117,7 +117,7 @@ const SlabManagerDebugger = () => {
         }
 
         try {
-          console.log('Testing getDetailedAchievementProgress...');
+          // console.log('Testing getDetailedAchievementProgress...');
           const detailedProgress = await getDetailedAchievementProgress(userAddress, 0); // Test slab progress
           contractTests.detailedAchievementProgress = {
             success: detailedProgress.success,
@@ -125,7 +125,7 @@ const SlabManagerDebugger = () => {
             error: detailedProgress.error,
             timestamp: detailedProgress.timestamp
           };
-          console.log('✅ getDetailedAchievementProgress result:', detailedProgress);
+          // console.log('✅ getDetailedAchievementProgress result:', detailedProgress);
         } catch (error) {
           contractTests.detailedAchievementProgress = {
             success: false,

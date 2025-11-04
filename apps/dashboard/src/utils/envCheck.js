@@ -3,14 +3,14 @@ export const checkEnvironmentConfig = () => {
   const env = import.meta.env ?? {};
   const processEnv = typeof process !== 'undefined' ? process.env : {};
   
-  console.log('🔍 Environment Configuration Check:');
-  console.log('====================================');
+  // console.log('🔍 Environment Configuration Check:');
+  // console.log('====================================');
   
   // List all environment variables that start with VITE_
   const viteVars = Object.keys(env).filter(key => key.startsWith('VITE_'));
-  console.log('📝 VITE Environment Variables:');
+  // console.log('📝 VITE Environment Variables:');
   viteVars.forEach(key => {
-    console.log(`  ${key}: ${env[key]}`);
+    // console.log(`  ${key}: ${env[key]}`);
   });
   
   // Check important contract addresses
@@ -23,20 +23,20 @@ export const checkEnvironmentConfig = () => {
     'VITE_COMPREHENSIVEVIEW'
   ];
   
-  console.log('\n🏗️ Contract Address Check:');
+  // console.log('\n🏗️ Contract Address Check:');
   contractKeys.forEach(key => {
     const value = env[key] || processEnv[key] || processEnv[key.replace('VITE_', '')];
     const status = value ? '✅' : '❌';
-    console.log(`  ${status} ${key}: ${value || 'NOT FOUND'}`);
+    // console.log(`  ${status} ${key}: ${value || 'NOT FOUND'}`);
   });
   
   // Environment detection
-  console.log('\n🌍 Environment Detection:');
-  console.log(`  Mode: ${env.MODE || 'unknown'}`);
-  console.log(`  Dev: ${env.DEV || false}`);
-  console.log(`  Prod: ${env.PROD || false}`);
-  console.log(`  Base URL: ${env.BASE_URL || '/'}`);
-  console.log(`  Build Environment: ${typeof window !== 'undefined' ? 'browser' : 'node'}`);
+  // console.log('\n🌍 Environment Detection:');
+  // console.log(`  Mode: ${env.MODE || 'unknown'}`);
+  // console.log(`  Dev: ${env.DEV || false}`);
+  // console.log(`  Prod: ${env.PROD || false}`);
+  // console.log(`  Base URL: ${env.BASE_URL || '/'}`);
+  // console.log(`  Build Environment: ${typeof window !== 'undefined' ? 'browser' : 'node'}`);
   
   // Network configuration
   const rpcEnvKeys = [
@@ -60,15 +60,15 @@ export const checkEnvironmentConfig = () => {
   const primaryRpcUrl = rpcUrls[0] || null;
   const fallbackRpcUrls = rpcUrls.slice(1);
 
-  console.log('\n🌐 Network Configuration:');
-  console.log(`  Primary RPC URL: ${primaryRpcUrl || 'NOT CONFIGURED'}`);
+  // console.log('\n🌐 Network Configuration:');
+  // console.log(`  Primary RPC URL: ${primaryRpcUrl || 'NOT CONFIGURED'}`);
   if (fallbackRpcUrls.length) {
-    console.log('  Fallback RPC URLs:');
+    // console.log('  Fallback RPC URLs:');
     fallbackRpcUrls.forEach((url) => {
-      console.log(`    • ${url}`);
+      // console.log(`    • ${url}`);
     });
   }
-  console.log(`  Network Status: ${rpcUrls.length ? 'Configured' : 'Missing'}`);
+  // console.log(`  Network Status: ${rpcUrls.length ? 'Configured' : 'Missing'}`);
   
   return {
     hasRequiredVars: contractKeys.every(key => 
@@ -97,7 +97,7 @@ export const resolveContractAddress = (contractName) => {
   for (const variation of variations) {
     const value = env[variation] || processEnv[variation];
     if (value && typeof value === 'string' && value.startsWith('0x') && value.length === 42) {
-      console.log(`✅ ${contractName} resolved from ${variation}: ${value}`);
+      // console.log(`✅ ${contractName} resolved from ${variation}: ${value}`);
       return value;
     }
   }
@@ -126,7 +126,7 @@ export const validateRuntimeConfig = () => {
     return false;
   }
   
-  console.log('✅ Runtime configuration valid');
+  // console.log('✅ Runtime configuration valid');
   return true;
 };
 

@@ -508,14 +508,14 @@ export default function AccruedRewards() {
       const totalClaimedFromMap = Object.values(claimedMap).reduce((sum, val) => sum + (val || 0), 0);
 
       // Use claimed totals from Distributor (authoritative) and unclaimed from Distributor window
-      console.log('Claimed totals debug:', {
-        distClaimedTotals,
-        totalClaimedFromMap,
-        totalsClaimedUsd: totals.claimedUsd,
-        totalsClaimedRama: totals.claimedRama,
-        windowUsd: window.usd,
-        windowRama: window.rama,
-      });
+      // console.log('Claimed totals debug:', {
+      //   distClaimedTotals,
+      //   totalClaimedFromMap,
+      //   totalsClaimedUsd: totals.claimedUsd,
+      //   totalsClaimedRama: totals.claimedRama,
+      //   windowUsd: window.usd,
+      //   windowRama: window.rama,
+      // });
 
       const dashboardData = {
         totals: {
@@ -536,7 +536,7 @@ export default function AccruedRewards() {
         }
       };
 
-      console.log('Final dashboard data:', dashboardData);
+      // console.log('Final dashboard data:', dashboardData);
 
       // Leave from/last from distributor window; portfolio dates can still be used for UI hints if needed
 
@@ -576,7 +576,7 @@ export default function AccruedRewards() {
     if (!isConnected || !address) return;
 
     const interval = setInterval(() => {
-      console.log('🔄 Auto-checking for ROI changes...');
+      // console.log('🔄 Auto-checking for ROI changes...');
       loadData();
     }, 30000); // 30 seconds
 
@@ -658,7 +658,7 @@ export default function AccruedRewards() {
           throw new Error('No claimable periods available');
         }
         
-        console.log('[AccruedRewards] Auto window info loaded:', autoWindow);
+        // console.log('[AccruedRewards] Auto window info loaded:', autoWindow);
       } catch (autoErr) {
         console.error('[AccruedRewards] Failed to load auto window info:', autoErr);
         setError(autoErr?.message || 'Failed to load claiming information');
@@ -705,7 +705,7 @@ export default function AccruedRewards() {
     try {
       // Prevent multiple calls
       if (successHandledRef.current) {
-        console.log('Success already handled, skipping...');
+        // console.log('Success already handled, skipping...');
         return;
       }
       successHandledRef.current = true;
@@ -756,11 +756,11 @@ export default function AccruedRewards() {
       if (maxPeriods) {
         // Claim specific number of days
         tx = await claimROIUpTo(effectiveAddress, maxPeriods);
-        console.log('[AccruedRewards] Claiming', maxPeriods, 'days');
+        // console.log('[AccruedRewards] Claiming', maxPeriods, 'days');
       } else {
         // Claim all available days
         tx = await claimAllROI(effectiveAddress);
-        console.log('[AccruedRewards] Claiming all available days');
+        // console.log('[AccruedRewards] Claiming all available days');
       }
 
       if (!tx) {

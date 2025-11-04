@@ -47,7 +47,7 @@ class FinancialSoundSystem {
       // Auto-enable after duration
       setTimeout(() => {
         this.temporarilyDisabled = false;
-        console.log('🔊 Sound system re-enabled after wallet operation');
+        // console.log('🔊 Sound system re-enabled after wallet operation');
       }, duration);
     }
   }
@@ -109,7 +109,7 @@ class FinancialSoundSystem {
       // Delay audio initialization to not interfere with current event
       setTimeout(async () => {
         await this.initializeAudioContext();
-        console.log('🔊 Audio context initialized via user interaction');
+        // console.log('🔊 Audio context initialized via user interaction');
       }, 100);
     }
   }
@@ -172,7 +172,7 @@ class FinancialSoundSystem {
       oscillator.start(this.audioContext.currentTime);
       oscillator.stop(this.audioContext.currentTime + 0.01);
       
-      console.log('🔕 iOS silent sound played for audio unlock');
+      // console.log('🔕 iOS silent sound played for audio unlock');
     } catch (error) {
       console.warn('Failed to play silent sound:', error);
     }
@@ -200,7 +200,7 @@ class FinancialSoundSystem {
   playROIIncome(amount = 0) {
     if (!this.shouldPlay('roi')) return;
     
-    console.log(`🔊 Playing ROI income sound for $${amount}`);
+    // console.log(`🔊 Playing ROI income sound for $${amount}`);
     this.playSound('roiAlert');
   }
 
@@ -208,7 +208,7 @@ class FinancialSoundSystem {
   playCoinDrop(amount = 0) {
     if (!this.shouldPlay('coinDrop')) return;
     
-    console.log(`🔊 Playing coin drop sound for $${amount}`);
+    // console.log(`🔊 Playing coin drop sound for $${amount}`);
     this.playSound('coinDrop');
   }
 
@@ -216,7 +216,7 @@ class FinancialSoundSystem {
   playMoneyIn(amount = 0) {
     if (!this.shouldPlay('moneyIn')) return;
     
-    console.log(`🔊 Playing money in sound for $${amount}`);
+    // console.log(`🔊 Playing money in sound for $${amount}`);
     this.playSound('moneyIn');
   }
 
@@ -224,7 +224,7 @@ class FinancialSoundSystem {
   playMoneyOut(amount = 0) {
     if (!this.shouldPlay('moneyOut')) return;
     
-    console.log(`🔊 Playing money out sound for $${amount}`);
+    // console.log(`🔊 Playing money out sound for $${amount}`);
     this.playSound('moneyOut');
   }
 
@@ -232,7 +232,7 @@ class FinancialSoundSystem {
   playPortfolioUpdate() {
     if (!this.shouldPlay('portfolio')) return;
     
-    console.log(`🔊 Playing portfolio update sound`);
+    // console.log(`🔊 Playing portfolio update sound`);
     this.playSound('portfolioUpdate');
   }
 
@@ -240,7 +240,7 @@ class FinancialSoundSystem {
   playTransactionSuccess() {
     if (!this.shouldPlay('transaction')) return;
     
-    console.log(`🔊 Playing transaction success sound`);
+    // console.log(`🔊 Playing transaction success sound`);
     this.playSound('cashRegister');
   }
 
@@ -251,7 +251,7 @@ class FinancialSoundSystem {
     try {
       // Don't initialize audio during wallet connection processes
       if (this.isWalletConnecting()) {
-        console.log('🔊 Skipping sound during wallet connection');
+        // console.log('🔊 Skipping sound during wallet connection');
         return;
       }
 
@@ -265,7 +265,7 @@ class FinancialSoundSystem {
 
       // For mobile, ensure user has interacted first
       if (this.isMobile && !this.userHasInteracted) {
-        console.log('📱 Mobile audio requires user interaction first');
+        // console.log('📱 Mobile audio requires user interaction first');
         return;
       }
 
@@ -447,13 +447,13 @@ class FinancialSoundSystem {
   // Update the ROI and transaction methods to use the new system
   playROIIncome(amount = 0) {
     if (!this.shouldPlay('roi')) return;
-    console.log(`🔊 Playing ROI income sound for $${amount}`);
+    // console.log(`🔊 Playing ROI income sound for $${amount}`);
     this.playSound('roiAlert');
   }
 
   playCoinDrop(amount = 0) {
     if (!this.shouldPlay('coinDrop')) return;
-    console.log(`🔊 Playing coin drop sound for $${amount}`);
+    // console.log(`🔊 Playing coin drop sound for $${amount}`);
     this.playSound('coinDrop');
   }
 

@@ -5,7 +5,7 @@ export function registerServiceWorker() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('Service Worker registered successfully:', registration.scope);
+          // console.log('Service Worker registered successfully:', registration.scope);
 
           // Check for updates periodically
           setInterval(() => {
