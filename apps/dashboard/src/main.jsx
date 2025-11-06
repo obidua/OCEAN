@@ -6,6 +6,9 @@ import './index.css';
 // Initialize sound system globally
 import './utils/financialSounds.js';
 
+// Filter out non-critical console warnings
+import './utils/consoleFilter.js';
+
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker

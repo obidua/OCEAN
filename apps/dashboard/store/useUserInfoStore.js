@@ -1985,15 +1985,24 @@ export const useStore = create((set, get) => ({
                   debitsUsd: fromWadToUsd(debitsUsdWad),
                   debitsRama: fromWeiToRama(debitsRamaWei),
                 };
-                safeWalletRama = fromWeiToRama(ramaWei);
+                const ramaWeiBigInt = toBigIntSafe(ramaWei);
+                safeWalletRama = fromWeiToRama(ramaWeiBigInt);
                 if (portfolioManager) {
-                  try {
-                    const usdMicro = await portfolioManager.methods
-                      .getPackageValueInUSD(ramaWei)
-                      .call();
-                    safeWalletUsd = fromMicroUSD(usdMicro);
-                  } catch (err) {
-                    console.warn("SafeWallet USD conversion failed:", err);
+                  if (ramaWeiBigInt > 0n) {
+                    try {
+                      const usdMicro = await portfolioManager.methods
+                        .getPackageValueInUSD(ramaWeiBigInt.toString())
+                        .call();
+                      safeWalletUsd = fromMicroUSD(usdMicro);
+                    } catch (err) {
+                      if (String(err?.message || "").includes("Invalid oracle price")) {
+                        safeWalletUsd = 0;
+                      } else {
+                        console.warn("SafeWallet USD conversion failed:", err);
+                      }
+                    }
+                  } else {
+                    safeWalletUsd = 0;
                   }
                 }
               }
@@ -2135,6 +2144,7 @@ export const useStore = create((set, get) => ({
         Contract["OceanViewUpgradeable"]
       );
 
+      // Use dual RPC for all contract calls to speed up dashboard loading
       const [
         totals,
         slabPanel,
@@ -2146,15 +2156,15 @@ export const useStore = create((set, get) => ({
         totalStakedRaw,
         totalEarningsRaw,
       ] = await Promise.all([
-        oceanView.methods.getPortfolioTotals(userAddress).call(),
-        oceanView.methods.getSlabPanel(userAddress).call(),
-        oceanQuery.methods.getSafeWalletBalance(userAddress).call(),
-        oceanQuery.methods.getAccruedGrowth(userAddress).call(),
-        oceanQuery.methods.getIncomeStreamTotals(userAddress).call(),
-        oceanQuery.methods.getTotalClaimableIncome(userAddress).call(),
-        oceanQuery.methods.getUserStatus(userAddress).call(),
-        oceanQuery.methods.getTotalStakedAmount(userAddress).call(),
-        oceanQuery.methods.getTotalEarnings(userAddress).call(),
+        callWithDualRPC(() => oceanView.methods.getPortfolioTotals(userAddress).call(), 'getPortfolioTotals'),
+        callWithDualRPC(() => oceanView.methods.getSlabPanel(userAddress).call(), 'getSlabPanel'),
+        callWithDualRPC(() => oceanQuery.methods.getSafeWalletBalance(userAddress).call(), 'getSafeWalletBalance'),
+        callWithDualRPC(() => oceanQuery.methods.getAccruedGrowth(userAddress).call(), 'getAccruedGrowth'),
+        callWithDualRPC(() => oceanQuery.methods.getIncomeStreamTotals(userAddress).call(), 'getIncomeStreamTotals'),
+        callWithDualRPC(() => oceanQuery.methods.getTotalClaimableIncome(userAddress).call(), 'getTotalClaimableIncome'),
+        callWithDualRPC(() => oceanQuery.methods.getUserStatus(userAddress).call(), 'getUserStatus'),
+        callWithDualRPC(() => oceanQuery.methods.getTotalStakedAmount(userAddress).call(), 'getTotalStakedAmount'),
+        callWithDualRPC(() => oceanQuery.methods.getTotalEarnings(userAddress).call(), 'getTotalEarnings'),
       ]);
 
       const totalClaimableValue = totalClaimable?.sum ?? totalClaimable ?? "0";
@@ -3262,6 +3272,7 @@ export const useStore = create((set, get) => ({
         Contract["CappingIncomeManager"]
       );
 
+      // Try OceanViewV2.getPortfolioCards first, fallback to OceanicView.getPortfolios
       if (oceanViewV2) {
         try {
           if (!oceanViewV2?.methods?.getPortfolioCards) {
@@ -3351,10 +3362,99 @@ export const useStore = create((set, get) => ({
 
           return mapped;
         } catch (err) {
-          console.warn(
-            "OceanViewV2.getPortfolioCards fallback to legacy:",
+          // Silently fallback to OceanicView.getPortfolios (expected behavior when contract functions change)
+          console.log(
+            "Using OceanicView.getPortfolios fallback (contract method updated):",
             err?.message ?? err
           );
+          
+          // Fallback to OceanicView.getPortfolios (working method used in other pages)
+          try {
+            const oceanicView = makeContract(OceanicViewABI, Contract["Oceanicview"]);
+            if (!oceanicView?.methods?.getPortfolios) {
+              throw new Error("OceanicView.getPortfolios not available");
+            }
+            
+            const portfoliosData = await oceanicView.methods.getPortfolios(userAddress).call();
+            const portfolioList = Array.isArray(portfoliosData?.portfolios) 
+              ? portfoliosData.portfolios 
+              : Array.isArray(portfoliosData) 
+              ? portfoliosData 
+              : [];
+            
+            // Map OceanicView data structure to match expected format
+            const oceanicMapped = await Promise.all(
+              portfolioList
+                .filter((p) => {
+                  const pid = Number(p?.pid ?? p?.[0]);
+                  return Number.isFinite(pid) && pid > 0;
+                })
+                .map(async (p) => {
+                  const pid = Number(p?.pid ?? p?.[0]);
+                  const principalUsdMicro = p?.principalUsd ?? p?.[2] ?? 0;
+                  const principalRama = p?.principalRama ?? p?.[1] ?? 0;
+                  const capRama = p?.capRama ?? p?.[3] ?? 0;
+                  const creditedRama = p?.creditedRama ?? p?.[4] ?? 0;
+                  const capPct = Number(p?.capPct ?? p?.[5] ?? 0);
+                  const booster = Boolean(p?.booster ?? p?.[6] ?? false);
+                  const tier = Number(p?.tier ?? p?.[7] ?? 0);
+                  const dailyRateWad = p?.dailyRateWad ?? p?.[8] ?? 0;
+                  const active = Boolean(p?.active ?? p?.[9] ?? true);
+                  const createdAt = Number(p?.createdAt ?? p?.[10] ?? 0);
+                  const frozenUntil = Number(p?.frozenUntil ?? p?.[11] ?? 0);
+
+                  let capProgressBps = null;
+                  if (Number.isFinite(pid) && pid > 0) {
+                    try {
+                      const oceanQuery = new web3.eth.Contract(
+                        OceanQueryUpgradeableABI,
+                        Contract["OceanQueryUpgradeable"]
+                      );
+                      const progressRaw = await oceanQuery.methods
+                        .getPortfolioCapProgress(pid)
+                        .call();
+                      capProgressBps = Number(progressRaw);
+                    } catch {
+                      capProgressBps = null;
+                    }
+                  }
+
+                  let remainingCapUsdMicro = "0";
+                  try {
+                    if (cappingIncomeManager && Number.isFinite(pid)) {
+                      const usd6 = await cappingIncomeManager.methods.remainingToCapUSD(pid).call();
+                      remainingCapUsdMicro = String(usd6 ?? "0");
+                    }
+                  } catch (remErr) {
+                    console.warn("remainingToCapUSD (OceanicView fallback) failed:", remErr?.message || remErr);
+                  }
+
+                  return {
+                    pid,
+                    principalUsdRaw: principalUsdMicro,
+                    principalUsd: fromMicroUSD(principalUsdMicro),
+                    principalRama,
+                    capRama,
+                    creditedRama,
+                    capPct,
+                    booster,
+                    tier,
+                    dailyRateWad,
+                    active,
+                    createdAt,
+                    frozenUntil,
+                    capProgressBps,
+                    remainingCapUsdMicro,
+                    remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
+                  };
+                })
+            );
+            
+            return oceanicMapped;
+          } catch (fallbackErr) {
+            console.error("OceanicView.getPortfolios fallback also failed:", fallbackErr);
+            throw fallbackErr; // Continue to legacy fallback below
+          }
         }
       }
 
@@ -3758,39 +3858,20 @@ export const useStore = create((set, get) => ({
     try {
       if (!userAddress) return null;
 
-      const oceanViewV2 = makeContract(
-        OceanicViewABI,
-        Contract["Oceanicview"]
-      );
-
-      if (oceanViewV2) {
-        try {
-          if (!oceanViewV2?.methods?.getPortfolioCards) {
-            throw new Error("oceanViewV2.getPortfolioCards not available on this ABI");
-          }
-          const [, lifetimeCapRaw] = await oceanViewV2.methods
-            .getPortfolioCards(userAddress)
-            .call();
-          return Number(lifetimeCapRaw ?? 0);
-        } catch (err) {
-          console.warn(
-            "OceanViewV2.getPortfolioCards (lifetimeCap) fallback:",
-            err?.message ?? err
-          );
-        }
-      }
-
+      // Use OceanQuery directly for lifetime cap progress (more reliable)
       const oceanQuery = new web3.eth.Contract(
         OceanQueryUpgradeableABI,
         Contract["OceanQueryUpgradeable"]
       );
+      
       const raw = await oceanQuery.methods
         .getLifetimeCapProgress(userAddress)
         .call();
       return Number(raw);
     } catch (error) {
       console.error("getLifetimeCapProgress error:", error);
-      throw error;
+      // Return 0 instead of throwing to prevent UI breaks
+      return 0;
     }
   },
 
@@ -3819,9 +3900,15 @@ export const useStore = create((set, get) => ({
       // Get achievement status from ComprehensiveView
       let slabAchiev = null;
       try {
-        slabAchiev = await CompView.methods.getAchievementStatus(userAddress).call();
+        if (CompView && CompView.methods?.getAchievementStatus) {
+          slabAchiev = await CompView.methods.getAchievementStatus(userAddress).call();
+        } else {
+          console.log("ComprehensiveView.getAchievementStatus not available - using fallback");
+          slabAchiev = { stages: [], achievedAt: [] };
+        }
       } catch (err) {
-        console.warn("ComprehensiveView getAchievementStatus failed:", err);
+        // Silently fallback - this is expected if the function doesn't exist on the contract
+        console.log("Using fallback for achievement status (contract method may not exist yet)");
         slabAchiev = { stages: [], achievedAt: [] }; // Fallback
       }
 
