@@ -104,6 +104,7 @@ export default function SafeWallet() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [withdrawCurrency, setWithdrawCurrency] = useState('USD');
   const [withdrawInput, setWithdrawInput] = useState('');
+  const [txWithdrawAmount, setTxWithdrawAmount] = useState(0); // Store transaction amount for modal display
   const [safeSummary, setSafeSummary] = useState(null);
   const [safeSummaryLoading, setSafeSummaryLoading] = useState(false);
   const [safeSummaryError, setSafeSummaryError] = useState('');
@@ -942,6 +943,9 @@ export default function SafeWallet() {
     if (amountUsd <= 0 || exceedsBalance || isViewMode || !isConnected) return;
     
     try {
+      // Store the withdrawal amount before opening modal
+      setTxWithdrawAmount(amountRama);
+      
       setIsWithdrawOpen(false); // Close input modal
       setShowWithdrawModal(true); // Open progressive modal
       
@@ -963,6 +967,7 @@ export default function SafeWallet() {
     setIsWithdrawing(false);
     setWithdrawalData(null);
     setWithdrawalHash(null);
+    setTxWithdrawAmount(0); // Reset transaction amount
   };
 
   const handleWithdrawSuccess = () => {
@@ -2210,7 +2215,7 @@ export default function SafeWallet() {
         title="Safe Wallet Withdrawal"
         description="Withdrawing funds to your connected wallet"
         successMessage="Withdrawal completed successfully! Funds have been sent to your wallet."
-        amount={`${formatRamaPrecise(amountRama)}`}
+        amount={txWithdrawAmount > 0 ? `${formatRamaPrecise(txWithdrawAmount)}` : '0.00000'}
         amountLabel="Withdrawing"
         txHash={hash}
         onSuccess={handleWithdrawSuccess}

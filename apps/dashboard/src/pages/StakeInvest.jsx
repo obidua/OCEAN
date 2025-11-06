@@ -67,6 +67,9 @@ export default function StakeInvest() {
 
   // Current user info
   const [currentUserId, setCurrentUserId] = useState(null);
+  
+  // Store the transaction amount separately to display in modal
+  const [txAmount, setTxAmount] = useState(0);
 
   const tier = parseFloat(stakeAmount) >= 5001 ? 2 : 1;
   const dailyRate = tier === 2 ? 0.40 : 0.33;
@@ -363,6 +366,7 @@ export default function StakeInvest() {
     setTrxHash(undefined);
     setTxSuccess(false);
     setIsStaking(false);
+    setTxAmount(0); // Reset transaction amount
   };
 
   const handleSuccess = () => {
@@ -701,6 +705,9 @@ export default function StakeInvest() {
       return;
     }
 
+    // Store the transaction amount before starting
+    setTxAmount(stakeAmountNum);
+    
     setIsStaking(true);
     setTxModalOpen(true);
     setShowRegisterModal(false);
@@ -776,6 +783,9 @@ export default function StakeInvest() {
         return;
       }
     }
+
+    // Store the transaction amount before starting
+    setTxAmount(stakeAmountNum);
 
     setIsStaking(true);
     setTxModalOpen(true);
@@ -1507,7 +1517,7 @@ export default function StakeInvest() {
         description="Creating your portfolio stake"
         successMessage="Your portfolio has been staked successfully!"
         onSuccess={handleSuccess}
-        amount={stakeAmountNum > 0 ? `$${stakeAmountNum.toFixed(2)}` : ''}
+        amount={txAmount > 0 ? `$${txAmount.toFixed(2)}` : ''}
         amountLabel="Stake Amount"
       />
 
