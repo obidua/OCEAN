@@ -1,10 +1,13 @@
 /**
  * Console Filter Utility
- * Suppresses known non-critical warnings and errors in development
+ * Suppresses known non-critical warnings and errors in development and production
  */
 
 const originalWarn = console.warn;
 const originalError = console.error;
+
+// Check if we're in production
+const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
 
 // List of warning messages to suppress (safe to ignore)
 const SUPPRESSED_WARNINGS = [
@@ -64,7 +67,9 @@ console.error = (...args) => {
   
   if (isExpectedRpcError) {
     // Show user rejection as info, not error
-    console.info('ℹ️ Wallet connection cancelled by user');
+    if (!isProduction) {
+      console.info('ℹ️ Wallet connection cancelled by user');
+    }
     return;
   }
   
@@ -84,12 +89,11 @@ export const disableConsoleFiltering = () => {
   console.log('ℹ️ Console filtering disabled - showing all messages');
 };
 
-// Auto-enable in development
-if (import.meta.env.DEV) {
-  enableConsoleFiltering();
-}
+// Auto-enable filtering
+enableConsoleFiltering();
 
 export default {
   enableConsoleFiltering,
-  disableConsoleFiltering
+  disableConsoleFiltering,
+  isProduction
 };

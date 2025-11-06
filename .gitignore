@@ -4,12 +4,20 @@ package-lock.json
 
 # Environment files
 .env
-.env.local
-.env.development
-.env.production
+.env.*
+!.env.example
 .env.bak
 apps/dashboard/.env
-apps/dashboard/.env.local
+apps/dashboard/.env.*
+!apps/dashboard/.env.example
+
+# CRITICAL: Private keys and sensitive data
+config/privateKeys.json
+config/coreconfig_manifest.json
+**/privateKeys*.json
+**/*private*.json
+*.secret
+secrets/
 
 # Build outputs
 dist

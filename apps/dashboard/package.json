@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
+    "build:prod": "NODE_ENV=production vite build",
+    "build:staging": "NODE_ENV=staging vite build",
     "preview": "vite preview",
+    "preview:prod": "vite preview --port 4173",
+    "lint": "eslint .",
     "icons": "node scripts/generate-icons.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "prebuild:prod": "npm run typecheck"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
