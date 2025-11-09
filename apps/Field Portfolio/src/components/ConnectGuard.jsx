@@ -1,11 +1,12 @@
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
-import { useIsRegistered, usePortfolioIds } from '../hooks/useFieldPortfolio'
+import { useIsRegistered, usePortfolioIds, useIsOwner } from '../hooks/useFieldPortfolio'
 
 export default function ConnectGuard({ children }) {
   const { open } = useAppKit()
   const { address, isConnected } = useAppKitAccount()
   const isReg = useIsRegistered()
   const ids = usePortfolioIds()
+  const ownerStatus = useIsOwner()
 
   if (!isConnected) {
     return (
@@ -19,11 +20,12 @@ export default function ConnectGuard({ children }) {
     )
   }
 
-  if (isReg.isLoading || ids.isLoading) {
+  if (isReg.isLoading || ids.isLoading || ownerStatus.isLoading) {
     return <div className="min-h-screen grid place-items-center text-white">Loading...</div>
   }
 
-  const allowed = isReg.data && Array.isArray(ids.data) && ids.data.length > 0
+  // Owner bypass: if owner connected, allow access regardless of registration/portfolio presence
+  const allowed = ownerStatus.isOwner || (isReg.data && Array.isArray(ids.data) && ids.data.length > 0)
 
   if (!allowed) {
     return (

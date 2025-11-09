@@ -3,10 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit } from '@reown/appkit/react'
 import { projectId, metadata, networks, wagmiAdapter } from '../config/index.js'
 import ConnectGuard from './components/ConnectGuard'
-import PortfolioOverview from './components/PortfolioOverview'
-import EarningsSummary from './components/EarningsSummary'
-import ClaimPanel from './components/ClaimPanel'
-import ClaimHistory from './components/ClaimHistory'
+import AccruedRewards from './pages/AccruedRewards'
+import AdminPanel from './components/AdminPanel'
 
 const generalConfig = {
   projectId,
@@ -31,10 +29,8 @@ export default function App() {
               <appkit-button />
             </header>
             <main className="max-w-5xl mx-auto p-4 space-y-6">
-              <EarningsSummary />
-              <ClaimPanel />
-              <PortfolioOverview />
-              <ClaimHistory />
+              <AdminPanel />
+              <AccruedRewards />
             </main>
           </div>
         </ConnectGuard>
