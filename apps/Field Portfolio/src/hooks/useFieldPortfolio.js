@@ -189,7 +189,7 @@ export function useAllUsers({ enabled = true, limit } = {}) {
 export function useAllPortfolios({ limitUsers } = {}) {
   const users = useAllUsers({ enabled: true, limit: limitUsers })
   return useQuery({
-    queryKey: ['allPortfolios', users.data],
+    queryKey: ['allPortfolios', keySafe(users.data)],
     enabled: users.isSuccess,
     queryFn: async () => {
       const rows = []
@@ -211,3 +211,66 @@ export function useAllPortfolios({ limitUsers } = {}) {
     }
   })
 }
+
+// Wallet Balance (user's internal balance in contract)
+export function useWalletBalance() {
+  const { address } = useAppKitAccount()
+  return useQuery({
+    queryKey: ['walletBalance', address],
+    enabled: !!address,
+    refetchInterval: 30000,
+    queryFn: async () => await readContract('walletBalance', [address])
+  })
+}
+
+// Withdraw mutation
+export function useWithdraw() {
+  const { address } = useAppKitAccount()
+  const queryClient = useQueryClient()
+  const { writeContract, data: hash, isPending } = useWriteContract()
+  const receipt = useWaitForTransactionReceipt({ hash, confirmations: 1 })
+
+  const mutation = useMutation({
+    mutationFn: async ({ amountWei }) => {
+      if (!address) throw new Error('Connect wallet')
+      return writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: [
+          {"inputs":[{"internalType":"uint256","name":"amountWei","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}
+        ],
+        functionName: 'withdraw',
+        args: [BigInt(amountWei)]
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] })
+    }
+  })
+
+  return { ...mutation, txHash: hash, receipt, isPending }
+}
+
+// Admin close portfolio mutation
+export function useAdminClosePortfolio() {
+  const isOwner = useIsOwner()
+  const queryClient = useQueryClient()
+  const { writeContract, data: hash, isPending } = useWriteContract()
+  const receipt = useWaitForTransactionReceipt({ hash })
+  const mutation = useMutation({
+    mutationFn: async ({ pid }) => {
+      if (!isOwner.isOwner) throw new Error('Not owner')
+      return writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: [{"inputs":[{"internalType":"uint256","name":"pid","type":"uint256"}],"name":"adminClosePortfolio","outputs":[],"stateMutability":"nonpayable","type":"function"}],
+        functionName: 'adminClosePortfolio',
+        args: [BigInt(pid)]
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allPortfolios'] })
+      queryClient.invalidateQueries({ queryKey: ['portfolios'] })
+    }
+  })
+  return { ...mutation, txHash: hash, isPending, receipt }
+}
+

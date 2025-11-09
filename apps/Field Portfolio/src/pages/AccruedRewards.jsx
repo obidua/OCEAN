@@ -6,6 +6,7 @@ import {
   useClaimHistory,
   useClaimROI
 } from '../hooks/useFieldPortfolio'
+import WithdrawPanel from '../components/WithdrawPanel'
 import {
   TrendingUp,
   Coins,
@@ -212,6 +213,9 @@ export default function AccruedRewards() {
           <p className="text-xs text-purple-300/60">Active & running portfolios</p>
         </div>
       </div>
+
+      {/* Withdraw Panel */}
+      <WithdrawPanel />
 
       {/* Portfolio table */}
       <div className="cyber-glass rounded-xl border border-cyan-500/30 p-4 sm:p-6">
