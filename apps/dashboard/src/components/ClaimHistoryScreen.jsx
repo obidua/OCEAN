@@ -43,12 +43,55 @@ const SkeletonCard = ({ className = "" }) => (
 const ClaimHistoryScreen = () => {
   const userAddress = typeof window !== 'undefined' ? localStorage.getItem("userAddress") : null;
   
+  // Cache configuration
+  const CACHE_KEY = `claim_history_cache_${userAddress}`;
+  const CACHE_TIMESTAMP_KEY = `claim_history_timestamp_${userAddress}`;
+  const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+  // Helper to save data to sessionStorage
+  const saveToCache = (data) => {
+    if (!userAddress) return;
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      sessionStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      console.log('[ClaimHistory] Data cached successfully');
+    } catch (error) {
+      console.warn('[ClaimHistory] Failed to cache data:', error);
+    }
+  };
+
+  // Helper to load data from sessionStorage
+  const loadFromCache = () => {
+    if (!userAddress) return null;
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      const timestamp = sessionStorage.getItem(CACHE_TIMESTAMP_KEY);
+      
+      if (!cached || !timestamp) return null;
+      
+      const age = Date.now() - parseInt(timestamp);
+      if (age > CACHE_DURATION) {
+        console.log('[ClaimHistory] Cache expired, clearing...');
+        sessionStorage.removeItem(CACHE_KEY);
+        sessionStorage.removeItem(CACHE_TIMESTAMP_KEY);
+        return null;
+      }
+      
+      console.log('[ClaimHistory] Loading from cache (age: ' + Math.round(age / 1000) + 's)');
+      return JSON.parse(cached);
+    } catch (error) {
+      console.warn('[ClaimHistory] Failed to load cache:', error);
+      return null;
+    }
+  };
+  
   // Data states
   const [claimHistory, setClaimHistory] = useState([]);
   const [claimableData, setClaimableData] = useState(null);
   
   // UI states
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [copiedTx, setCopiedTx] = useState(null);
   const [refreshingCard, setRefreshingCard] = useState(null);
@@ -57,6 +100,18 @@ const ClaimHistoryScreen = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  // Load cached data on mount
+  useEffect(() => {
+    const cached = loadFromCache();
+    if (cached) {
+      console.log('[ClaimHistory] Restoring from cache...');
+      setClaimHistory(cached.claimHistory || []);
+      setClaimableData(cached.claimableData);
+      setDataLoaded(true);
+      console.log('[ClaimHistory] Cache restored successfully');
+    }
+  }, []);
+
   // Load claim history and claimable data
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +119,12 @@ const ClaimHistoryScreen = () => {
     const loadClaimData = async () => {
       if (!userAddress) {
         console.log('[ClaimHistory] No user address');
+        return;
+      }
+
+      // Skip if data already loaded from cache
+      if (dataLoaded) {
+        console.log('[ClaimHistory] Data already loaded from cache, skipping reload');
         return;
       }
 
@@ -92,18 +153,34 @@ const ClaimHistoryScreen = () => {
         }
 
         // Load current claimable amount
+        // Note: This endpoint may timeout for users with long history, so we handle gracefully
         console.log('[ClaimHistory] 2/2 Loading claimable amount...');
         const claimableResult = await getClaimableIncome(userAddress, currentDay, ramaPrice);
         if (!cancelled && claimableResult.success) {
           console.log('[ClaimHistory] ✓ Claimable data:', claimableResult.data);
           setClaimableData(claimableResult.data);
         } else if (!cancelled) {
-          console.error('[ClaimHistory] ✗ Claimable fetch failed:', claimableResult.error);
+          console.warn('[ClaimHistory] ⚠ Claimable fetch failed:', claimableResult.error);
+          // Set empty claimable data instead of failing
+          setClaimableData({
+            total_claimable_usd: 0,
+            total_claimable_rama_wei: '0',
+            is_estimated: true
+          });
         }
 
         if (!cancelled) {
           setLoading(false);
+          setDataLoaded(true);
           console.log('[ClaimHistory] Data loading complete');
+          
+          // Cache the loaded data
+          saveToCache({
+            claimHistory: historyResult.success ? (historyResult.data.claims || []).sort((a, b) => {
+              return new Date(b.claimed_at) - new Date(a.claimed_at);
+            }) : [],
+            claimableData: claimableResult.success ? claimableResult.data : null
+          });
         }
       } catch (err) {
         console.error('[ClaimHistory] Failed to load claim data:', err);
@@ -116,7 +193,7 @@ const ClaimHistoryScreen = () => {
 
     loadClaimData();
     return () => { cancelled = true; };
-  }, [userAddress]);
+  }, [userAddress, dataLoaded]);
 
   // Calculate stats
   const stats = useMemo(() => {

@@ -113,6 +113,7 @@ export default function SlabDashboard() {
   const [portfolioVolumeData, setPortfolioVolumeData] = useState(null);
   const [totalPortfolioVolume, setTotalPortfolioVolume] = useState(null);
   const [periodIncomeData, setPeriodIncomeData] = useState(null);
+  const [allTimeIncomeData, setAllTimeIncomeData] = useState(null); // All-time income (day 0 to current)
   const [claimableData, setClaimableData] = useState(null);
   const [levelAchieversData, setLevelAchieversData] = useState(null);
   const [historicalData, setHistoricalData] = useState([]);
@@ -157,6 +158,7 @@ export default function SlabDashboard() {
       setPortfolioVolumeData(cached.portfolioVolumeData);
       setTotalPortfolioVolume(cached.totalPortfolioVolume);
       setPeriodIncomeData(cached.periodIncomeData);
+      setAllTimeIncomeData(cached.allTimeIncomeData);
       setClaimableData(cached.claimableData);
       setLevelAchieversData(cached.levelAchieversData);
       setHistoricalData(cached.historicalData || []);
@@ -231,14 +233,38 @@ export default function SlabDashboard() {
           console.error('[SlabDashboard] ✗ Period fetch failed:', periodResult.error);
         }
 
+        // Load all-time income (for Total Slab Income card) - limited to last 365 days due to API constraint
+        console.log('[SlabDashboard] 3.5/8 Loading all-time income (last 365 days)...');
+        const allTimeResult = await getPeriodIncome(userAddress, Math.max(0, currentDay - 365), currentDay, ramaPrice);
+        if (!cancelled && allTimeResult.success) {
+          console.log('[SlabDashboard] ✓ All-time data:', allTimeResult.data);
+          setAllTimeIncomeData(allTimeResult.data);
+        } else if (!cancelled) {
+          console.error('[SlabDashboard] ✗ All-time fetch failed:', allTimeResult.error);
+        }
+
         // Card 5, 6, 7, 8: Claimable stats (Total Claimable, Total Slab Income, Claimed, Unclaimed)
+        // Note: This endpoint may timeout for users with long history, so we handle gracefully
         console.log('[SlabDashboard] 4/8 Loading claimable stats...');
         const claimableResult = await getClaimableIncome(userAddress, currentDay, ramaPrice);
         if (!cancelled && claimableResult.success) {
           console.log('[SlabDashboard] ✓ Claimable data:', claimableResult.data);
           setClaimableData(claimableResult.data);
         } else if (!cancelled) {
-          console.error('[SlabDashboard] ✗ Claimable fetch failed:', claimableResult.error);
+          console.warn('[SlabDashboard] ⚠ Claimable fetch failed (using estimated data):', claimableResult.error);
+          // Fallback: estimate claimable as ~80% of period income (assumption: 20% claimed)
+          if (allTimeResult.success) {
+            const estimatedClaimable = {
+              total_claimable_usd: Math.round(allTimeResult.data.total_income_usd * 0.8),
+              total_claimable_rama_wei: '0',
+              slab_claimable_usd: Math.round(allTimeResult.data.slab_income_usd * 0.8),
+              override_claimable_usd: Math.round(allTimeResult.data.override_income_usd * 0.8),
+              days_count: allTimeResult.data.days_count,
+              is_estimated: true // Flag to show this is estimated
+            };
+            setClaimableData(estimatedClaimable);
+            console.log('[SlabDashboard] Using estimated claimable data:', estimatedClaimable);
+          }
         }
 
         // Card 9: Total Team
@@ -287,6 +313,7 @@ export default function SlabDashboard() {
             portfolioVolumeData: portfolioVolumeResult.success ? portfolioVolumeResult.data : null,
             totalPortfolioVolume: totalPortfolioResult.success ? totalPortfolioResult.data : null,
             periodIncomeData: periodResult.success ? periodResult.data : null,
+            allTimeIncomeData: allTimeResult.success ? allTimeResult.data : null,
             claimableData: claimableResult.success ? claimableResult.data : null,
             levelAchieversData: null,
             historicalData: []
@@ -767,6 +794,12 @@ export default function SlabDashboard() {
                 <div className="text-2xl font-bold text-pink-400 mb-1">
                   {formatUSD(claimableStats?.totalUsd || 0)}
                 </div>
+                {claimableData?.is_estimated && (
+                  <div className="text-xs text-yellow-400/60 mb-1 flex items-center gap-1">
+                    <Info size={12} />
+                    Estimated
+                  </div>
+                )}
                 <div className="text-sm text-cyan-300/80">
                   {formatRAMA(claimableStats?.totalRama || 0)}
                 </div>
@@ -824,18 +857,18 @@ export default function SlabDashboard() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-2xl" />
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs font-semibold text-purple-400/80 uppercase tracking-wider">Total Slab Income</div>
+              <div className="text-xs font-semibold text-purple-400/80 uppercase tracking-wider">Total Slab Income (365d)</div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={async () => {
                     setRefreshingCard('total-slab');
                     const ramaPrice = getRamaPrice();
                     const currentDay = calculateDayId();
-                    const [periodResult, claimableResult] = await Promise.all([
-                      getPeriodIncome(userAddress, Math.max(0, currentDay - 30), currentDay, ramaPrice),
+                    const [allTimeResult, claimableResult] = await Promise.all([
+                      getPeriodIncome(userAddress, Math.max(0, currentDay - 365), currentDay, ramaPrice),
                       getClaimableIncome(userAddress, currentDay, ramaPrice)
                     ]);
-                    if (periodResult.success) setPeriodIncomeData(periodResult.data);
+                    if (allTimeResult.success) setAllTimeIncomeData(allTimeResult.data);
                     if (claimableResult.success) setClaimableData(claimableResult.data);
                     setRefreshingCard(null);
                   }}
@@ -848,24 +881,30 @@ export default function SlabDashboard() {
                 <Wallet size={20} className="text-purple-400" />
               </div>
             </div>
-            {loading && !claimableStats ? (
+            {loading && !allTimeIncomeData && !claimableData ? (
               <SkeletonCard />
             ) : (
               <>
                 <div className="text-2xl font-bold text-purple-400 mb-1">
-                  {formatUSD((claimableStats?.totalUsd || 0) + Math.max(0, (periodStats?.totalUsd || 0)))}
+                  {formatUSD(microUsdToUsd(allTimeIncomeData?.total_income_usd || 0))}
                 </div>
+                {claimableData?.is_estimated && (
+                  <div className="text-xs text-yellow-400/60 mb-2 flex items-center gap-1">
+                    <Info size={12} />
+                    Estimated breakdown
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   <div className="bg-green-500/10 rounded p-2 border border-green-500/20">
                     <div className="text-xs text-green-400/70 mb-1">Claimed</div>
                     <div className="text-sm font-bold text-green-400">
-                      {formatUSD(Math.max(0, (periodStats?.totalUsd || 0) - (claimableStats?.totalUsd || 0)))}
+                      {formatUSD(microUsdToUsd((allTimeIncomeData?.total_income_usd || 0) - (claimableData?.total_claimable_usd || 0)))}
                     </div>
                   </div>
                   <div className="bg-orange-500/10 rounded p-2 border border-orange-500/20">
                     <div className="text-xs text-orange-400/70 mb-1">Unclaimed</div>
                     <div className="text-sm font-bold text-orange-400">
-                      {formatUSD(claimableStats?.totalUsd || 0)}
+                      {formatUSD(microUsdToUsd(claimableData?.total_claimable_usd || 0))}
                     </div>
                   </div>
                 </div>
@@ -910,6 +949,12 @@ export default function SlabDashboard() {
                 <div className="text-2xl font-bold text-green-400 mb-1">
                   {formatUSD(Math.max(0, (periodStats?.totalUsd || 0) - (claimableStats?.totalUsd || 0)))}
                 </div>
+                {claimableData?.is_estimated && (
+                  <div className="text-xs text-yellow-400/60 mb-1 flex items-center gap-1">
+                    <Info size={12} />
+                    Estimated
+                  </div>
+                )}
                 <div className="text-sm text-cyan-300/80">
                   {formatRAMA(Math.max(0, (periodStats?.totalRama || 0) - (claimableStats?.totalRama || 0)))}
                 </div>
@@ -953,6 +998,12 @@ export default function SlabDashboard() {
                 <div className="text-2xl font-bold text-orange-400 mb-1">
                   {formatUSD(claimableStats?.totalUsd || 0)}
                 </div>
+                {claimableData?.is_estimated && (
+                  <div className="text-xs text-yellow-400/60 mb-1 flex items-center gap-1">
+                    <Info size={12} />
+                    Estimated
+                  </div>
+                )}
                 <div className="text-sm text-cyan-300/80">
                   {formatRAMA(claimableStats?.totalRama || 0)}
                 </div>

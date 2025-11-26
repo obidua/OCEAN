@@ -44,6 +44,48 @@ const SkeletonCard = ({ className = "" }) => (
 const SameSlabScreen = () => {
   const userAddress = typeof window !== 'undefined' ? localStorage.getItem("userAddress") : null;
   
+  // Cache configuration
+  const CACHE_KEY = `same_slab_cache_${userAddress}`;
+  const CACHE_TIMESTAMP_KEY = `same_slab_timestamp_${userAddress}`;
+  const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+  // Helper to save data to sessionStorage
+  const saveToCache = (data) => {
+    if (!userAddress) return;
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      sessionStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      console.log('[SameSlabScreen] Data cached successfully');
+    } catch (error) {
+      console.warn('[SameSlabScreen] Failed to cache data:', error);
+    }
+  };
+
+  // Helper to load data from sessionStorage
+  const loadFromCache = () => {
+    if (!userAddress) return null;
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      const timestamp = sessionStorage.getItem(CACHE_TIMESTAMP_KEY);
+      
+      if (!cached || !timestamp) return null;
+      
+      const age = Date.now() - parseInt(timestamp);
+      if (age > CACHE_DURATION) {
+        console.log('[SameSlabScreen] Cache expired, clearing...');
+        sessionStorage.removeItem(CACHE_KEY);
+        sessionStorage.removeItem(CACHE_TIMESTAMP_KEY);
+        return null;
+      }
+      
+      console.log('[SameSlabScreen] Loading from cache (age: ' + Math.round(age / 1000) + 's)');
+      return JSON.parse(cached);
+    } catch (error) {
+      console.warn('[SameSlabScreen] Failed to load cache:', error);
+      return null;
+    }
+  };
+  
   // Data states
   const [todayData, setTodayData] = useState(null);
   const [periodData, setPeriodData] = useState(null);
@@ -52,6 +94,7 @@ const SameSlabScreen = () => {
   
   // UI states
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState(null);
   const [selectedDay, setSelectedDay] = useState(calculateDayId());
@@ -61,6 +104,20 @@ const SameSlabScreen = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
 
+  // Load cached data on mount
+  useEffect(() => {
+    const cached = loadFromCache();
+    if (cached) {
+      console.log('[SameSlabScreen] Restoring from cache...');
+      setTodayData(cached.todayData);
+      setPeriodData(cached.periodData);
+      setClaimableData(cached.claimableData);
+      setHistoricalData(cached.historicalData || []);
+      setDataLoaded(true);
+      console.log('[SameSlabScreen] Cache restored successfully');
+    }
+  }, []);
+
   // Load today's override data sequentially
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +125,12 @@ const SameSlabScreen = () => {
     const loadTodayData = async () => {
       if (!userAddress) {
         console.log('[SameSlabScreen] No user address');
+        return;
+      }
+
+      // Skip if data already loaded from cache
+      if (dataLoaded) {
+        console.log('[SameSlabScreen] Data already loaded from cache, skipping reload');
         return;
       }
 
@@ -100,18 +163,40 @@ const SameSlabScreen = () => {
         }
 
         // Card 3: Total Claimable Override
+        // Note: This endpoint may timeout for users with long history, so we handle gracefully
         console.log('[SameSlabScreen] 3/3 Loading claimable override...');
         const claimableResult = await getClaimableIncome(userAddress, currentDay, ramaPrice);
         if (!cancelled && claimableResult.success) {
           console.log('[SameSlabScreen] ✓ Claimable data:', claimableResult.data);
           setClaimableData(claimableResult.data);
         } else if (!cancelled) {
-          console.error('[SameSlabScreen] ✗ Claimable fetch failed:', claimableResult.error);
+          console.warn('[SameSlabScreen] ⚠ Claimable fetch failed (using estimated data):', claimableResult.error);
+          // Fallback: estimate claimable as ~80% of period income
+          if (periodResult.success) {
+            const estimatedClaimable = {
+              total_claimable_usd: Math.round(periodResult.data.total_income_usd * 0.8),
+              total_claimable_rama_wei: '0',
+              override_claimable_usd: Math.round(periodResult.data.override_income_usd * 0.8),
+              days_count: periodResult.data.days_count,
+              is_estimated: true
+            };
+            setClaimableData(estimatedClaimable);
+            console.log('[SameSlabScreen] Using estimated claimable data:', estimatedClaimable);
+          }
         }
 
         if (!cancelled) {
           setLoading(false);
+          setDataLoaded(true);
           console.log('[SameSlabScreen] Data loading complete');
+          
+          // Cache the loaded data
+          saveToCache({
+            todayData: todayResult.success ? todayResult.data : null,
+            periodData: periodResult.success ? periodResult.data : null,
+            claimableData: claimableResult.success ? claimableResult.data : null,
+            historicalData: []
+          });
         }
       } catch (err) {
         console.error('[SameSlabScreen] Failed to load override data:', err);
@@ -124,7 +209,7 @@ const SameSlabScreen = () => {
 
     loadTodayData();
     return () => { cancelled = true; };
-  }, [userAddress, selectedDay]);
+  }, [userAddress, selectedDay, dataLoaded]);
 
   // Load all-time override history
   useEffect(() => {
