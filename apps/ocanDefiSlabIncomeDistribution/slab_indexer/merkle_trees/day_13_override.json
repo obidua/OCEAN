@@ -1,0 +1,14 @@
+{
+  "day_id": 13,
+  "income_type": "override",
+  "merkle_root": "0xb58a5645ca942a474d89e96dd663cd0e7680680dea60b1ab87f62efdf80d7919",
+  "total_achievers": 1,
+  "leaves": [
+    {
+      "user_address": "0xa6EBDdFa8e3c669b5e5a9d3a2294B1052686025f",
+      "day_id": 13,
+      "amount": 122067032503,
+      "leaf_hash": "0xb58a5645ca942a474d89e96dd663cd0e7680680dea60b1ab87f62efdf80d7919"
+    }
+  ]
+}

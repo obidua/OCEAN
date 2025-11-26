@@ -1,0 +1,20 @@
+{
+  "day_id": 20407,
+  "income_type": "slab",
+  "merkle_root": "0xf39dc6a2da87e36617c9b80391b8d0c7be22106561e7c13025173f0ec5554ed0",
+  "total_achievers": 2,
+  "leaves": [
+    {
+      "user_address": "0x2Eb8fce19f656F9fe0074C4b4b94e5dABe0048c1",
+      "day_id": 20407,
+      "amount": 1220670325036,
+      "leaf_hash": "0xbc8211f190db7ee90eba9334f329fedb5a21374bc3ee5f8135799a496b2d75b5"
+    },
+    {
+      "user_address": "0xa6EBDdFa8e3c669b5e5a9d3a2294B1052686025f",
+      "day_id": 20407,
+      "amount": 5179211938335,
+      "leaf_hash": "0x0dd9b7dc9cbdf952977ed3b87146532b9f828a07a6eaf0a1144aae9831c5ec0f"
+    }
+  ]
+}

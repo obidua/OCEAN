@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Table, LayoutGrid, History, TrendingUp, Users, Target, Award } from "lucide-react";
+import { LayoutGrid, Award, BarChart3 } from "lucide-react";
 import { useStore } from "../../store/useUserInfoStore";
-import SameSlabScreen from "../components/SameSlabScreen";
 import SlabIncomeScreen from "../components/SlabIncomeScreen";
-import SlabIncomeHistory from "../components/SlabIncomeHistory";
+import SlabDashboard from "../components/SlabDashboard";
 
 const SlabIncome = () => {
-  const [viewMode, setViewMode] = useState("overview");
+  const [viewMode, setViewMode] = useState("overview");  // Default to overview
   
   const userAddress = localStorage.getItem("userAddress");
   const [slabDetails, setSlabDetails] = useState(null);
@@ -25,6 +24,7 @@ const SlabIncome = () => {
     getIncomeTotals,
   } = useStore();
 
+  // Load data from store (contract-based)
   useEffect(() => {
     let cancelled = false;
     const loadData = async () => {
@@ -39,12 +39,9 @@ const SlabIncome = () => {
       setError(null);
       
       try {
-        // Load basic overview first
         const overview = await getSlabIncomeOverview(userAddress);
-        // console.log("Loaded slab income overview:", overview);
         if (!cancelled) setSlabDetails(overview);
         
-        // Then load additional data in parallel
         const [managerDetails, achievements] = await Promise.all([
           getSlabManagerDetails(userAddress).catch(err => {
             console.warn("Failed to load SlabManager details:", err);
@@ -57,11 +54,8 @@ const SlabIncome = () => {
         ]);
         
         if (!cancelled) {
-
-          // console.log("this is manager details", managerDetails);
           setSlabManagerDetails(managerDetails);
           setNextAchievements(achievements);
-          // console.log("Comprehensive slab data loaded:", { overview, managerDetails, achievements });
         }
       } catch (err) {
         console.error("Error loading slab data:", err);
@@ -114,7 +108,7 @@ const SlabIncome = () => {
     };
   }, [userAddress, getIncomeTotals]);
 
-  // Process data for UI components
+  // Process data for UI
   const fallbackSlabIndex = Number.isFinite(Number(slabDetails?.slabLevel))
     ? Math.max(0, Math.floor(Number(slabDetails.slabLevel) - 1))
     : 0;
@@ -171,7 +165,7 @@ const SlabIncome = () => {
   const royaltyIncomeUsd = slabDetails?.royaltyIncomeUsd ?? 0;
   const royaltyIncomeRama = slabDetails?.royaltyIncomeRama ?? 0;
 
-  // Legacy override data for SameSlabScreen compatibility
+  // Override data
   const overrideL1 = Number(slabDetails?.legBreakdown?.L1 ?? 0);
   const overrideL2 = Number(slabDetails?.legBreakdown?.L2 ?? 0);
   const overrideL3 = Number(slabDetails?.legBreakdown?.Lrest ?? 0);
@@ -207,7 +201,6 @@ const SlabIncome = () => {
     royaltyIncomeUsd,
     royaltyIncomeRama,
     newDirects,
-    // Enhanced data
     progressData: slabDetails?.progressData,
     achievementsData: slabDetails?.achievementsData,
     legBreakdown: slabDetails?.legBreakdown,
@@ -219,62 +212,20 @@ const SlabIncome = () => {
     incomeTotalsLoading,
     incomeTotalsError,
   };
-
-  const SameSlabData = {
-    totalOverrideRama: 0,
-    totalOverrideUsd: 0,
-    sameSlabPartners: {
-      firstWave: [],
-      secondWave: [],
-      thirdWave: [],
-    },
-    overrideL1: 0,
-    overrideL2: 0,
-    overrideL3: 0,
-    legsDetailed: [],
-    legBreakdown: { L1: 0, L2: 0, Lrest: 0, total: 0 },
-  };
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center space-x-3">
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green relative inline-block">
-            Slab Income System
-            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
-          </h1>
-
-          <Award
-              size={20}
-              className="text-white"
-              />
+              Slab Income System
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-neon-green/20 blur-xl -z-10" />
+            </h1>
+            <Award size={20} className="text-white" />
           </div>
           <p className="text-cyan-300/90 mt-1">
             Earn difference income from your team's growth
           </p>
-          
-          {/* Quick stats bar */}
-          {/* {slabDetails && !loading && (
-            <div className="flex flex-wrap gap-4 mt-3 text-sm">
-              <div className="flex items-center gap-1 text-cyan-400">
-                <Award size={16} />
-                <span>Slab {displayedSlabLevel}</span>
-              </div>
-              <div className="flex items-center gap-1 text-green-400">
-                <Users size={16} />
-                <span>{directs.toLocaleString()} Directs</span>
-              </div>
-              <div className="flex items-center gap-1 text-yellow-400">
-                <TrendingUp size={16} />
-                <span>${qualifiedVolumeUsd.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-1 text-purple-400">
-                <Target size={16} />
-                <span>{newDirects} New Since Claim</span>
-              </div>
-            </div>
-          )} */}
         </div>
         
         <div className="flex gap-2">
@@ -287,29 +238,18 @@ const SlabIncome = () => {
             }`}
           >
             <LayoutGrid size={18} />
-            <span className="hidden sm:inline">Slab overview</span>
+            <span className="hidden sm:inline">Slab Overview</span>
           </button>
           <button
-            onClick={() => setViewMode("table")}
+            onClick={() => setViewMode("dashboard")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              viewMode === "table"
+              viewMode === "dashboard"
                 ? "bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950"
                 : "cyber-glass text-cyan-400 border border-cyan-500/30 hover:border-cyan-500/50"
             }`}
           >
-            <Table size={18} />
-            <span className="hidden sm:inline">Same slab override</span>
-          </button>
-          <button
-            onClick={() => setViewMode("history")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              viewMode === "history"
-                ? "bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950"
-                : "cyber-glass text-cyan-400 border border-cyan-500/30 hover:border-cyan-500/50"
-            }`}
-          >
-            <History size={18} />
-            <span className="hidden sm:inline">History</span>
+            <BarChart3 size={18} />
+            <span className="hidden sm:inline">Slab Dashboard</span>
           </button>
         </div>
       </div>
@@ -318,10 +258,9 @@ const SlabIncome = () => {
         {viewMode === "overview" && (
           <SlabIncomeScreen SlabIncomeData={SlabIncomeData} />
         )}
-        {viewMode === "table" && (
-          <SameSlabScreen SameSlabData={SameSlabData} />
+        {viewMode === "dashboard" && (
+          <SlabDashboard />
         )}
-        {viewMode === "history" && <SlabIncomeHistory />}
       </div>
     </div>
   );

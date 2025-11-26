@@ -5,6 +5,13 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     port: 8786,
+    proxy: {
+      '/api': {
+        target: 'https://testapi.oceandefi.uk',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   optimizeDeps: { 
     exclude: ['lucide-react'] 

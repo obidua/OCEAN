@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Ocean DeFi</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e27;
+            color: #00ffff;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #1a1f3a;
+            border: 1px solid #00ffff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .loading { color: #ffff00; }
+        button {
+            background: linear-gradient(135deg, #00ffff, #00ff88);
+            color: #0a0e27;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        pre {
+            background: #0a0e27;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .result {
+            margin-top: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌊 Ocean DeFi API Tester</h1>
+    <p>Test API endpoints to verify they're working correctly</p>
+
+    <div class="test-section">
+        <h2>Configuration</h2>
+        <label>User Address:</label>
+        <input type="text" id="userAddress" value="0xa6EBDdFa8e3c669b5e5a9d3a2294B1052686025f" style="width: 400px; padding: 8px; margin: 10px 0; background: #0a0e27; border: 1px solid #00ffff; color: #00ffff; border-radius: 4px;">
+        <br>
+        <label>Day ID:</label>
+        <input type="number" id="dayId" value="20418" style="width: 100px; padding: 8px; margin: 10px 0; background: #0a0e27; border: 1px solid #00ffff; color: #00ffff; border-radius: 4px;">
+        <br>
+        <label>API Base:</label>
+        <select id="apiBase" style="padding: 8px; margin: 10px 0; background: #0a0e27; border: 1px solid #00ffff; color: #00ffff; border-radius: 4px;">
+            <option value="http://localhost:8786/api">Development (Proxy)</option>
+            <option value="https://testapi.oceandefi.uk/api">Production (Direct)</option>
+        </select>
+    </div>
+
+    <div class="test-section">
+        <h2>Quick Tests</h2>
+        <button onclick="testCombinedIncome()">Test Combined Income</button>
+        <button onclick="testUserAchievement()">Test User Achievement</button>
+        <button onclick="testTeamSummary()">Test Team Summary</button>
+        <button onclick="testTeamLegs()">Test Team Legs</button>
+        <button onclick="testPortfolioVolume()">Test Portfolio Volume</button>
+        <button onclick="testPeriodIncome()">Test Period Income (30 days)</button>
+        <button onclick="testClaimableIncome()">Test Claimable Income</button>
+        <button onclick="testAllEndpoints()">🚀 Test All Endpoints</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const calculateDayId = () => Math.floor(Date.now() / 1000 / 86400);
+
+        async function makeRequest(endpoint, params = {}) {
+            const apiBase = document.getElementById('apiBase').value;
+            const url = new URL(`${apiBase}${endpoint}`);
+            
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                    url.searchParams.append(key, value);
+                }
+            });
+
+            const startTime = Date.now();
+            const response = await fetch(url.toString());
+            const duration = Date.now() - startTime;
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || errorData.message || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            return { data, duration, status: response.status };
+        }
+
+        function addResult(title, status, message, data = null, duration = null) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-section';
+            
+            let html = `<h3>${title}</h3>`;
+            html += `<div class="${status}">${message}</div>`;
+            if (duration) html += `<div>⏱️ Duration: ${duration}ms</div>`;
+            if (data) {
+                html += '<div class="result"><pre>' + JSON.stringify(data, null, 2) + '</pre></div>';
+            }
+            
+            resultDiv.innerHTML = html;
+            resultsDiv.insertBefore(resultDiv, resultsDiv.firstChild);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testCombinedIncome() {
+            try {
+                addResult('Combined Income', 'loading', 'Testing...');
+                const address = document.getElementById('userAddress').value;
+                const dayId = document.getElementById('dayId').value;
+                const { data, duration } = await makeRequest(`/combined/${address}/${dayId}`, {
+                    price_micro_usd: 50000000
+                });
+                addResult('✅ Combined Income', 'success', 'Success!', data, duration);
+            } catch (error) {
+                addResult('❌ Combined Income', 'error', error.message);
+            }
+        }
+
+        async function testUserAchievement() {
+            try {
+                addResult('User Achievement', 'loading', 'Testing...');
+                const address = document.getElementById('userAddress').value;
+                const dayId = document.getElementById('dayId').value;
+                const { data, duration } = await makeRequest(`/slab-achievers/user/${address}`, {
+                    day_id: dayId
+                });
+                addResult('✅ User Achievement', 'success', 'Success!', data, duration);
+            } catch (error) {
+                addResult('❌ User Achievement', 'error', error.message);
+            }
+        }
+
+        async function testTeamSummary() {
+            try {
+                addResult('Team Summary', 'loading', 'Testing...');
+                const address = document.getElementById('userAddress').value;
+                const { data, duration } = await makeRequest(`/team/${address}/summary`);
+                addResult('✅ Team Summary', 'success', 'Success!', data, duration);
+            } catch (error) {
+                addResult('❌ Team Summary', 'error', error.message);
+            }
+        }
+
+        async function testTeamLegs() {
+            try {
+                addResult('Team Legs', 'loading', 'Testing...');
+                const address = document.getElementById('userAddress').value;
+                const { data, duration } = await makeRequest(`/team/${address}/legs`);
+                addResult('✅ Team Legs', 'success', 'Success!', data, duration);
+            } catch (error) {
+                addResult('❌ Team Legs', 'error', error.message);
+            }
+        }
+
+        async function testPortfolioVolume() {
+            try {
+                addResult('Portfolio Volume', 'loading', 'Testing...');
+                const address = document.getElementById('userAddress').value;
+                const { data, duration } = await makeRequest(`/team/${address}/portfolio-volume`);
+                addResult('✅ Portfolio Volume', 'success', 'Success!', data, duration);
+            } catch (error) {
+                addResult('❌ Portfolio Volume', 'error', error.message);
+            }
+        }
+
+        async function testPeriodIncome() {
+            try {
+                addResult('Period Income', 'loading', 'Testing...');
+                const address = document.getElementById('userAddress').value;
+                const currentDay = calculateDayId();
+                const { data, duration } = await makeRequest(`/period/${address}`, {
+                    from_day: currentDay - 30,
+                    to_day: currentDay,
+                    price_micro_usd: 50000000
+                });
+                addResult('✅ Period Income (30 days)', 'success', 'Success!', data, duration);
+            } catch (error) {
+                addResult('❌ Period Income', 'error', error.message);
+            }
+        }
+
+        async function testClaimableIncome() {
+            try {
+                addResult('Claimable Income', 'loading', 'Testing...');
+                const address = document.getElementById('userAddress').value;
+                const currentDay = calculateDayId();
+                const { data, duration } = await makeRequest(`/claimable/${address}`, {
+                    price_micro_usd: 50000000,
+                    current_day: currentDay
+                });
+                addResult('✅ Claimable Income', 'success', 'Success!', data, duration);
+            } catch (error) {
+                addResult('❌ Claimable Income', 'error', error.message);
+            }
+        }
+
+        async function testAllEndpoints() {
+            clearResults();
+            addResult('All Endpoints Test', 'loading', '🚀 Starting comprehensive API test...', null);
+            
+            const tests = [
+                { name: 'Combined Income', fn: testCombinedIncome },
+                { name: 'User Achievement', fn: testUserAchievement },
+                { name: 'Team Summary', fn: testTeamSummary },
+                { name: 'Team Legs', fn: testTeamLegs },
+                { name: 'Portfolio Volume', fn: testPortfolioVolume },
+                { name: 'Period Income', fn: testPeriodIncome },
+                { name: 'Claimable Income', fn: testClaimableIncome }
+            ];
+
+            let passed = 0;
+            let failed = 0;
+
+            for (const test of tests) {
+                try {
+                    await test.fn();
+                    passed++;
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Delay between tests
+                } catch (error) {
+                    failed++;
+                }
+            }
+
+            addResult(
+                '📊 Test Summary',
+                passed === tests.length ? 'success' : 'error',
+                `Tests Complete: ${passed} passed, ${failed} failed out of ${tests.length} total`
+            );
+        }
+
+        // Auto-test on load
+        window.onload = () => {
+            console.log('API Tester loaded. Click "Test All Endpoints" to begin.');
+        };
+    </script>
+</body>
+</html>
