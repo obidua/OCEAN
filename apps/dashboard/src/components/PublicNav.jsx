@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Waves, Menu, X } from 'lucide-react';
+import WalletConnectionStatus from './WalletConnectionStatus';
 
 export default function PublicNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -74,6 +75,7 @@ export default function PublicNav() {
               <FileDown size={18} />
               <span className="hidden lg:inline">Download PDF</span>
             </button> */}
+            <WalletConnectionStatus />
             <Link
               to="/login"
               onClick={scrollToTop}
@@ -89,13 +91,16 @@ export default function PublicNav() {
           {/* Mobile Menu Button */}
           {/* ======================================================================= */}
 
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-cyan-300 hover:text-neon-green transition-colors"
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <WalletConnectionStatus />
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-cyan-300 hover:text-neon-green transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}

@@ -313,21 +313,31 @@ export default function StakeInvest() {
   const [error, setError] = useState('');
   const [trxData, setTrxData] = useState();
   const [trxHash, setTrxHash] = useState();
+  // Transaction ID to prevent stale data processing
+  const txIdRef = useRef(0);
+  const lastProcessedTxIdRef = useRef(0);
   const [txModalOpen, setTxModalOpen] = useState(false);
   const [txSuccess, setTxSuccess] = useState(false);
 
   const { handleSendTx, hash } = useTransaction(trxData !== null && trxData);
   
   useEffect(() => {
-    if (trxData) {
-      try {
-        setTxModalOpen(true);
-        handleSendTx(trxData);
-      } catch (error) {
-        setTxModalOpen(false);
-        toast.error(error?.message || 'Transaction rejected or failed to send.');
-        setIsStaking(false);
-        try { financialSounds.playMoneyOut(); } catch {}
+    if (trxData && trxData._txId) {
+      // Only process if this is a new transaction (not already processed)
+      if (trxData._txId > lastProcessedTxIdRef.current) {
+        lastProcessedTxIdRef.current = trxData._txId;
+        console.log('[Transaction] Processing tx:', { txId: trxData._txId, value: trxData.value, to: trxData.to });
+        try {
+          setTxModalOpen(true);
+          handleSendTx(trxData);
+        } catch (error) {
+          setTxModalOpen(false);
+          toast.error(error?.message || 'Transaction rejected or failed to send.');
+          setIsStaking(false);
+          try { financialSounds.playMoneyOut(); } catch {}
+        }
+      } else {
+        console.log('[Transaction] Skipping duplicate tx:', { txId: trxData._txId, lastProcessed: lastProcessedTxIdRef.current });
       }
     }
   }, [trxData]);
@@ -700,8 +710,45 @@ export default function StakeInvest() {
   }, [showRegisterModal, stakeAmountNum]);
 
   const handleConfirmRegistration = async () => {
+    // Prevent double submissions
+    if (isStaking) return;
+    
+    // Validate wallet connection
+    if (!isConnected || !address) {
+      toast.error('Please connect your wallet first.');
+      return;
+    }
+    
     if (!registrationSponsorValidated) {
       setRegistrationSponsorError('Please validate the sponsor address first.');
+      return;
+    }
+    
+    // Use the captured beneficiary address from when modal opened
+    const beneficiaryToCheck = unregisteredBeneficiary || beneficiaryAddress;
+    
+    // Validate beneficiary address exists
+    if (!beneficiaryToCheck || !beneficiaryToCheck.startsWith('0x') || beneficiaryToCheck.length !== 42) {
+      toast.error('Invalid beneficiary address. Please try again.');
+      setShowRegisterModal(false);
+      return;
+    }
+    
+    // Validate sponsor address exists
+    if (!registrationSponsorInfo?.address || !registrationSponsorInfo.address.startsWith('0x')) {
+      toast.error('Invalid sponsor address. Please validate sponsor again.');
+      return;
+    }
+    
+    // Validate amount
+    if (!Number.isFinite(stakeAmountNum) || stakeAmountNum < MIN_USD || stakeAmountNum > MAX_USD) {
+      toast.error(`Amount must be between $${MIN_USD} and $${MAX_USD}.`);
+      return;
+    }
+    
+    // Validate sufficient balance
+    if (!isSufficientBalance) {
+      toast.error('Insufficient balance in selected wallet.');
       return;
     }
 
@@ -713,32 +760,55 @@ export default function StakeInvest() {
     setShowRegisterModal(false);
   try { financialSounds.playPortfolioUpdate(); } catch {}
 
+    // Capture values at submission time to prevent stale state issues
+    // Use unregisteredBeneficiary (captured when modal opened) instead of beneficiaryAddress (could change)
+    const beneficiaryToRegister = unregisteredBeneficiary || beneficiaryAddress;
+    
+    const submissionData = {
+      connectedWallet: address,
+      beneficiary: beneficiaryToRegister,
+      sponsor: registrationSponsorInfo?.address,
+      amount: stakeAmountNum,
+      stakeType,
+      useWallet,
+      timestamp: Date.now()
+    };
+    
+    console.log('[Registration] Submission data:', submissionData);
+    
     try {
       let response;
 
-      // console.log("registrationSponsor");
+      // Use validated sponsor address, not the raw input
+      const validatedSponsorAddress = registrationSponsorInfo?.address;
+      
+      if (!validatedSponsorAddress) {
+        throw new Error('Sponsor address not properly validated');
+      }
       
       if (stakeType === 'self' && useWallet === 'external') {
-        // console.log("self external----->",address, stakeAmountNum);
+        console.log('[Registration] self external:', { wallet: address, amount: stakeAmountNum });
         response = await CreateSelfPort(address, stakeAmountNum);
 
       } else if (stakeType === 'other' && useWallet === 'external') {
-        // console.log("other external----->",address, beneficiaryAddress, stakeAmountNum,registrationSponsor);
-        response = await CreateOtherfPort(address,beneficiaryAddress, stakeAmountNum,registrationSponsor);
+        console.log('[Registration] other external:', { wallet: address, beneficiary: beneficiaryToRegister, amount: stakeAmountNum, sponsor: validatedSponsorAddress });
+        response = await CreateOtherfPort(address, beneficiaryToRegister, stakeAmountNum, validatedSponsorAddress);
 
       } else if (stakeType === 'self' && useWallet === 'safe') {
-        // console.log("self safe----->",address, stakeAmountNum);
+        console.log('[Registration] self safe:', { wallet: address, amount: stakeAmountNum });
         response = await SafeSelfPort(address, stakeAmountNum);
 
       } else if (stakeType === 'other' && useWallet === 'safe') {
-        // console.log("other safe--->" ,registrationSponsor, beneficiaryAddress,stakeAmountNum);
-
-
-        response = await SafeOtherPort(address,registrationSponsor, beneficiaryAddress, stakeAmountNum);
+        console.log('[Registration] other safe:', { wallet: address, beneficiary: beneficiaryToRegister, amount: stakeAmountNum, sponsor: validatedSponsorAddress });
+        response = await SafeOtherPort(address, validatedSponsorAddress, beneficiaryToRegister, stakeAmountNum);
       }
 
       if (response) {
-        setTrxData(response);
+        // Add unique transaction ID to prevent stale data processing
+        txIdRef.current += 1;
+        const txWithId = { ...response, _txId: txIdRef.current };
+        console.log('[Registration] Setting transaction:', { txId: txIdRef.current, amount: stakeAmountNum });
+        setTrxData(txWithId);
         // After successful registration, mark beneficiary as validated
         setSponsorInfo({ address: unregisteredBeneficiary, id: null });
         setSponsorValidated(true);
@@ -763,26 +833,74 @@ export default function StakeInvest() {
     if (isStaking) return;
     setError('');
 
-    // Basic validations
+    // ====== STEP 1: Validate wallet connection ======
     if (!isConnected || !address) {
       setError('Connect your wallet to continue.');
       return;
     }
+    
+    // ====== STEP 2: Validate amount ======
     if (!Number.isFinite(stakeAmountNum) || stakeAmountNum < MIN_USD || stakeAmountNum > MAX_USD) {
       setError(`Amount must be between $${MIN_USD.toLocaleString()} and $${MAX_USD.toLocaleString()}.`);
       return;
     }
-    if (!isSufficientBalance) {
-      setError('Insufficient balance in selected wallet.');
-      return;
-    }
-    if (stakeType === 'other') {
-      const ok = await validateSponsor({ silent: false, value: beneficiaryAddress });
-      if (!ok) {
-        setError('Please enter a valid registered beneficiary.');
+    
+    // ====== STEP 3: Validate wallet type specific balance ======
+    if (useWallet === 'external') {
+      // Check connected wallet balance
+      if (walletBalanceNum <= 0) {
+        setError('Connected wallet has no balance.');
+        return;
+      }
+      const externalWalletUsd = walletBalanceNum * ramaPrice;
+      if (externalWalletUsd < stakeAmountNum) {
+        setError(`Insufficient balance in connected wallet. You have $${externalWalletUsd.toFixed(2)} but need $${stakeAmountNum.toFixed(2)}.`);
+        return;
+      }
+    } else if (useWallet === 'safe') {
+      // Check safe wallet balance
+      if (safeWalletBalance <= 0) {
+        setError('Safe wallet has no balance.');
+        return;
+      }
+      const safeUsd = safeWalletBalance * ramaPrice;
+      if (safeUsd < stakeAmountNum) {
+        setError(`Insufficient balance in safe wallet. You have $${safeUsd.toFixed(2)} but need $${stakeAmountNum.toFixed(2)}.`);
         return;
       }
     }
+    
+    // ====== STEP 4: Validate beneficiary for "other" stake type ======
+    if (stakeType === 'other') {
+      if (!beneficiaryAddress || !beneficiaryAddress.startsWith('0x') || beneficiaryAddress.length !== 42) {
+        setError('Please enter a valid beneficiary address.');
+        return;
+      }
+      const ok = await validateSponsor({ silent: false, value: beneficiaryAddress });
+      if (!ok) {
+        // If validation returned false but modal opened, don't continue
+        if (showRegisterModal) return;
+        setError('Please enter a valid registered beneficiary.');
+        return;
+      }
+      // Double-check sponsor info is set
+      if (!sponsorInfo?.address) {
+        setError('Beneficiary address not properly validated.');
+        return;
+      }
+    }
+
+    // ====== STEP 5: Capture all values for transaction ======
+    const txValues = {
+      connectedWallet: address,
+      stakeType,
+      useWallet,
+      amount: stakeAmountNum,
+      beneficiary: stakeType === 'other' ? (sponsorInfo?.address || beneficiaryAddress) : address,
+      timestamp: Date.now()
+    };
+    
+    console.log('[CreatePortfolio] Transaction values:', txValues);
 
     // Store the transaction amount before starting
     setTxAmount(stakeAmountNum);
@@ -793,29 +911,47 @@ export default function StakeInvest() {
 
     try {
       let response;
-
-      // console.log("stakeType,useWallet");
+      
+      // Use validated beneficiary address for "other" stake type
+      const validatedBeneficiary = stakeType === 'other' ? (sponsorInfo?.address || beneficiaryAddress) : null;
 
       if (stakeType === 'self' && useWallet === 'external') {
-        // console.log("self external----->",address, stakeAmountNum);
-
+        console.log('[CreatePortfolio] self external:', { wallet: address, amount: stakeAmountNum });
         response = await CreateSelfPort(address, stakeAmountNum);
+        
       } else if (stakeType === 'other' && useWallet === 'external') {
-        // console.log("other external----->",address, beneficiaryAddress, stakeAmountNum, address);
-
-        response = await CreateOtherfPort(address, beneficiaryAddress, stakeAmountNum, address);
+        if (!validatedBeneficiary) {
+          throw new Error('Beneficiary address not available');
+        }
+        console.log('[CreatePortfolio] other external:', { wallet: address, beneficiary: validatedBeneficiary, amount: stakeAmountNum, sponsor: address });
+        response = await CreateOtherfPort(address, validatedBeneficiary, stakeAmountNum, address);
+        
       } else if (stakeType === 'self' && useWallet === 'safe') {
-        // console.log("self safe----->",address, stakeAmountNum);
-
+        console.log('[CreatePortfolio] self safe:', { wallet: address, amount: stakeAmountNum });
         response = await SafeSelfPort(address, stakeAmountNum);
+        
       } else if (stakeType === 'other' && useWallet === 'safe') {
-        // console.log("other safe--->", address, beneficiaryAddress, stakeAmountNum);
-
-        response = await SafeOtherPort(address,address, beneficiaryAddress, stakeAmountNum);
+        if (!validatedBeneficiary) {
+          throw new Error('Beneficiary address not available');
+        }
+        console.log('[CreatePortfolio] other safe:', { wallet: address, beneficiary: validatedBeneficiary, amount: stakeAmountNum, sponsor: address });
+        response = await SafeOtherPort(address, address, validatedBeneficiary, stakeAmountNum);
       }
 
       if (response) {
-        setTrxData(response);
+        // ====== STEP 6: Verify response matches expected values ======
+        console.log('[CreatePortfolio] Response received:', { 
+          from: response.from, 
+          to: response.to, 
+          value: response.value?.toString(),
+          expectedAmount: stakeAmountNum
+        });
+        
+        // Add unique transaction ID to prevent stale data processing
+        txIdRef.current += 1;
+        const txWithId = { ...response, _txId: txIdRef.current, _expectedAmount: stakeAmountNum };
+        console.log('[CreatePortfolio] Setting transaction:', { txId: txIdRef.current, amount: stakeAmountNum });
+        setTrxData(txWithId);
       } else {
         toast.error('Unable to build staking transaction.');
         setIsStaking(false);
@@ -1689,21 +1825,22 @@ export default function StakeInvest() {
                     <button
                       type="button"
                       onClick={handleCancelRegistration}
-                      className="w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all font-semibold text-sm"
+                      disabled={isStaking}
+                      className={`w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl transition-all font-semibold text-sm ${isStaking ? 'opacity-50 cursor-not-allowed' : 'hover:bg-cyan-500/10'}`}
                     >
                       No, Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleConfirmRegistration}
-                      disabled={!registrationSponsorValidated}
+                      disabled={!registrationSponsorValidated || isStaking || !isConnected || !isSufficientBalance}
                       className={`w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 rounded-xl font-semibold transition-all text-sm ${
-                        registrationSponsorValidated
+                        registrationSponsorValidated && !isStaking && isConnected && isSufficientBalance
                           ? 'bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 hover:shadow-neon-cyan cursor-pointer'
                           : 'bg-dark-700/50 text-cyan-400/40 cursor-not-allowed'
                       }`}
                     >
-                      Yes, Register & Stake
+                      {isStaking ? 'Processing...' : !isConnected ? 'Connect Wallet' : !isSufficientBalance ? 'Insufficient Balance' : 'Yes, Register & Stake'}
                     </button>
                   </div>
                 </>
@@ -1829,16 +1966,18 @@ export default function StakeInvest() {
                     <button
                       type="button"
                       onClick={handleCancelRegistration}
-                      className="w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-cyan-500/10 transition-all font-semibold text-sm"
+                      disabled={isStaking}
+                      className={`w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 border border-cyan-500/40 text-cyan-300 rounded-xl transition-all font-semibold text-sm ${isStaking ? 'opacity-50 cursor-not-allowed' : 'hover:bg-cyan-500/10'}`}
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleConfirmRegistration}
-                      className="w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-semibold hover:shadow-neon-cyan transition-all text-sm"
+                      disabled={isStaking || !isConnected || !isSufficientBalance}
+                      className={`w-full sm:flex-1 py-3 sm:py-2.5 lg:py-3 rounded-xl font-semibold transition-all text-sm ${isStaking || !isConnected || !isSufficientBalance ? 'bg-dark-700/50 text-cyan-400/40 cursor-not-allowed' : 'bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 hover:shadow-neon-cyan'}`}
                     >
-                      Register & Stake Now
+                      {isStaking ? 'Processing...' : !isConnected ? 'Connect Wallet' : !isSufficientBalance ? 'Insufficient Balance' : 'Register & Stake Now'}
                     </button>
                   </div>
                 </>

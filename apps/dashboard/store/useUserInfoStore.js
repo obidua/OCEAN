@@ -6350,6 +6350,63 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  // Get withdrawal history with actual USD values at transaction time
+  getWithdrawalHistorySlice: async (userAddress, offset = 0, limit = 100) => {
+    try {
+      if (!hasAddress(userAddress)) {
+        return [];
+      }
+
+      const safeWallet = makeContract(
+        SafeWalletABI,
+        Contract["SafeWallet"]
+      );
+      if (!safeWallet) {
+        console.warn('SafeWallet contract unavailable for withdrawal history');
+        return [];
+      }
+
+      const withdrawals = await safeWallet.methods
+        .getWithdrawalHistorySlice(userAddress, offset, limit)
+        .call();
+
+      if (!Array.isArray(withdrawals)) {
+        return [];
+      }
+
+      return withdrawals.map((w, idx) => {
+        const pickField = (key, index) => {
+          if (w?.[key] != null) return w[key];
+          if (index != null && w?.[index] != null) return w[index];
+          return null;
+        };
+
+        const amountInRAMA = toBigIntSafe(pickField('amountInRAMA', 1) ?? '0');
+        const amountInUSD = toBigIntSafe(pickField('amountInUSD', 2) ?? '0');
+        const platformFeeInUsd = toBigIntSafe(pickField('platformFeeInUSd', 3) ?? '0');
+        const platformFeeInRAMA = toBigIntSafe(pickField('platformFeeInRAMA', 4) ?? '0');
+        const netTransferredAmountRAMA = toBigIntSafe(pickField('netTransferredAmountRAMA', 5) ?? '0');
+        const netTransferredAmountUSD = toBigIntSafe(pickField('netTransferredAmountUSD', 6) ?? '0');
+        const withdrawanAt = toNumber(pickField('withdrawanAt', 7) ?? 0);
+
+        return {
+          index: offset + idx,
+          withdrawnBy: pickField('withdrawanBy', 0) ?? null,
+          amountRama: fromWeiToRama(amountInRAMA.toString()),
+          amountUsd: fromMicroUSD(amountInUSD),
+          feeRama: fromWeiToRama(platformFeeInRAMA.toString()),
+          feeUsd: fromMicroUSD(platformFeeInUsd),
+          netRama: fromWeiToRama(netTransferredAmountRAMA.toString()),
+          netUsd: fromMicroUSD(netTransferredAmountUSD),
+          timestamp: withdrawanAt,
+        };
+      });
+    } catch (error) {
+      console.error('getWithdrawalHistorySlice error:', error);
+      return [];
+    }
+  },
+
 
   // =====================================================================
   // One-Time Rewards 
@@ -7319,12 +7376,22 @@ export const useStore = create((set, get) => ({
   // ==========================================================================
 
   CreateSelfPort: async (userAddress, Amt) => {
-    // console.log('CreateSelfPort args:', userAddress, Amt);
+    console.log('[CreateSelfPort] Called with:', { userAddress, Amt, timestamp: new Date().toISOString() });
+    
+    // Validate inputs
+    if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
+      throw new Error('Invalid user address');
+    }
+    if (!Amt || Amt <= 0) {
+      throw new Error('Invalid amount: must be greater than 0');
+    }
+    
     try {
-
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
 
       const usdMicro = Amt * 1e6;
+      console.log('[CreateSelfPort] USD micro:', usdMicro);
+      
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -7333,9 +7400,12 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-
-
-      // console.log('[CreateSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
+      console.log('[CreateSelfPort] RAMA values:', { 
+        rawWei: valueToSendRaw.toString(), 
+        bufferedWei: valueToSend.toString(), 
+        bufferPPM: getRamaBufferPpm(),
+        usdAmount: Amt
+      });
 
       const data = pm.methods
   .createPortfolio(valueToSend)
@@ -7361,14 +7431,16 @@ export const useStore = create((set, get) => ({
 
       const tx = {
         from: userAddress,
-        to: Contract.PortFolioManager,   // ✅ correct target (PM)
+        to: Contract.PortFolioManager,
         data,
-        value: valueToSend,       // ✅ must send RAMA wei
+        value: valueToSend,
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
+      
+      console.log('[CreateSelfPort] Transaction built:', { from: tx.from, to: tx.to, value: valueToSend.toString() });
 
-      return tx; // your wallet (AppKit/WalletConnect) will sign & send this
+      return tx;
     } catch (error) {
       console.error('CreateSelfPort error:', error);
       toast.error(error?.message || 'Unknown error', 'Create Portfolio Error');
@@ -7377,7 +7449,28 @@ export const useStore = create((set, get) => ({
   },
 
   CreateOtherfPort: async (userAddress, toBeActivatedUSer, Amt,sponsorAddress) => {
-    // console.log('userAddress, toBeActivatedUSer, Amt,sponsorAddress args:', userAddress, toBeActivatedUSer, Amt,sponsorAddress);
+    console.log('[CreateOtherfPort] Called with:', { 
+      userAddress, 
+      toBeActivatedUSer, 
+      Amt, 
+      sponsorAddress,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Validate inputs before proceeding
+    if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
+      throw new Error('Invalid caller address');
+    }
+    if (!toBeActivatedUSer || !toBeActivatedUSer.startsWith('0x') || toBeActivatedUSer.length !== 42) {
+      throw new Error('Invalid beneficiary address');
+    }
+    if (!sponsorAddress || !sponsorAddress.startsWith('0x') || sponsorAddress.length !== 42) {
+      throw new Error('Invalid sponsor address');
+    }
+    if (!Amt || Amt <= 0) {
+      throw new Error('Invalid amount');
+    }
+    
     try {
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
 
@@ -7432,14 +7525,23 @@ export const useStore = create((set, get) => ({
   },
 
   SafeSelfPort: async (userAddress, Amt) => {
-    // console.log('SafeSelfPort args:', userAddress, Amt);
+    console.log('[SafeSelfPort] Called with:', { userAddress, Amt, timestamp: new Date().toISOString() });
+    
+    // Validate inputs
+    if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
+      throw new Error('Invalid user address');
+    }
+    if (!Amt || Amt <= 0) {
+      throw new Error('Invalid amount: must be greater than 0');
+    }
+    
     try {
-
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
       const safeWallCont = new web3.eth.Contract(SafeWalletABI, Contract.SafeWallet);
 
-
       const usdMicro = BigInt(Math.floor(Number(Amt) * 1e6));
+      console.log('[SafeSelfPort] USD micro:', usdMicro.toString());
+      
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -7448,9 +7550,12 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-
-
-      // console.log('[SafeSelfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
+      console.log('[SafeSelfPort] RAMA values:', { 
+        rawWei: valueToSendRaw.toString(), 
+        bufferedWei: valueToSend.toString(), 
+        bufferPPM: getRamaBufferPpm(),
+        usdAmount: Amt
+      });
 
   const data = safeWallCont.methods.createPortfolioFromSafe(valueToSend).encodeABI();
 
@@ -7480,6 +7585,8 @@ export const useStore = create((set, get) => ({
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
+      
+      console.log('[SafeSelfPort] Transaction built:', { from: tx.from, to: tx.to, ramaAmount: valueToSend.toString() });
 
       return tx;
     } catch (error) {
@@ -7490,14 +7597,36 @@ export const useStore = create((set, get) => ({
   },
 
   SafeOtherPort: async (userAddress,sponserAddress, beneficiary, Amt) => {
-    // console.log('SafeOtherPort args:', userAddress, beneficiary, Amt);
+    console.log('[SafeOtherPort] Called with:', { 
+      userAddress, 
+      sponserAddress, 
+      beneficiary, 
+      Amt,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Validate inputs before proceeding
+    if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
+      throw new Error('Invalid caller address');
+    }
+    if (!sponserAddress || !sponserAddress.startsWith('0x') || sponserAddress.length !== 42) {
+      throw new Error('Invalid sponsor address');
+    }
+    if (!beneficiary || !beneficiary.startsWith('0x') || beneficiary.length !== 42) {
+      throw new Error('Invalid beneficiary address');
+    }
+    if (!Amt || Amt <= 0) {
+      throw new Error('Invalid amount: must be greater than 0');
+    }
+    
     try {
 
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
       const safeWallCont = new web3.eth.Contract(SafeWalletABI, Contract.SafeWallet);
 
-
       const usdMicro = BigInt(Math.floor(Number(Amt) * 1e6));
+      console.log('[SafeOtherPort] USD micro:', usdMicro.toString());
+      
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -7506,11 +7635,14 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
+      console.log('[SafeOtherPort] RAMA values:', { 
+        rawWei: valueToSendRaw.toString(), 
+        bufferedWei: valueToSend.toString(), 
+        bufferPPM: getRamaBufferPpm(),
+        usdAmount: Amt
+      });
 
-
-      // console.log('[SafeOtherPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
-
-      // console.log("========>",beneficiary, valueToSend, sponserAddress)
+      console.log('[SafeOtherPort] Contract call params:', { beneficiary, ramaAmount: valueToSend.toString(), sponsor: sponserAddress });
 
       const data = safeWallCont.methods
         .sponsorCreatePortfolioFor(beneficiary, valueToSend, sponserAddress)
@@ -7542,11 +7674,13 @@ export const useStore = create((set, get) => ({
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
+      
+      console.log('[SafeOtherPort] Transaction built:', { from: tx.from, to: tx.to, beneficiary, sponsor: sponserAddress });
 
       return tx; 
     } catch (error) {
       console.error('SafeOtherPort error:', error);
-      toast.error(error?.message || 'Unknown error' , 'CreateSelfPort error');
+      toast.error(error?.message || 'Unknown error' , 'SafeOtherPort error');
       throw error;
     }
   },

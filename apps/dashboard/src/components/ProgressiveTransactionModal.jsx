@@ -108,6 +108,9 @@ const ProgressiveTransactionModal = ({
   onSuccess,
   amount,
   amountLabel,
+  // New props to handle errors from parent (e.g., send transaction errors)
+  externalError = null,
+  externalIsError = false,
 }) => {
   const [stage, setStage] = useState(STAGES.PREPARE);
   const [progress, setProgress] = useState(0);
@@ -115,11 +118,52 @@ const ProgressiveTransactionModal = ({
   const countdownTimerRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const [copied, setCopied] = useState(false);
+  const [revertError, setRevertError] = useState(null);
 
-  const { isLoading, isSuccess, isError, error } = useWaitForTransactionReceipt({
+  const { data: receipt, isLoading, isSuccess, isError, error } = useWaitForTransactionReceipt({
     hash: txHash,
     enabled: !!txHash,
   });
+
+  // Debug logging
+  useEffect(() => {
+    if (isOpen) {
+      console.log('[ProgressiveModal] State:', {
+        txHash,
+        isLoading,
+        isSuccess,
+        isError,
+        receipt,
+        receiptStatus: receipt?.status,
+        externalIsError,
+        externalError: externalError?.message || externalError?.shortMessage,
+        stage
+      });
+    }
+  }, [isOpen, txHash, isLoading, isSuccess, isError, receipt, externalIsError, externalError, stage]);
+
+  // Determine if the transaction actually succeeded on-chain
+  // isSuccess from wagmi means "we got a receipt", NOT "transaction succeeded"
+  // We need to check receipt.status to know if it was actually successful or reverted
+  const isTransactionReverted = isSuccess && receipt && receipt.status === 'reverted';
+  const isActualSuccess = isSuccess && receipt && receipt.status === 'success';
+  
+  // Combine internal receipt errors with external errors (from send transaction failure)
+  const isActualError = isError || isTransactionReverted || externalIsError;
+  const combinedError = externalError || error;
+  
+  // Set revert error message when detected
+  useEffect(() => {
+    if (externalIsError && externalError) {
+      // Extract meaningful error message from external error
+      const errorMessage = externalError?.shortMessage || externalError?.message || 'Transaction failed to send.';
+      setRevertError(errorMessage);
+    } else if (isTransactionReverted) {
+      setRevertError('Transaction was reverted on-chain. The contract may have insufficient funds or the operation was rejected.');
+    } else {
+      setRevertError(null);
+    }
+  }, [isTransactionReverted, externalIsError, externalError]);
 
   // Handle stage transitions based on transaction status
   useEffect(() => {
@@ -127,6 +171,7 @@ const ProgressiveTransactionModal = ({
       setStage(STAGES.PREPARE);
       setProgress(0);
       setCountdown(AUTO_CLOSE_DELAY);
+      setRevertError(null);
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;
@@ -138,8 +183,22 @@ const ProgressiveTransactionModal = ({
       return;
     }
 
+    // PRIORITY: Check for errors first - if there's an error, show error state immediately
+    if (isActualError) {
+      if (stage !== STAGES.ERROR) {
+        playTransactionSound('error');
+      }
+      setStage(STAGES.ERROR);
+      setProgress(0);
+      
+      // Clear progress animation
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    }
     // Stage 1: Transaction prepared, waiting for hash
-    if (!txHash) {
+    else if (!txHash) {
       if (stage !== STAGES.PREPARE) {
         playTransactionSound('prepare');
       }
@@ -147,7 +206,7 @@ const ProgressiveTransactionModal = ({
       setProgress(10);
     }
     // Stage 2: Hash received, waiting for user to sign
-    else if (txHash && !isLoading && !isSuccess && !isError) {
+    else if (txHash && !isLoading && !isActualSuccess) {
       if (stage !== STAGES.SIGN) {
         playTransactionSound('sign');
       }
@@ -173,8 +232,8 @@ const ProgressiveTransactionModal = ({
         });
       }, 200);
     }
-    // Stage 4: Transaction succeeded
-    else if (isSuccess) {
+    // Stage 4: Transaction succeeded (must check receipt.status === 'success')
+    else if (isActualSuccess) {
       if (stage !== STAGES.SUCCESS) {
         playTransactionSound('success');
       }
@@ -215,27 +274,13 @@ const ProgressiveTransactionModal = ({
         });
       }, 1000);
     }
-    // Stage 5: Transaction failed
-    else if (isError) {
-      if (stage !== STAGES.ERROR) {
-        playTransactionSound('error');
-      }
-      setStage(STAGES.ERROR);
-      setProgress(0);
-      
-      // Clear progress animation
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-    }
 
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [isOpen, txHash, isLoading, isSuccess, isError, onSuccess, onClose]);
+  }, [isOpen, txHash, isLoading, isActualSuccess, isActualError, onSuccess, onClose]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -306,7 +351,7 @@ const ProgressiveTransactionModal = ({
       iconColor: 'text-red-400',
       bgColor: 'from-red-500/20 to-orange-500/20',
       title: 'Transaction Failed',
-      subtitle: error?.message || 'Something went wrong. Please try again.',
+      subtitle: revertError || error?.message || 'Something went wrong. Please try again.',
     },
   };
 

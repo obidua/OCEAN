@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import MoreMenu from './MoreMenu';
 import Sidebar from './Sidebar';
+import WalletConnectionStatus from './WalletConnectionStatus';
 
 export default function Layout() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -19,6 +20,11 @@ export default function Layout() {
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Floating Wallet Status - Fixed position, no extra space */}
+        <div className="fixed top-2 right-2 lg:top-4 lg:right-8 z-40">
+          <WalletConnectionStatus />
+        </div>
+
         <main className="flex-1 relative z-10 overflow-y-auto overflow-x-hidden pb-24 lg:pb-8" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'none' }}>
           <div className="p-4 lg:p-8">
             <Outlet />

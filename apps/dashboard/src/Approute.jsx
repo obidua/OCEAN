@@ -13,6 +13,7 @@ import OneTimeRewards from './pages/OneTimeRewards';
 import MissedIncome from './pages/MissedIncome';
 import MissedIncomeHistory from './pages/MissedIncomeHistory';
 import SafeWallet from './pages/SafeWallet';
+import SwapWallet from './pages/SwapWallet';
 import TransactionHistory from './pages/TransactionHistory';
 import Analytics from './pages/Analytics';
 import About from './pages/About';
@@ -161,6 +162,7 @@ const Approute = () => {
           <Route path="missed-income" element={<MissedIncome />} />
           <Route path="missed-income/history" element={<MissedIncomeHistory />} />
           <Route path="safe-wallet" element={<SafeWallet />} />
+          <Route path="swap-wallet" element={<SwapWallet />} />
           <Route path="transaction-history" element={<TransactionHistory />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="about" element={<About />} />

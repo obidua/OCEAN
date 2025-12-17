@@ -17,6 +17,9 @@ import {
   SortAsc,
   SortDesc,
   Shield,
+  Copy,
+  Coins,
+  User,
 } from 'lucide-react';
 import { formatRAMA, formatUSD } from '../utils/contractData';
 import AddressWithCopy from '../components/AddressWithCopy';
@@ -113,6 +116,9 @@ export default function SafeWallet() {
   const [historyTotals, setHistoryTotals] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
+  
+  // Cache for portfolio details (pid -> portfolio data)
+  const [portfolioCache, setPortfolioCache] = useState({});
 
   // Transaction History Filter State
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'credit', 'debit', 'income', 'withdrawal', 'portfolio'
@@ -222,6 +228,37 @@ export default function SafeWallet() {
           );
         setHistoryEntries(sortedEntries);
 
+        // Fetch portfolio details for portfolio-related entries
+        const portfolioKinds = [SAFEWALLET_KINDS.STAKE_SPEND, SAFEWALLET_KINDS.PORTFOLIO_CREATE, SAFEWALLET_KINDS.PORTFOLIO_TOPUP];
+        const portfolioPids = [...new Set(
+          sortedEntries
+            .filter(e => portfolioKinds.includes(Number(e.kind)) && e.pid && Number(e.pid) > 0)
+            .map(e => Number(e.pid))
+        )];
+        
+        if (portfolioPids.length > 0 && typeof getPortFoliById === 'function') {
+          const portfolioPromises = portfolioPids.map(async (pid) => {
+            try {
+              const detail = await getPortFoliById(pid);
+              return { pid, detail };
+            } catch (err) {
+              console.warn(`Failed to fetch portfolio ${pid}:`, err);
+              return { pid, detail: null };
+            }
+          });
+          
+          const results = await Promise.all(portfolioPromises);
+          if (!cancelled) {
+            const cache = {};
+            results.forEach(({ pid, detail }) => {
+              if (detail) {
+                cache[pid] = detail;
+              }
+            });
+            setPortfolioCache(cache);
+          }
+        }
+
         if (typeof getWithdrawalHistorySlice === 'function') {
           try {
             const extras = await getWithdrawalHistorySlice(userAddress, 0, 200);
@@ -256,7 +293,7 @@ export default function SafeWallet() {
     return () => {
       cancelled = true;
     };
-  }, [userAddress, getTransactionHistory, getWithdrawalHistorySlice]);
+  }, [userAddress, getTransactionHistory, getWithdrawalHistorySlice, getPortFoliById]);
 
   // Load income sources data
   useEffect(() => {
@@ -616,39 +653,66 @@ export default function SafeWallet() {
           ? `${related.slice(0, 6)}…${related.slice(-4)}`
           : null;
 
+      // Get portfolio details from cache if available
+      const pid = entry.pid && Number(entry.pid) > 0 ? Number(entry.pid) : null;
+      const portfolioData = pid ? portfolioCache[pid] : null;
+      
+      // Use portfolio owner as the beneficiary (who the portfolio was created for)
+      const portfolioBeneficiary = portfolioData?.owner || null;
+      const portfolioActivatedBy = portfolioData?.activatedBy || null;
+      
+      // Get actual USD and RAMA from portfolio if available
+      const portfolioPrincipalUsd = portfolioData?.principalUsd || portfolioData?.principalUsdDisplay || 0;
+      const portfolioPrincipalRama = portfolioData?.principalRama || 0;
+
       const detailsPieces = [];
       if (entry.memoReadable) detailsPieces.push(entry.memoReadable);
-      if (entry.pid && Number(entry.pid) > 0) {
-        detailsPieces.push(`Portfolio #${entry.pid}`);
+      if (pid) {
+        detailsPieces.push(`Portfolio #${pid}`);
       }
       if (relatedLabel) {
         detailsPieces.push(`Related ${relatedLabel}`);
       }
       const details = detailsPieces.join(' • ') || '—';
 
+      // Use actual values from contract
       let grossRama = Number(entry.rama ?? 0);
       let grossUsd = Number(entry.usd ?? 0);
-      if (grossUsd <= 0 && grossRama > 0) {
-        const estimatedUsd = toUsd(grossRama);
-        if (estimatedUsd > 0) {
-          grossUsd = estimatedUsd;
+      let isEstimatedUsd = false;
+      
+      // For portfolio-related transactions, use portfolio data if ledger data is missing
+      const isPortfolioKind = [SAFEWALLET_KINDS.STAKE_SPEND, SAFEWALLET_KINDS.PORTFOLIO_CREATE, SAFEWALLET_KINDS.PORTFOLIO_TOPUP].includes(kind);
+      
+      if (isPortfolioKind && portfolioData) {
+        // Use portfolio's principalUsd if ledger USD is 0
+        if (Math.abs(grossUsd) < 1e-6 && portfolioPrincipalUsd > 0) {
+          grossUsd = portfolioPrincipalUsd;
+        }
+        // Use portfolio's principalRama if ledger RAMA is 0
+        if ((grossRama <= 0 || !Number.isFinite(grossRama)) && portfolioPrincipalRama > 0) {
+          grossRama = portfolioPrincipalRama;
         }
       }
-
+      
+      // For portfolio creation, try to get fallback from stake_spend entry if USD is still 0
       if (kind === SAFEWALLET_KINDS.PORTFOLIO_CREATE && Math.abs(grossUsd) < 1e-6) {
         const fallback = portfolioCreationFallbacks.get(entry.id);
         if (fallback) {
           if (fallback.usd > 0) {
             grossUsd = fallback.usd;
-          } else if (fallback.rama > 0) {
-            const estimatedUsd = toUsd(fallback.rama);
-            if (estimatedUsd > 0) {
-              grossUsd = estimatedUsd;
-            }
           }
           if ((grossRama <= 0 || !Number.isFinite(grossRama)) && fallback.rama > 0) {
             grossRama = fallback.rama;
           }
+        }
+      }
+
+      // If USD is still 0 but we have RAMA, estimate USD from current price
+      if (Math.abs(grossUsd) < 1e-6 && grossRama > 0) {
+        const estimatedUsd = toUsd(grossRama);
+        if (estimatedUsd > 0) {
+          grossUsd = estimatedUsd;
+          isEstimatedUsd = true;
         }
       }
 
@@ -666,6 +730,11 @@ export default function SafeWallet() {
         );
         if (match) {
           withdrawalDetails = match;
+          // Use the actual USD amount from withdrawal history (at transaction time)
+          if (match.amountUsd > 0) {
+            grossUsd = match.amountUsd;
+            isEstimatedUsd = false; // We have actual USD, not estimated
+          }
         }
       }
 
@@ -696,13 +765,42 @@ export default function SafeWallet() {
         date: entry.timestamp ? formatDate(entry.timestamp) : '—',
         rawTimestamp: Number(entry.timestamp) || 0,
         tokenAmount: grossRama,
+        // Enhanced data for rich display
+        kind,
+        portfolioId: pid,
+        relatedAddress: typeof related === 'string' && related.startsWith('0x') && related.length === 42 ? related : null,
+        memo: entry.memoReadable || null,
+        ramaAmount: grossRama,
+        isEstimatedUsd, // Flag to indicate USD was estimated from current RAMA price
+        // Portfolio data from PortfolioManager contract
+        portfolioBeneficiary, // The address that owns the portfolio (who it was created for)
+        portfolioActivatedBy, // The address that created/sponsored the portfolio
+        portfolioCreatedAt: portfolioData?.createdAt || null,
+        isActivatedFromSafeWallet: portfolioData?.isActivatedFromSafeWallet || false,
       };
     },
-    [address, formatDate, portfolioCreationFallbacks, toUsd, userAddress, withdrawalHistory]
+    [address, formatDate, portfolioCache, portfolioCreationFallbacks, toUsd, userAddress, withdrawalHistory]
   );
 
   const historyRows = useMemo(() => {
     let filtered = historyEntries.map(mapHistoryEntry).filter(Boolean);
+
+    // Remove duplicate portfolio creation records ONLY when NOT filtering by portfolio_creation
+    // When both STAKE_SPEND (7) and PORTFOLIO_CREATE (8) exist for same pid, keep only PORTFOLIO_CREATE
+    if (selectedFilter !== 'portfolio_creation') {
+      const portfolioCreatePids = new Set(
+        historyEntries
+          .filter(e => Number(e.kind) === SAFEWALLET_KINDS.PORTFOLIO_CREATE && e.pid)
+          .map(e => Number(e.pid))
+      );
+      filtered = filtered.filter(tx => {
+        // If this is a STAKE_SPEND and there's a PORTFOLIO_CREATE for the same pid, skip it
+        if (tx.kind === SAFEWALLET_KINDS.STAKE_SPEND && tx.portfolioId && portfolioCreatePids.has(tx.portfolioId)) {
+          return false;
+        }
+        return true;
+      });
+    }
 
     // Apply filters
     if (selectedFilter !== 'all') {
@@ -710,6 +808,11 @@ export default function SafeWallet() {
         filtered = filtered.filter(tx => tx.direction === 'credit');
       } else if (selectedFilter === 'debit') {
         filtered = filtered.filter(tx => tx.direction === 'debit');
+      } else if (selectedFilter === 'portfolio_creation') {
+        // Show only STAKE_SPEND records (the actual spend, not the debit record)
+        filtered = filtered.filter(tx => 
+          tx.kind === SAFEWALLET_KINDS.STAKE_SPEND
+        );
       } else {
         filtered = filtered.filter(tx => tx.type === selectedFilter);
       }
@@ -1219,12 +1322,18 @@ export default function SafeWallet() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 relative z-10">
             <button
               onClick={() => navigate('/dashboard/stake')}
               className="py-3 px-4 cyber-glass hover:bg-white/10 backdrop-blur-sm rounded-lg font-medium transition-colors border border-cyan-500/30 hover:border-cyan-500/50 text-sm sm:text-base"
             >
               Stake from Wallet
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/swap-wallet')}
+              className="py-3 px-4 cyber-glass hover:bg-white/10 backdrop-blur-sm rounded-lg font-medium transition-colors border border-violet-500/30 hover:border-violet-500/50 text-violet-300 text-sm sm:text-base"
+            >
+              Swap to USDT
             </button>
             <button
               onClick={isViewMode ? undefined : handleOpenWithdraw}
@@ -1641,72 +1750,70 @@ export default function SafeWallet() {
 
             {/* Filter Controls */}
             <div className="mb-4 sm:mb-6 space-y-3">
-              {/* Primary Filters Row */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              {/* All Filters in Single Row */}
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-1 text-xs text-cyan-300/70">
                   <Filter size={14} />
                   <span>Filter:</span>
                 </div>
                 
-                {/* Filter Controls Row */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Transaction Type Filter */}
-                  <select
-                    value={selectedFilter}
-                    onChange={(e) => setSelectedFilter(e.target.value)}
-                    className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none min-w-[100px]"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="credit">Credits Only</option>
-                    <option value="debit">Debits Only</option>
-                    <option value="income">Income</option>
-                    <option value="withdrawal">Withdrawals</option>
-                    <option value="portfolio">Portfolio</option>
-                  </select>
+                {/* Transaction Type Filter */}
+                <select
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                  className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none"
+                >
+                  <option value="all">All Types</option>
+                  <option value="credit">Credits Only</option>
+                  <option value="debit">Debits Only</option>
+                  <option value="income">Income</option>
+                  <option value="withdrawal">Withdrawals</option>
+                  <option value="portfolio">Portfolio</option>
+                  <option value="portfolio_creation">Portfolio Spend</option>
+                </select>
 
-                  {/* Income Type Filter (shown only when credits are selected) */}
-                  {(selectedFilter === 'all' || selectedFilter === 'credit' || selectedFilter === 'income') && (
-                    <select
-                      value={selectedIncomeType}
-                      onChange={(e) => setSelectedIncomeType(e.target.value)}
-                      className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none min-w-[100px]"
-                    >
-                      <option value="all">All Income</option>
-                      <option value="roi">Portfolio Growth</option>
-                      <option value="growth">Spot Income</option>
-                      <option value="royalty">Royalty</option>
-                      <option value="slab">Slab Income</option>
-                      <option value="reward">Rewards</option>
-                      <option value="direct">Direct Income</option>
-                      <option value="manual">Manual</option>
-                    </select>
-                  )}
-                </div>
+                {/* Income Type Filter */}
+                {(selectedFilter === 'all' || selectedFilter === 'credit' || selectedFilter === 'income') && (
+                  <select
+                    value={selectedIncomeType}
+                    onChange={(e) => setSelectedIncomeType(e.target.value)}
+                    className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none"
+                  >
+                    <option value="all">All Income</option>
+                    <option value="roi">Portfolio Growth</option>
+                    <option value="growth">Spot Income</option>
+                    <option value="royalty">Royalty</option>
+                    <option value="slab">Slab Income</option>
+                    <option value="reward">Rewards</option>
+                    <option value="direct">Direct Income</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                )}
+
+                <span className="text-cyan-300/30">|</span>
 
                 {/* Sort Controls */}
-                <div className="flex items-center gap-1 sm:ml-auto">
-                  <span className="text-xs text-cyan-300/70">Sort:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none min-w-[80px]"
-                  >
-                    <option value="date">Date</option>
-                    <option value="amount">Amount</option>
-                    <option value="type">Type</option>
-                  </select>
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                    className="p-1 hover:bg-cyan-500/10 rounded transition-colors"
-                    title={`Sort ${sortOrder === 'desc' ? 'Ascending' : 'Descending'}`}
-                  >
-                    {sortOrder === 'desc' ? (
-                      <SortDesc size={14} className="text-cyan-400" />
-                    ) : (
-                      <SortAsc size={14} className="text-cyan-400" />
-                    )}
-                  </button>
-                </div>
+                <span className="text-xs text-cyan-300/70">Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="text-xs bg-dark-900/60 border border-cyan-500/30 rounded-lg px-2 py-1 text-cyan-200 focus:border-cyan-500/60 focus:outline-none"
+                >
+                  <option value="date">Date</option>
+                  <option value="amount">Amount</option>
+                  <option value="type">Type</option>
+                </select>
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                  className="p-1 hover:bg-cyan-500/10 rounded transition-colors"
+                  title={`Sort ${sortOrder === 'desc' ? 'Ascending' : 'Descending'}`}
+                >
+                  {sortOrder === 'desc' ? (
+                    <SortDesc size={14} className="text-cyan-400" />
+                  ) : (
+                    <SortAsc size={14} className="text-cyan-400" />
+                  )}
+                </button>
               </div>
 
               {/* Filter Summary */}
@@ -1770,18 +1877,21 @@ export default function SafeWallet() {
               </div>
             ) : (
               <>
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto hide-scrollbar">
-                  <div className="max-h-[420px] overflow-y-auto hide-scrollbar">
-                    <table className="w-full text-left text-sm">
-                      <thead className="text-xs uppercase border-b border-cyan-500/20 text-cyan-300/70 sticky top-0 bg-dark-950/90 backdrop-blur-sm">
+                {/* Desktop Table View - Horizontal scrollable */}
+                <div className="hidden md:block overflow-x-auto">
+                  <div className="max-h-[420px] overflow-y-auto">
+                    <table className="min-w-full text-left text-sm whitespace-nowrap">
+                      <thead className="text-xs uppercase border-b border-cyan-500/20 text-cyan-300/70 sticky top-0 bg-dark-950/95 backdrop-blur-sm z-10">
                         <tr>
-                          <th className="py-3 px-3 text-left">Activity</th>
-                          <th className="py-3 px-3 text-right">Gross</th>
-                          <th className="py-3 px-3 text-right">Fee</th>
-                          <th className="py-3 px-3 text-right">Net</th>
-                          <th className="py-3 px-3 text-center">Source</th>
-                          <th className="py-3 px-3 text-right">Date</th>
+                          <th className="py-3 px-3 text-left min-w-[80px]">Type</th>
+                          <th className="py-3 px-3 text-left min-w-[180px]">Activity</th>
+                          <th className="py-3 px-3 text-left min-w-[160px]">Created For</th>
+                          <th className="py-3 px-3 text-right min-w-[100px]">USD</th>
+                          <th className="py-3 px-3 text-right min-w-[140px]">RAMA</th>
+                          <th className="py-3 px-3 text-right min-w-[80px]">Fee</th>
+                          <th className="py-3 px-3 text-right min-w-[100px]">Net</th>
+                          <th className="py-3 px-3 text-center min-w-[120px]">Source</th>
+                          <th className="py-3 px-3 text-right min-w-[140px]">Date</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-cyan-500/10">
@@ -1796,79 +1906,133 @@ export default function SafeWallet() {
                           tx.direction === 'credit'
                             ? 'text-neon-green border-neon-green/40 bg-neon-green/10'
                             : 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
+                        
+                        // Determine if this is a portfolio creation for someone else
+                        const isPortfolioCreation = tx.kind === SAFEWALLET_KINDS.PORTFOLIO_CREATE || 
+                                                     tx.kind === SAFEWALLET_KINDS.STAKE_SPEND;
+                        // Use portfolioBeneficiary (from PortfolioManager) first, fallback to relatedAddress
+                        const createdForAddress = isPortfolioCreation 
+                          ? (tx.portfolioBeneficiary || tx.relatedAddress) 
+                          : null;
+                        
                         return (
-                          <tr key={tx.id} className="hover:bg-cyan-500/5 transition-colors">
-                            <td className="py-4 px-3">
-                              <div className="flex items-start gap-3 min-w-[180px]">
+                          <tr key={tx.id} className="hover:bg-cyan-500/5 transition-colors align-middle">
+                            {/* Type Column */}
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-2">
                                 <span
-                                  className={`mt-0.5 inline-flex items-center justify-center w-8 h-8 rounded-lg border ${iconClass}`}
+                                  className={`inline-flex items-center justify-center w-7 h-7 rounded-lg border ${iconClass}`}
                                 >
                                   {tx.direction === 'credit' ? (
-                                    <ArrowUpRight size={16} />
+                                    <ArrowUpRight size={14} />
                                   ) : (
-                                    <ArrowDownRight size={16} />
+                                    <ArrowDownRight size={14} />
                                   )}
                                 </span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                                    <span
-                                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${typeBadgeClass(tx.type)}`}
-                                    >
-                                      {typeLabel}
-                                    </span>
+                                <div className="flex flex-col gap-0.5">
+                                  <span
+                                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${typeBadgeClass(tx.type)}`}
+                                  >
+                                    {typeLabel}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    {tx.portfolioId && (
+                                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-500/10 text-cyan-300">
+                                        #{tx.portfolioId}
+                                      </span>
+                                    )}
+                                    {tx.isActivatedFromSafeWallet && (
+                                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300">
+                                        Safe
+                                      </span>
+                                    )}
                                   </div>
-                                  <p className="text-sm font-semibold text-cyan-200 truncate">
-                                    {tx.activity}
-                                  </p>
-                                  <p className="text-xs text-cyan-300/70 truncate">
-                                    {tx.details}
-                                  </p>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-4 px-3 text-right">
-                              <div className="text-sm font-semibold text-cyan-200">
-                                {formatSignedUsd(tx.grossUsd, tx.direction)}
-                              </div>
+                            {/* Activity Column */}
+                            <td className="py-3 px-3">
+                              <p className="text-sm font-semibold text-cyan-200">
+                                {tx.activity}
+                              </p>
+                              {tx.memo && !createdForAddress && (
+                                <p className="text-[10px] text-cyan-300/70 truncate max-w-[160px]">
+                                  {tx.memo}
+                                </p>
+                              )}
                             </td>
-                            <td className="py-4 px-3 text-right">
-                              <div className="text-sm font-semibold text-cyan-200">
-                                {tx.feeUsd ? formatUSD(tx.feeUsd) : '—'}
-                              </div>
-                            </td>
-                            <td className="py-4 px-3 text-right">
-                              <div
-                                className={`text-sm font-semibold ${
-                                  tx.direction === 'credit' ? 'text-neon-green' : 'text-neon-orange'
-                                }`}
-                              >
-                                {formatSignedUsd(tx.netUsd, tx.direction)}
-                              </div>
-                            </td>
-                            <td className="py-4 px-3 text-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <span
-                                  className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${sourceBadgeClass(tx.fundSource)}`}
-                                >
-                                  {tx.fundSource}
-                                </span>
-                                {tx.fundSourceAddress && (
+                            {/* Created For Column */}
+                            <td className="py-3 px-3">
+                              {createdForAddress ? (
+                                <div className="flex items-center gap-1.5">
+                                  <User size={12} className="text-neon-purple flex-shrink-0" />
                                   <AddressWithCopy
-                                    address={tx.fundSourceAddress}
-                                    className="text-[10px]"
-                                    textClassName="text-cyan-300/70 font-mono"
+                                    address={createdForAddress}
+                                    className="text-[11px]"
+                                    textClassName="text-neon-purple font-mono"
                                     copyLabel=""
                                   />
+                                </div>
+                              ) : (
+                                <span className="text-cyan-500/50">—</span>
+                              )}
+                            </td>
+                            {/* USD Column */}
+                            <td className="py-3 px-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <span className="text-sm font-semibold text-cyan-200">
+                                  {formatSignedUsd(tx.grossUsd, tx.direction)}
+                                </span>
+                                {tx.isEstimatedUsd && (
+                                  <span className="text-[8px] text-amber-400" title="Estimated from current RAMA price">~</span>
                                 )}
                               </div>
                             </td>
-                            <td className="py-4 px-3 text-right">
-                              <div className="text-xs text-cyan-300/70 space-y-1">
-                                <p>{tx.date ?? '—'}</p>
-                                <p className="font-mono text-[10px] tracking-tight text-cyan-500/80 truncate">
-                                  {tx.id}
-                                </p>
+                            {/* RAMA Column */}
+                            <td className="py-3 px-3 text-right">
+                              {tx.ramaAmount > 0 ? (
+                                <div className="flex items-center justify-end gap-1">
+                                  <Coins size={12} className="text-amber-400" />
+                                  <span className="text-[11px] text-amber-400 font-mono">
+                                    {formatRamaPrecise(tx.ramaAmount)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-cyan-500/50">—</span>
+                              )}
+                            </td>
+                            {/* Fee Column */}
+                            <td className="py-3 px-3 text-right">
+                              <span className="text-sm font-semibold text-cyan-200">
+                                {tx.feeUsd ? formatUSD(tx.feeUsd) : '—'}
+                              </span>
+                            </td>
+                            {/* Net Column */}
+                            <td className="py-3 px-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <span
+                                  className={`text-sm font-semibold ${
+                                    tx.direction === 'credit' ? 'text-neon-green' : 'text-neon-orange'
+                                  }`}
+                                >
+                                  {formatSignedUsd(tx.netUsd, tx.direction)}
+                                </span>
+                                {tx.isEstimatedUsd && (
+                                  <span className="text-[8px] text-amber-400" title="Estimated">~</span>
+                                )}
                               </div>
+                            </td>
+                            {/* Source Column */}
+                            <td className="py-3 px-3 text-center">
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded-lg border text-[10px] font-semibold ${sourceBadgeClass(tx.fundSource)}`}
+                              >
+                                {tx.fundSource}
+                              </span>
+                            </td>
+                            {/* Date Column */}
+                            <td className="py-3 px-3 text-right">
+                              <p className="text-xs text-cyan-300">{tx.date ?? '—'}</p>
                             </td>
                           </tr>
                         );
@@ -1892,6 +2056,14 @@ export default function SafeWallet() {
                         ? 'text-neon-green border-neon-green/40 bg-neon-green/10'
                         : 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
                     
+                    // Determine if this is a portfolio creation for someone else
+                    const isPortfolioCreation = tx.kind === SAFEWALLET_KINDS.PORTFOLIO_CREATE || 
+                                                 tx.kind === SAFEWALLET_KINDS.STAKE_SPEND;
+                    // Use portfolioBeneficiary (from PortfolioManager) first, fallback to relatedAddress
+                    const createdForAddress = isPortfolioCreation 
+                      ? (tx.portfolioBeneficiary || tx.relatedAddress) 
+                      : null;
+                    
                     return (
                       <div key={tx.id} className="cyber-glass border border-cyan-500/20 rounded-lg p-3 hover:border-cyan-500/40 transition-all">
                         {/* Header Row */}
@@ -1906,7 +2078,7 @@ export default function SafeWallet() {
                             )}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span
                                 className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${typeBadgeClass(tx.type)}`}
                               >
@@ -1917,12 +2089,36 @@ export default function SafeWallet() {
                               >
                                 {tx.fundSource}
                               </span>
+                              {tx.portfolioId && (
+                                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300">
+                                  #{tx.portfolioId}
+                                </span>
+                              )}
+                              {tx.isActivatedFromSafeWallet && (
+                                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-300">
+                                  Safe
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs font-semibold text-cyan-200 truncate">
                               {tx.activity}
                             </p>
                           </div>
                         </div>
+
+                        {/* Created For Address - using portfolio owner from contract */}
+                        {createdForAddress && (
+                          <div className="flex items-center gap-1.5 mb-2 p-2 rounded-lg bg-neon-purple/10 border border-neon-purple/30">
+                            <User size={12} className="text-neon-purple flex-shrink-0" />
+                            <span className="text-[10px] text-neon-purple">Created for:</span>
+                            <AddressWithCopy
+                              address={createdForAddress}
+                              className="text-[10px]"
+                              textClassName="text-neon-purple font-mono"
+                              copyLabel=""
+                            />
+                          </div>
+                        )}
 
                         {tx.fundSourceAddress && (
                           <div className="mb-2">
@@ -1935,18 +2131,31 @@ export default function SafeWallet() {
                           </div>
                         )}
 
-                        {/* Details */}
-                        <p className="text-[10px] text-cyan-300/70 mb-3 line-clamp-2">
-                          {tx.details}
-                        </p>
+                        {/* Memo/Details */}
+                        {tx.memo && !createdForAddress && (
+                          <p className="text-[10px] text-cyan-300/70 mb-3 line-clamp-2">
+                            {tx.memo}
+                          </p>
+                        )}
 
                         {/* Financial Data Grid */}
                         <div className="grid grid-cols-2 gap-3 mb-3">
                           <div>
-                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Gross Amount</p>
+                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">
+                              Gross Amount {tx.isEstimatedUsd && <span className="text-amber-400">~</span>}
+                            </p>
                             <p className="text-xs font-semibold text-cyan-200">
                               {formatSignedUsd(tx.grossUsd, tx.direction)}
                             </p>
+                            {/* RAMA Amount */}
+                            {tx.ramaAmount > 0 && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Coins size={10} className="text-amber-400" />
+                                <span className="text-[9px] text-amber-400 font-mono">
+                                  {formatRamaPrecise(tx.ramaAmount)} RAMA
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Fee</p>
@@ -1959,7 +2168,9 @@ export default function SafeWallet() {
                         {/* Net Amount & Date */}
                         <div className="flex items-center justify-between pt-3 border-t border-cyan-500/10">
                           <div>
-                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Net Amount</p>
+                            <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">
+                              Net Amount {tx.isEstimatedUsd && <span className="text-amber-400">~</span>}
+                            </p>
                             <p
                               className={`text-sm font-bold ${
                                 tx.direction === 'credit' ? 'text-neon-green' : 'text-neon-orange'

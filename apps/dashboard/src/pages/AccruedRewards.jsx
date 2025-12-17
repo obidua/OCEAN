@@ -18,9 +18,11 @@ import {
   Volume2,
   VolumeX,
   Wallet2,
-  Award
+  Award,
+  CheckCircle,
+  XCircle,
+  ExternalLink
 } from 'lucide-react';
-import { useWaitForTransactionReceipt } from 'wagmi';
 import { useTransaction } from '../../config/register';
 import { useStore } from '../../store/useUserInfoStore';
 import NumberPopup from '../components/NumberPopup';
@@ -33,6 +35,7 @@ import financialSounds from '../utils/financialSounds';
 import incomeTracker from '../utils/incomeTracker';
 import { useAppKitAccount } from '@reown/appkit/react';
 import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
+import { addClaimTransaction, updateTransactionByHash, getClaimTransactions } from '../utils/transactionHistory';
 
 const formatRAMAPrecise = (value) => {
   const num = Number(value) || 0;
@@ -49,9 +52,11 @@ const formatRAMAPrecise = (value) => {
 const ClaimHistoryModal = ({ isOpen, onClose, history, loading }) => {
   if (!isOpen) return null;
 
+  const explorerTxBase = (import.meta?.env?.VITE_EXPLORER_TX || import.meta?.env?.VITE_BLOCK_EXPLORER_TX || 'https://ramascan.com/tx/').replace(/\/$/, '/');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="cyber-glass rounded-xl border border-cyan-500/30 p-6 w-full max-w-4xl max-h-[80vh] overflow-auto space-y-4">
+      <div className="cyber-glass rounded-xl border border-cyan-500/30 p-6 w-full max-w-5xl max-h-[80vh] overflow-auto space-y-4">
         <div className="flex items-center justify-between sticky top-0 bg-dark-900/95 backdrop-blur-sm pb-4 border-b border-cyan-500/20">
           <h2 className="text-xl font-bold text-cyan-300">Claim History</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-cyan-500/10">
@@ -69,23 +74,76 @@ const ClaimHistoryModal = ({ isOpen, onClose, history, loading }) => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-cyan-500/20">
+                  <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Status</th>
                   <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Epoch</th>
                   <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Period Range</th>
-                  <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Claimed At</th>
+                  <th className="text-left py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Time</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">USD Amount</th>
                   <th className="text-right py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">RAMA Amount</th>
+                  <th className="text-center py-3 px-4 text-xs uppercase tracking-wider text-cyan-300/70">Tx</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cyan-500/20">
-                {history.map(item => (
-                  <tr key={item.id} className="hover:bg-cyan-500/5">
-                    <td className="py-3 px-4 text-cyan-200 font-mono">#{item.epoch || '—'}</td>
-                    <td className="py-3 px-4 text-cyan-200 font-mono">{item.dayId}</td>
-                    <td className="py-3 px-4 text-cyan-200 whitespace-nowrap">{new Date(item.claimedAt * 1000).toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right text-cyan-100">{formatUSD(item.usdAmount)}</td>
-                    <td className="py-3 px-4 text-right text-cyan-100">{formatRAMAPrecise(item.ramaAmount)}</td>
-                  </tr>
-                ))}
+                {history.map((item, idx) => {
+                  const isSuccess = item.status === 'success' || item.status === undefined;
+                  const isFailed = item.status === 'failed' || item.status === 'reverted';
+                  const isPending = item.status === 'pending';
+                  
+                  return (
+                    <tr key={item.id || idx} className={`hover:bg-cyan-500/5 ${isFailed ? 'opacity-70' : ''}`}>
+                      <td className="py-3 px-4">
+                        {isSuccess && (
+                          <span className="inline-flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                            <CheckCircle size={12} />
+                            Success
+                          </span>
+                        )}
+                        {isFailed && (
+                          <span className="inline-flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded-full">
+                            <XCircle size={12} />
+                            Failed
+                          </span>
+                        )}
+                        {isPending && (
+                          <span className="inline-flex items-center gap-1 text-xs text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full">
+                            <Loader2 size={12} className="animate-spin" />
+                            Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-cyan-200 font-mono">#{item.epoch || '—'}</td>
+                      <td className="py-3 px-4 text-cyan-200 font-mono">{item.dayId || item.periodRange || '—'}</td>
+                      <td className="py-3 px-4 text-cyan-200 whitespace-nowrap text-sm">
+                        {item.claimedAt 
+                          ? new Date(item.claimedAt * 1000).toLocaleString()
+                          : item.timestamp 
+                            ? new Date(item.timestamp).toLocaleString()
+                            : '—'
+                        }
+                      </td>
+                      <td className={`py-3 px-4 text-right ${isFailed ? 'text-red-300 line-through' : 'text-cyan-100'}`}>
+                        {formatUSD(item.usdAmount || item.estimatedUsd || 0)}
+                      </td>
+                      <td className={`py-3 px-4 text-right ${isFailed ? 'text-red-300 line-through' : 'text-cyan-100'}`}>
+                        {formatRAMAPrecise(item.ramaAmount || item.estimatedRama || 0)}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {item.hash ? (
+                          <a
+                            href={`${explorerTxBase}${item.hash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        ) : (
+                          <span className="text-cyan-500/30">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -171,21 +229,56 @@ const PortfolioDebugModal = ({ isOpen, onClose, debugInfo, loading }) => {
             <p className="text-center text-cyan-300/70 py-12">No unclaimed log data available.</p>
           ) : (
             <div className="space-y-6 pb-20 mb-10">
+              {/* Bug Detection Warning Banner */}
+              {debugInfo._bugDetected && (
+                <div className="cyber-glass rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle size={20} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-amber-300 mb-1">
+                        Smart Contract Data Limitation
+                      </h4>
+                      <p className="text-xs text-amber-200/80 mb-3">
+                        The per-period breakdown cannot be retrieved for older portfolios due to a smart contract limitation. 
+                        However, the correct total unclaimed amount has been fetched from an alternative source.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 pt-2 border-t border-amber-500/20">
+                        <div>
+                          <span className="text-xs text-amber-300/70 block">Correct USD:</span>
+                          <span className="text-lg font-bold text-emerald-300">{formatUSD(debugInfo._correctUsd)}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-amber-300/70 block">Correct RAMA:</span>
+                          <span className="text-lg font-bold text-cyan-100">{formatRAMAPrecise(debugInfo._correctRama)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="cyber-glass rounded-lg border border-cyan-500/20 p-4">
                   <h3 className="text-sm font-semibold text-cyan-300 mb-3">Unclaimed Totals</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-cyan-300/70">USD:</span>
-                      <span className="text-emerald-300 font-semibold">{formatUSD(debugInfo.usdTotal)}</span>
+                      <span className={`font-semibold ${debugInfo._bugDetected ? 'text-red-400 line-through' : 'text-emerald-300'}`}>
+                        {formatUSD(debugInfo.usdTotal)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-cyan-300/70">RAMA:</span>
-                      <span className="text-cyan-100 font-mono">{formatRAMAPrecise(debugInfo.ramaTotal)}</span>
+                      <span className={`font-mono ${debugInfo._bugDetected ? 'text-red-400 line-through' : 'text-cyan-100'}`}>
+                        {formatRAMAPrecise(debugInfo.ramaTotal)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-cyan-300/70">Epochs Count:</span>
-                      <span className="text-cyan-100">{debugInfo.epochsCount}</span>
+                      <span className={debugInfo._bugDetected ? 'text-red-400' : 'text-cyan-100'}>
+                        {debugInfo.epochsCount}
+                        {debugInfo._bugDetected && <span className="text-xs text-amber-400 ml-2">(affected by bug)</span>}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -311,6 +404,7 @@ export default function AccruedRewards() {
   const [portfolioDebugInfo, setPortfolioDebugInfo] = useState(null);
   const [debugLoading, setDebugLoading] = useState(false);
   const [autoWindowInfo, setAutoWindowInfo] = useState(null);
+  const [pendingTxId, setPendingTxId] = useState(null); // Track pending transaction for history
 
   // Ref to prevent multiple success notifications
   const successHandledRef = useRef(false);
@@ -350,11 +444,18 @@ export default function AccruedRewards() {
   const claimAccruedROISmart = useStore((s) => s.claimAccruedROISmart);
   const getAutoWindow = useStore((s) => s.getAutoWindow);
 
-  const { handleSendTx, hash } = useTransaction();
-  const { data: receipt, isSuccess, isError } = useWaitForTransactionReceipt({
-    hash,
-    confirmations: 1,
-  });
+  const { handleSendTx, hash, receipt, isSuccess, isError, isTransactionReverted, error: txError } = useTransaction();
+
+  // Aliases for clarity in the component
+  const isActualSuccess = isSuccess;
+  const isActualError = isError;
+
+  // Update pending transaction with hash when available
+  useEffect(() => {
+    if (hash && pendingTxId) {
+      updateTransactionByHash(pendingTxId, { hash });
+    }
+  }, [hash, pendingTxId]);
 
   // Function to detect ROI changes and play sounds
   const checkROIChangesAndPlaySounds = useCallback((newDashboard) => {
@@ -678,8 +779,29 @@ export default function AccruedRewards() {
       // Reset success flag for new transaction
       successHandledRef.current = false;
 
+      // Add transaction to local history as pending
+      const effectiveAddress = userAddress || address;
+      const txRecord = addClaimTransaction({
+        wallet: effectiveAddress,
+        status: 'pending',
+        estimatedUsd: claimConfirmData?.estimatedAmount || dashboard?.totals?.unclaimed?.usd || 0,
+        estimatedRama: dashboard?.totals?.unclaimed?.rama || 0,
+        periodRange: autoWindowInfo?.claimingPlan?.[0]?.estimatedFromDate && autoWindowInfo?.claimingPlan?.[0]?.estimatedToDate
+          ? `${autoWindowInfo.claimingPlan[0].estimatedFromDate} to ${autoWindowInfo.claimingPlan[0].estimatedToDate}`
+          : `${claimConfirmData?.claimingDays || 0} days`,
+        epoch: null,
+      });
+      
+      if (txRecord) {
+        setPendingTxId(txRecord.id);
+      }
+
       const tx = await claimAccruedROISmart(address);
       if (!tx) {
+        // Update transaction as failed if we can't build it
+        if (txRecord) {
+          updateTransactionByHash(txRecord.id, { status: 'failed', error: 'Unable to build claim transaction' });
+        }
         throw new Error('Unable to build claim transaction');
       }
 
@@ -689,8 +811,9 @@ export default function AccruedRewards() {
       setError(err?.message || 'Failed to claim rewards');
       setIsClaiming(false);
       setShowClaimModal(false);
+      setPendingTxId(null);
     }
-  }, [claimAccruedROISmart, handleSendTx, address]);
+  }, [claimAccruedROISmart, handleSendTx, address, userAddress, claimConfirmData, autoWindowInfo, dashboard]);
 
   const handleClaimModalClose = () => {
     setShowClaimModal(false);
@@ -781,8 +904,48 @@ export default function AccruedRewards() {
     setHistoryLoading(true);
     try {
       const effectiveAddress = userAddress || address;
-      const { history } = await getClaimHistoryPaged(effectiveAddress, 0, 100);
-      setClaimHistory(history || []);
+      
+      // Get on-chain claim history
+      const { history: onChainHistory } = await getClaimHistoryPaged(effectiveAddress, 0, 100);
+      
+      // Get local transaction history (includes failed transactions)
+      const localHistory = getClaimTransactions(effectiveAddress);
+      
+      // Mark on-chain history as successful
+      const onChainWithStatus = (onChainHistory || []).map(item => ({
+        ...item,
+        status: 'success',
+        source: 'onchain'
+      }));
+      
+      // Filter local history to only show failed/pending transactions
+      // (successful ones are already in on-chain history)
+      const localFailedOrPending = localHistory.filter(tx => 
+        tx.status === 'failed' || tx.status === 'reverted' || tx.status === 'pending'
+      ).map(tx => ({
+        id: tx.id,
+        epoch: tx.epoch || null,
+        dayId: tx.periodRange || null,
+        periodRange: tx.periodRange,
+        claimedAt: tx.timestamp ? Math.floor(tx.timestamp / 1000) : null,
+        timestamp: tx.timestamp,
+        usdAmount: tx.estimatedUsd || 0,
+        ramaAmount: tx.estimatedRama || 0,
+        estimatedUsd: tx.estimatedUsd,
+        estimatedRama: tx.estimatedRama,
+        status: tx.status,
+        hash: tx.hash,
+        source: 'local'
+      }));
+      
+      // Merge and sort by timestamp (most recent first)
+      const merged = [...onChainWithStatus, ...localFailedOrPending].sort((a, b) => {
+        const timeA = a.claimedAt || (a.timestamp ? a.timestamp / 1000 : 0);
+        const timeB = b.claimedAt || (b.timestamp ? b.timestamp / 1000 : 0);
+        return timeB - timeA;
+      });
+      
+      setClaimHistory(merged);
     } catch (err) {
       setError("Failed to load claim history.");
       console.error(err);
@@ -797,6 +960,34 @@ export default function AccruedRewards() {
     setPortfolioDebugInfo(null);
     try {
       const info = await previewUnclaimedForPortfolio(pid, 1, 1000);
+      
+      // Detect smart contract bug: epochsCount is 0 but totalEpochs > 0
+      // This happens for older portfolios where the period range doesn't align with windowed claims
+      const hasBuggyData = info.epochsCount === 0 && info.totalEpochs > 0;
+      const effectiveAddress = userAddress || address;
+      
+      if (hasBuggyData && effectiveAddress) {
+        // Fetch correct totals from ComprehensiveView via getROITotals
+        try {
+          const roiTotals = await getROITotals(effectiveAddress);
+          // Find the correct unclaimed amount for this portfolio from ComprehensiveView
+          const correctClaim = roiTotals?.portfolioClaims?.find(c => 
+            Number(c.pid) === Number(pid)
+          );
+          
+          if (correctClaim) {
+            // Attach correct amounts from ComprehensiveView (raw values are in micro/wei)
+            info._bugDetected = true;
+            info._correctUsd = Number(correctClaim.usdTotalMicro || 0) / 1e6;
+            info._correctRama = Number(correctClaim.ramaTotalWei || 0) / 1e18;
+            console.log('[Debug] Smart contract bug detected for PID', pid, 
+              '- Correct USD:', info._correctUsd, 'vs Buggy USD:', info.usdTotal);
+          }
+        } catch (roiErr) {
+          console.warn('Failed to fetch correct ROI totals:', roiErr);
+        }
+      }
+      
       setPortfolioDebugInfo(info);
     } catch (err) {
       console.error('Failed to load debug info:', err);
@@ -806,17 +997,37 @@ export default function AccruedRewards() {
     }
   };
 
+  // Monitor transaction status and update local history
   useEffect(() => {
     if (!isClaiming) return;
 
-    if (isSuccess && receipt) {
+    if (isActualSuccess) {
+      // Update local transaction record as successful (will be replaced by on-chain data)
+      if (pendingTxId) {
+        updateTransactionByHash(pendingTxId, { status: 'success', hash });
+        setPendingTxId(null);
+      } else if (hash) {
+        updateTransactionByHash(hash, { status: 'success' });
+      }
       setIsClaiming(false);
-    } else if (isError) {
-      setError('Transaction failed or was reverted');
+    } else if (isActualError) {
+      const errorMsg = isTransactionReverted 
+        ? 'Transaction was reverted on-chain. The contract may have insufficient funds.'
+        : 'Transaction failed or was rejected';
+      
+      // Update local transaction record as failed
+      if (pendingTxId) {
+        updateTransactionByHash(pendingTxId, { status: 'failed', error: errorMsg, hash });
+        setPendingTxId(null);
+      } else if (hash) {
+        updateTransactionByHash(hash, { status: 'failed', error: errorMsg });
+      }
+      
+      setError(errorMsg);
       setIsClaiming(false);
       setShowClaimModal(false);
     }
-  }, [isSuccess, isError, receipt, isClaiming]);
+  }, [isActualSuccess, isActualError, isTransactionReverted, isClaiming, hash, pendingTxId]);
 
   const filteredPortfolios = useMemo(() => {
     let result = [...portfolios];
@@ -1391,6 +1602,8 @@ export default function AccruedRewards() {
         onSuccess={handleClaimSuccess}
         amount={dashboard?.totals?.unclaimed?.usd ? formatUSD(dashboard.totals.unclaimed.usd) : null}
         amountLabel="Claiming Amount"
+        externalError={txError}
+        externalIsError={isActualError}
       />
     </>
   );

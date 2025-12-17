@@ -12,6 +12,7 @@ import {
   Download,
   Users,
 } from "lucide-react";
+import { useAppKitAccount } from "@reown/appkit/react";
 import NumberPopup from "../components/NumberPopup";
 import AddressWithCopy from "../components/AddressWithCopy";
 import { formatUSD, formatRAMA } from "../utils/contractData";
@@ -92,9 +93,27 @@ export default function SpotIncome() {
   );
   const getTeamNetworkData = useStore((s) => s.getTeamNetworkData);
   const getDownlineRoiView = useStore((s) => s.getDownlineRoiView);
+  const SafeWalletAddress = useStore((s) => s.SafeWalletAddress);
   const userAddressFromStore = useStore((s) => s.userAddress);
   const userAddress =
     userAddressFromStore || localStorage.getItem("userAddress") || null;
+
+  // Check wallet connection
+  const { address: connectedAddress, isConnected } = useAppKitAccount();
+
+  // Admin addresses that can see SafeWallet contract balance
+  const ADMIN_ADDRESSES = [
+    '0x85991C88B5a49E37b1037D06D845DC1d9029b2dE', // ID 78
+    '0xa6EBDdFa8e3c669b5e5a9d3a2294B1052686025f', // ID 152
+  ];
+  // Only show admin section if wallet is actually connected and address is admin
+  const isAdmin = isConnected && connectedAddress && ADMIN_ADDRESSES.some(
+    (addr) => addr.toLowerCase() === connectedAddress.toLowerCase()
+  );
+
+  // SafeWallet contract RAMA balance (admin only)
+  const [safeWalletBalance, setSafeWalletBalance] = useState(null);
+  const [safeWalletLoading, setSafeWalletLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!userAddress) {
@@ -168,6 +187,42 @@ export default function SpotIncome() {
       setLoading(false);
     }
   }, [getSpotIncomeSummary, getTeamNetworkData, userAddress]);
+
+  // Load SafeWallet contract RAMA balance for admin users
+  useEffect(() => {
+    let cancelled = false;
+    const loadSafeWalletBalance = async () => {
+      if (!isAdmin || !SafeWalletAddress) return;
+      
+      setSafeWalletLoading(true);
+      try {
+        // Get native RAMA coin balance of SafeWallet contract
+        const { default: Web3 } = await import('web3');
+        const rpcUrl = import.meta.env.VITE_RPC_URL || 'https://blockchain.ramestta.com';
+        const web3 = new Web3(rpcUrl);
+        
+        // Get native RAMA balance (like ETH on Ethereum)
+        const balanceWei = await web3.eth.getBalance(SafeWalletAddress);
+        const balanceRama = Number(balanceWei) / 1e18;
+        
+        if (!cancelled) {
+          setSafeWalletBalance(balanceRama);
+        }
+      } catch (err) {
+        console.error('Failed to load SafeWallet balance:', err);
+        if (!cancelled) {
+          setSafeWalletBalance(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setSafeWalletLoading(false);
+        }
+      }
+    };
+    
+    loadSafeWalletBalance();
+    return () => { cancelled = true; };
+  }, [isAdmin, SafeWalletAddress]);
 
   useEffect(() => {
     loadData();
@@ -809,6 +864,50 @@ export default function SpotIncome() {
               No downline daily accrued reward data available yet.
             </div>
           )}
+        </div>
+      </div>
+    )}
+
+    {/* SafeWallet Contract Balance - Admin Only */}
+    {isAdmin && (
+      <div className="cyber-glass rounded-2xl p-4 sm:p-6 border border-neon-purple/30 hover:border-neon-purple/60 relative overflow-hidden transition-all mt-6">
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-purple/50 to-transparent" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-neon-purple/20 rounded-lg border border-neon-purple/30">
+              <Coins size={20} className="text-neon-purple" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-neon-purple uppercase tracking-wide">
+                SafeWallet Contract Balance
+              </h3>
+              <p className="text-xs text-cyan-300/60">Admin View Only</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-4 cyber-glass rounded-xl border border-neon-purple/20">
+            <p className="text-xs text-cyan-300/70 uppercase tracking-wider mb-1">Contract Address</p>
+            <p className="text-sm font-mono text-neon-purple break-all">
+              {SafeWalletAddress || '—'}
+            </p>
+          </div>
+          <div className="p-4 cyber-glass rounded-xl border border-neon-green/30">
+            <p className="text-xs text-cyan-300/70 uppercase tracking-wider mb-1">RAMA Balance</p>
+            {safeWalletLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 size={16} className="animate-spin text-neon-green" />
+                <span className="text-sm text-cyan-300/60">Loading...</span>
+              </div>
+            ) : safeWalletBalance !== null ? (
+              <p className="text-xl font-bold text-neon-green">
+                {formatRAMA(safeWalletBalance)} <span className="text-sm font-normal">RAMA</span>
+              </p>
+            ) : (
+              <p className="text-sm text-cyan-300/50">Unable to load</p>
+            )}
+          </div>
         </div>
       </div>
     )}

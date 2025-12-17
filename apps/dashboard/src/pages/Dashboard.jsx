@@ -83,7 +83,7 @@ export default function Dashboard() {
   const successHandledRef = useRef(false);
 
   const { address, isConnected } = useAppKitAccount();
-  const { handleSendTx, hash, isSuccess, isError, receipt } = useTransaction();
+  const { handleSendTx, hash, isSuccess, isError, receipt, isTransactionReverted, error: txError } = useTransaction();
 
   const getTOtalPortFolio = useStore((s) => s.getTOtalPortFolio);
   const getPortFoliById = useStore((s) => s.getPortFoliById);
@@ -856,11 +856,14 @@ export default function Dashboard() {
 
     if (isError && isClaimingGrowth) {
       // Keep modal open so ProgressiveTransactionModal can show the error state
-      setClaimError("Transaction failed. Please try again.");
+      const errorMsg = isTransactionReverted 
+        ? "Transaction was reverted on-chain. The contract may have insufficient funds."
+        : "Transaction failed. Please try again.";
+      setClaimError(errorMsg);
       setIsClaimingGrowth(false);
       // do not close modal here; let the modal show the failure UI with explorer links
     }
-  }, [isSuccess, isError, receipt, isClaimingGrowth]);
+  }, [isSuccess, isError, receipt, isClaimingGrowth, isTransactionReverted]);
 
   const loadPortfolioById = async (pid) => {
     try {
@@ -2305,64 +2308,296 @@ export default function Dashboard() {
               {portfolioIds.length !== 0 &&
                 hasPortfolio &&
                 portFolioDetails && (
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-dark-900/40 border border-cyan-500/20">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
-                        Tier
-                      </span>
-                      <span className="text-sm font-bold text-cyan-300">
-                        {portFolioDetails.tier
-                          ? `T${portFolioDetails.tier}`
-                          : "—"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
-                        Booster
-                      </span>
-                      <span
-                        className={`text-sm font-bold ${
-                          portFolioDetails.booster
-                            ? "text-neon-orange"
-                            : "text-cyan-300/50"
-                        }`}
-                      >
-                        {portFolioDetails.booster ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
-                        Created
-                      </span>
-                      <span className="text-sm font-medium text-cyan-300">
-                        {portFolioDetails.createdAt
-                          ? new Date(
-                              portFolioDetails.createdAt * 1000
-                            ).toLocaleDateString()
-                          : "—"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
-                        Status
-                      </span>
-                      <div className="flex gap-1 flex-wrap">
-                        {portFolioDetails.isCapped && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                            Capped
+                  <div className="mt-4 space-y-3">
+                    {/* Row 1: Tier, Booster, Created, Status */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-dark-900/40 border border-cyan-500/20">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Tier
+                        </span>
+                        <span className="text-sm font-bold text-cyan-300">
+                          {portFolioDetails.tier
+                            ? `Tier ${portFolioDetails.tier}`
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Booster
+                        </span>
+                        <span
+                          className={`text-sm font-bold ${
+                            portFolioDetails.booster
+                              ? "text-neon-orange"
+                              : "text-cyan-300/50"
+                          }`}
+                        >
+                          {portFolioDetails.booster ? "Active" : "Inactive"}
+                        </span>
+                        {portFolioDetails.booster && portFolioDetails.boosterActivationDate > 0 && (
+                          <span className="text-[10px] text-neon-orange/60">
+                            Since {new Date(portFolioDetails.boosterActivationDate * 1000).toLocaleDateString()}
                           </span>
                         )}
-                        {portFolioDetails.isClosed && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">
-                            Closed
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Created
+                        </span>
+                        <span className="text-sm font-medium text-cyan-300">
+                          {portFolioDetails.createdAt
+                            ? new Date(
+                                portFolioDetails.createdAt * 1000
+                              ).toLocaleDateString()
+                            : "—"}
+                        </span>
+                        {portFolioDetails.createdAt && (
+                          <span className="text-[10px] text-cyan-300/50">
+                            {new Date(portFolioDetails.createdAt * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                           </span>
                         )}
-                        {!portFolioDetails.isCapped &&
-                          !portFolioDetails.isClosed && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                              Active
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Status
+                        </span>
+                        <div className="flex gap-1 flex-wrap">
+                          {portFolioDetails.isCapped && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                              Capped
                             </span>
                           )}
+                          {portFolioDetails.isClosed && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">
+                              Closed
+                            </span>
+                          )}
+                          {!portFolioDetails.isCapped &&
+                            !portFolioDetails.isClosed && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                Active
+                              </span>
+                            )}
+                        </div>
+                        {portFolioDetails.isCapped && portFolioDetails.cappedAt > 0 && (
+                          <span className="text-[10px] text-yellow-300/60">
+                            {new Date(portFolioDetails.cappedAt * 1000).toLocaleDateString()}
+                          </span>
+                        )}
+                        {portFolioDetails.isClosed && portFolioDetails.closedAt > 0 && (
+                          <span className="text-[10px] text-red-300/60">
+                            {new Date(portFolioDetails.closedAt * 1000).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 2: Created By Info - Who created this portfolio */}
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-dark-900/60 to-dark-800/40 border border-neon-purple/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <User2Icon size={16} className="text-neon-purple" />
+                        <span className="text-sm font-semibold text-neon-purple uppercase tracking-wider">
+                          Portfolio Creation Details
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Created By - Self or Sponsor */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                            Created By
+                          </span>
+                          {portFolioDetails.activatedBy && 
+                           portFolioDetails.owner && 
+                           portFolioDetails.activatedBy.toLowerCase() !== portFolioDetails.owner.toLowerCase() ? (
+                            <>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs px-2 py-0.5 rounded bg-neon-purple/20 text-neon-purple border border-neon-purple/30 font-medium">
+                                  Sponsor
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                <span className="text-sm font-medium text-neon-purple font-mono">
+                                  {`${portFolioDetails.activatedBy.slice(0, 6)}...${portFolioDetails.activatedBy.slice(-4)}`}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(portFolioDetails.activatedBy);
+                                    toast.success("Sponsor address copied!");
+                                  }}
+                                  className="text-neon-purple hover:text-neon-purple/70 transition-colors"
+                                  title="Copy sponsor address"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-medium">
+                                  Self
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-cyan-300/60 mt-1">
+                                You created this portfolio
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Wallet Source */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                            Wallet Source
+                          </span>
+                          {portFolioDetails.isActivatedFromSafeWallet ? (
+                            <>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs px-2 py-0.5 rounded bg-neon-green/20 text-neon-green border border-neon-green/30 font-medium flex items-center gap-1">
+                                  <Wallet size={10} /> Safe Wallet
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-neon-green/60 mt-1">
+                                Created from Safe Wallet balance
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-medium flex items-center gap-1">
+                                  <Wallet size={10} /> Connected Wallet
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-cyan-300/60 mt-1">
+                                Created from external wallet
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Owner (Beneficiary) */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                            Portfolio Owner
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium text-cyan-300 font-mono">
+                              {portFolioDetails.owner
+                                ? `${portFolioDetails.owner.slice(0, 6)}...${portFolioDetails.owner.slice(-4)}`
+                                : "—"}
+                            </span>
+                            {portFolioDetails.owner && (
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(portFolioDetails.owner);
+                                  toast.success("Owner address copied!");
+                                }}
+                                className="text-cyan-400 hover:text-cyan-200 transition-colors"
+                                title="Copy owner address"
+                              >
+                                <Copy size={12} />
+                              </button>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-cyan-300/50">
+                            Beneficiary of rewards
+                          </span>
+                        </div>
+
+                        {/* Portfolio ID */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                            Portfolio ID
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-bold text-neon-orange font-mono">
+                              #{portFolioDetails.pid || selectedPid || "—"}
+                            </span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(String(portFolioDetails.pid || selectedPid));
+                                toast.success("Portfolio ID copied!");
+                              }}
+                              className="text-neon-orange hover:text-neon-orange/70 transition-colors"
+                              title="Copy portfolio ID"
+                            >
+                              <Copy size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 3: Last Accrual, Cap %, Daily Rate, Frozen Until, Remaining Cap */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-xl bg-dark-900/40 border border-cyan-500/20">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Last Accrual
+                        </span>
+                        <span className="text-sm font-medium text-cyan-300">
+                          {portFolioDetails.lastAccrual && portFolioDetails.lastAccrual > 0
+                            ? new Date(portFolioDetails.lastAccrual * 1000).toLocaleDateString()
+                            : "—"}
+                        </span>
+                        {portFolioDetails.lastAccrual && portFolioDetails.lastAccrual > 0 && (
+                          <span className="text-[10px] text-cyan-300/50">
+                            {new Date(portFolioDetails.lastAccrual * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Cap %
+                        </span>
+                        <span className="text-sm font-bold text-neon-purple">
+                          {portFolioDetails.capPct ? `${portFolioDetails.capPct}%` : "—"}
+                        </span>
+                        {portFolioDetails.booster && (
+                          <span className="text-[10px] text-neon-orange/70">
+                            +50% Booster
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Daily Rate
+                        </span>
+                        <span className="text-sm font-bold text-neon-green">
+                          {dailyRatePercent ? `${dailyRatePercent.toFixed(2)}%` : "—"}
+                        </span>
+                        <span className="text-[10px] text-neon-green/60">
+                          ROI per day
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Frozen Until
+                        </span>
+                        <span className={`text-sm font-medium ${portFolioDetails.frozenUntil && portFolioDetails.frozenUntil * 1000 > Date.now() ? 'text-yellow-300' : 'text-cyan-300/50'}`}>
+                          {portFolioDetails.frozenUntil && portFolioDetails.frozenUntil > 0
+                            ? portFolioDetails.frozenUntil * 1000 > Date.now()
+                              ? new Date(portFolioDetails.frozenUntil * 1000).toLocaleDateString()
+                              : "Unfrozen"
+                            : "—"}
+                        </span>
+                        {portFolioDetails.frozenUntil && portFolioDetails.frozenUntil * 1000 > Date.now() && (
+                          <span className="text-[10px] text-yellow-300/60 flex items-center gap-1">
+                            <Lock size={10} /> Locked
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-cyan-300/70 uppercase tracking-wider">
+                          Remaining Cap
+                        </span>
+                        <span className="text-sm font-bold text-neon-orange">
+                          {formatUSD(portFolioDetails.remainingCapUsd || 0)}
+                        </span>
+                        {portFolioDetails.capProgressBps > 0 && (
+                          <span className="text-[10px] text-neon-orange/60">
+                            {(portFolioDetails.capProgressBps / 100).toFixed(2)}% used
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3162,6 +3397,8 @@ export default function Dashboard() {
             : null
         }
         amountLabel="Claiming Amount"
+        externalError={txError}
+        externalIsError={isError}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { Link, NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Wallet, TrendingUp, Users, Award, Trophy, Gift, Shield,
   History, Info, Settings, FileDown, LogOut, Presentation, BookOpen, Waves,
-  AlertTriangle, Coins
+  AlertTriangle, Coins, ArrowRightLeft
 } from 'lucide-react';
 import { generateOceanDefiPDF } from '../utils/generatePDF';
 import { useAccount, useDisconnect } from 'wagmi';
@@ -35,6 +35,7 @@ const menuSections = [
     items: [
       { path: '/dashboard/team', label: 'Team Network', icon: Users, color: 'text-sky-400' },
       { path: '/dashboard/safe-wallet', label: 'Safe Wallet', icon: Shield, color: 'text-emerald-400' },
+      { path: '/dashboard/swap-wallet', label: 'Swap Wallet', icon: ArrowRightLeft, color: 'text-violet-400' },
       // Intentionally hidden from menu per request; route remains available at /dashboard/transaction-history
       // { path: '/dashboard/transaction-history', label: 'Income & Trx History', icon: History, color: 'text-fuchsia-400' },
     ],
