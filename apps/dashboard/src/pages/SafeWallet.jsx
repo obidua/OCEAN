@@ -20,6 +20,8 @@ import {
   Copy,
   Coins,
   User,
+  Clock,
+  Rocket,
 } from 'lucide-react';
 import { formatRAMA, formatUSD } from '../utils/contractData';
 import AddressWithCopy from '../components/AddressWithCopy';
@@ -142,6 +144,11 @@ export default function SafeWallet() {
   const [withdrawalHash, setWithdrawalHash] = useState(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  // Track withdrawal building errors for ProgressiveTransactionModal
+  const [withdrawalBuildError, setWithdrawalBuildError] = useState(null);
+
+  // Coming Soon modal state
+  const [showComingSoon, setShowComingSoon] = useState(false);
 
   // Transaction hooks
   const { handleSendTx, hash } = useTransaction(withdrawalData !== null && withdrawalData);
@@ -883,6 +890,20 @@ export default function SafeWallet() {
     return historyRows.slice(start, start + HISTORY_PAGE_SIZE);
   }, [currentPage, historyRows]);
 
+  // Calculate totals for all filtered history rows (not just current page)
+  const filteredTotals = useMemo(() => {
+    return historyRows.reduce((acc, tx) => {
+      const sign = tx.direction === 'credit' ? 1 : -1;
+      acc.grossUsd += (tx.grossUsd || 0) * sign;
+      acc.netUsd += (tx.netUsd || 0) * sign;
+      acc.rama += (tx.ramaAmount || 0) * sign;
+      acc.fee += tx.feeUsd || 0;
+      acc.creditCount += tx.direction === 'credit' ? 1 : 0;
+      acc.debitCount += tx.direction === 'debit' ? 1 : 0;
+      return acc;
+    }, { grossUsd: 0, netUsd: 0, rama: 0, fee: 0, creditCount: 0, debitCount: 0 });
+  }, [historyRows]);
+
   const totalRecords = historyRows.length;
   const totalPages = Math.max(
     1,
@@ -1051,16 +1072,21 @@ export default function SafeWallet() {
       
       setIsWithdrawOpen(false); // Close input modal
       setShowWithdrawModal(true); // Open progressive modal
+      setWithdrawalBuildError(null); // Clear any previous errors
       
       // Build withdrawal transaction
       const tx = await withdrawFromSafeWallet(address, amountRama);
       if (tx) {
         setWithdrawalData(tx);
+      } else {
+        const errorMsg = 'Unable to build withdrawal transaction.';
+        setWithdrawalBuildError({ message: errorMsg, shortMessage: errorMsg });
       }
     } catch (error) {
       console.error('Withdrawal initiation failed:', error);
-      setIsWithdrawOpen(true); // Reopen input modal on error
-      setShowWithdrawModal(false); // Close progressive modal on error
+      const errorMsg = error?.message || 'Error happened while trying to execute a function inside a smart contract';
+      setWithdrawalBuildError({ message: errorMsg, shortMessage: errorMsg });
+      // Keep modal open to show error
     }
   };
 
@@ -1071,6 +1097,7 @@ export default function SafeWallet() {
     setWithdrawalData(null);
     setWithdrawalHash(null);
     setTxWithdrawAmount(0); // Reset transaction amount
+    setWithdrawalBuildError(null); // Reset build error
   };
 
   const handleWithdrawSuccess = () => {
@@ -1330,7 +1357,7 @@ export default function SafeWallet() {
               Stake from Wallet
             </button>
             <button
-              onClick={() => navigate('/dashboard/swap-wallet')}
+              onClick={() => setShowComingSoon(true)}
               className="py-3 px-4 cyber-glass hover:bg-white/10 backdrop-blur-sm rounded-lg font-medium transition-colors border border-violet-500/30 hover:border-violet-500/50 text-violet-300 text-sm sm:text-base"
             >
               Swap to USDT
@@ -1877,35 +1904,40 @@ export default function SafeWallet() {
               </div>
             ) : (
               <>
-                {/* Desktop Table View - Horizontal scrollable */}
+                {/* Desktop Table View - Horizontal scrollable with fixed header/footer */}
                 <div className="hidden md:block overflow-x-auto">
-                  <div className="max-h-[420px] overflow-y-auto">
-                    <table className="min-w-full text-left text-sm whitespace-nowrap">
-                      <thead className="text-xs uppercase border-b border-cyan-500/20 text-cyan-300/70 sticky top-0 bg-dark-950/95 backdrop-blur-sm z-10">
+                  <div className="min-w-full">
+                    {/* Fixed Header */}
+                    <table className="min-w-full text-left text-sm whitespace-nowrap table-fixed">
+                      <thead className="text-xs uppercase border-b border-cyan-500/20 text-cyan-300/70 bg-dark-950/95">
                         <tr>
-                          <th className="py-3 px-3 text-left min-w-[80px]">Type</th>
-                          <th className="py-3 px-3 text-left min-w-[180px]">Activity</th>
-                          <th className="py-3 px-3 text-left min-w-[160px]">Created For</th>
-                          <th className="py-3 px-3 text-right min-w-[100px]">USD</th>
-                          <th className="py-3 px-3 text-right min-w-[140px]">RAMA</th>
-                          <th className="py-3 px-3 text-right min-w-[80px]">Fee</th>
-                          <th className="py-3 px-3 text-right min-w-[100px]">Net</th>
-                          <th className="py-3 px-3 text-center min-w-[120px]">Source</th>
-                          <th className="py-3 px-3 text-right min-w-[140px]">Date</th>
+                          <th className="py-3 px-3 text-left w-[80px]">Type</th>
+                          <th className="py-3 px-3 text-left w-[180px]">Activity</th>
+                          <th className="py-3 px-3 text-left w-[160px]">Created For</th>
+                          <th className="py-3 px-3 text-right w-[100px]">USD</th>
+                          <th className="py-3 px-3 text-right w-[140px]">RAMA</th>
+                          <th className="py-3 px-3 text-right w-[80px]">Fee</th>
+                          <th className="py-3 px-3 text-right w-[100px]">Net</th>
+                          <th className="py-3 px-3 text-center w-[120px]">Source</th>
+                          <th className="py-3 px-3 text-right w-[140px]">Date</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-cyan-500/10">
-                      {paginatedHistory.map((tx) => {
-                        const typeLabel =
-                          tx.type === 'income'
-                            ? 'Income'
-                            : tx.type === 'withdrawal'
-                            ? 'Withdrawal'
-                            : 'Portfolio';
-                        const iconClass =
-                          tx.direction === 'credit'
-                            ? 'text-neon-green border-neon-green/40 bg-neon-green/10'
-                            : 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
+                    </table>
+                    {/* Scrollable Body */}
+                    <div className="max-h-[360px] overflow-y-auto">
+                      <table className="min-w-full text-left text-sm whitespace-nowrap table-fixed">
+                        <tbody className="divide-y divide-cyan-500/10">
+                        {paginatedHistory.map((tx) => {
+                          const typeLabel =
+                            tx.type === 'income'
+                              ? 'Income'
+                              : tx.type === 'withdrawal'
+                              ? 'Withdrawal'
+                              : 'Portfolio';
+                          const iconClass =
+                            tx.direction === 'credit'
+                              ? 'text-neon-green border-neon-green/40 bg-neon-green/10'
+                              : 'text-neon-orange border-neon-orange/40 bg-neon-orange/10';
                         
                         // Determine if this is a portfolio creation for someone else
                         const isPortfolioCreation = tx.kind === SAFEWALLET_KINDS.PORTFOLIO_CREATE || 
@@ -1918,7 +1950,7 @@ export default function SafeWallet() {
                         return (
                           <tr key={tx.id} className="hover:bg-cyan-500/5 transition-colors align-middle">
                             {/* Type Column */}
-                            <td className="py-3 px-3">
+                            <td className="py-3 px-3 w-[80px]">
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`inline-flex items-center justify-center w-7 h-7 rounded-lg border ${iconClass}`}
@@ -1951,7 +1983,7 @@ export default function SafeWallet() {
                               </div>
                             </td>
                             {/* Activity Column */}
-                            <td className="py-3 px-3">
+                            <td className="py-3 px-3 w-[180px]">
                               <p className="text-sm font-semibold text-cyan-200">
                                 {tx.activity}
                               </p>
@@ -1962,7 +1994,7 @@ export default function SafeWallet() {
                               )}
                             </td>
                             {/* Created For Column */}
-                            <td className="py-3 px-3">
+                            <td className="py-3 px-3 w-[160px]">
                               {createdForAddress ? (
                                 <div className="flex items-center gap-1.5">
                                   <User size={12} className="text-neon-purple flex-shrink-0" />
@@ -1978,7 +2010,7 @@ export default function SafeWallet() {
                               )}
                             </td>
                             {/* USD Column */}
-                            <td className="py-3 px-3 text-right">
+                            <td className="py-3 px-3 text-right w-[100px]">
                               <div className="flex items-center justify-end gap-1">
                                 <span className="text-sm font-semibold text-cyan-200">
                                   {formatSignedUsd(tx.grossUsd, tx.direction)}
@@ -1989,7 +2021,7 @@ export default function SafeWallet() {
                               </div>
                             </td>
                             {/* RAMA Column */}
-                            <td className="py-3 px-3 text-right">
+                            <td className="py-3 px-3 text-right w-[140px]">
                               {tx.ramaAmount > 0 ? (
                                 <div className="flex items-center justify-end gap-1">
                                   <Coins size={12} className="text-amber-400" />
@@ -2002,13 +2034,13 @@ export default function SafeWallet() {
                               )}
                             </td>
                             {/* Fee Column */}
-                            <td className="py-3 px-3 text-right">
+                            <td className="py-3 px-3 text-right w-[80px]">
                               <span className="text-sm font-semibold text-cyan-200">
                                 {tx.feeUsd ? formatUSD(tx.feeUsd) : '—'}
                               </span>
                             </td>
                             {/* Net Column */}
-                            <td className="py-3 px-3 text-right">
+                            <td className="py-3 px-3 text-right w-[100px]">
                               <div className="flex items-center justify-end gap-1">
                                 <span
                                   className={`text-sm font-semibold ${
@@ -2023,7 +2055,7 @@ export default function SafeWallet() {
                               </div>
                             </td>
                             {/* Source Column */}
-                            <td className="py-3 px-3 text-center">
+                            <td className="py-3 px-3 text-center w-[120px]">
                               <span
                                 className={`inline-flex items-center px-2 py-1 rounded-lg border text-[10px] font-semibold ${sourceBadgeClass(tx.fundSource)}`}
                               >
@@ -2031,13 +2063,55 @@ export default function SafeWallet() {
                               </span>
                             </td>
                             {/* Date Column */}
-                            <td className="py-3 px-3 text-right">
+                            <td className="py-3 px-3 text-right w-[140px]">
                               <p className="text-xs text-cyan-300">{tx.date ?? '—'}</p>
                             </td>
                           </tr>
                         );
                       })}
-                      </tbody>
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Fixed Totals Footer - Desktop */}
+                    <table className="min-w-full text-left text-sm whitespace-nowrap table-fixed border-t-2 border-cyan-500/40 bg-dark-900/95">
+                      <tfoot>
+                        <tr className="text-cyan-100 font-semibold">
+                          <td className="py-3 px-3 w-[80px]">
+                            <span className="text-xs uppercase text-cyan-400">Totals</span>
+                          </td>
+                          <td className="py-3 px-3 w-[180px]">
+                            <span className="text-[10px] text-cyan-300/70">
+                              {filteredTotals.creditCount} credits / {filteredTotals.debitCount} debits
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 w-[160px]"></td>
+                          <td className="py-3 px-3 text-right w-[100px]">
+                            <span className={`text-sm font-bold ${filteredTotals.grossUsd >= 0 ? 'text-neon-green' : 'text-neon-orange'}`}>
+                              {filteredTotals.grossUsd >= 0 ? '+' : ''}{formatUSD(filteredTotals.grossUsd)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right w-[140px]">
+                            <div className="flex items-center justify-end gap-1">
+                              <Coins size={12} className="text-amber-400" />
+                              <span className={`text-[11px] font-mono ${filteredTotals.rama >= 0 ? 'text-amber-400' : 'text-neon-orange'}`}>
+                                {filteredTotals.rama >= 0 ? '+' : ''}{formatRamaPrecise(Math.abs(filteredTotals.rama))}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-right w-[80px]">
+                            <span className="text-sm text-cyan-200">
+                              {formatUSD(filteredTotals.fee)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right w-[100px]">
+                            <span className={`text-sm font-bold ${filteredTotals.netUsd >= 0 ? 'text-neon-green' : 'text-neon-orange'}`}>
+                              {filteredTotals.netUsd >= 0 ? '+' : ''}{formatUSD(filteredTotals.netUsd)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 w-[120px]"></td>
+                          <td className="py-3 px-3 w-[140px]"></td>
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                 </div>
@@ -2189,6 +2263,43 @@ export default function SafeWallet() {
                       </div>
                     );
                   })}
+                </div>
+                
+                {/* Mobile Totals Summary */}
+                <div className="md:hidden mt-4 cyber-glass border-2 border-cyan-500/40 rounded-lg p-4 bg-dark-900/95">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wide">Summary Totals</span>
+                    <span className="text-[10px] text-cyan-300/60">
+                      ({filteredTotals.creditCount} credits / {filteredTotals.debitCount} debits)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Net USD</p>
+                      <p className={`text-sm font-bold ${filteredTotals.netUsd >= 0 ? 'text-neon-green' : 'text-neon-orange'}`}>
+                        {filteredTotals.netUsd >= 0 ? '+' : ''}{formatUSD(filteredTotals.netUsd)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Net RAMA</p>
+                      <div className="flex items-center gap-1">
+                        <Coins size={10} className="text-amber-400" />
+                        <span className={`text-xs font-mono ${filteredTotals.rama >= 0 ? 'text-amber-400' : 'text-neon-orange'}`}>
+                          {filteredTotals.rama >= 0 ? '+' : ''}{formatRamaPrecise(Math.abs(filteredTotals.rama))}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Total Fees</p>
+                      <p className="text-xs font-semibold text-cyan-200">{formatUSD(filteredTotals.fee)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-cyan-300/60 uppercase tracking-wide mb-1">Gross USD</p>
+                      <p className={`text-xs font-semibold ${filteredTotals.grossUsd >= 0 ? 'text-neon-green' : 'text-neon-orange'}`}>
+                        {filteredTotals.grossUsd >= 0 ? '+' : ''}{formatUSD(filteredTotals.grossUsd)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -2430,7 +2541,87 @@ export default function SafeWallet() {
         amountLabel="Withdrawing"
         txHash={hash}
         onSuccess={handleWithdrawSuccess}
+        externalError={withdrawalBuildError}
+        externalIsError={!!withdrawalBuildError}
       />
+
+      {/* Coming Soon Modal for Swap to USDT */}
+      {showComingSoon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
+            onClick={() => setShowComingSoon(false)}
+          />
+          
+          {/* Modal */}
+          <div className="relative cyber-glass border-2 border-violet-500/50 rounded-2xl p-6 sm:p-8 max-w-md w-full animate-in fade-in zoom-in-95 duration-200">
+            {/* Close button */}
+            <button
+              onClick={() => setShowComingSoon(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X className="text-cyan-300" size={20} />
+            </button>
+
+            {/* Content */}
+            <div className="text-center">
+              {/* Icon */}
+              <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+                <Rocket className="text-violet-400" size={40} />
+              </div>
+
+              {/* Title */}
+              <h3 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-400 mb-3">
+                Coming Soon!
+              </h3>
+
+              {/* Description */}
+              <p className="text-cyan-300/90 mb-6 leading-relaxed">
+                The <span className="text-violet-300 font-semibold">Swap to USDT</span> feature is currently under development. 
+                We're working hard to bring you seamless RAMA to USDT conversion.
+              </p>
+
+              {/* Features preview */}
+              <div className="cyber-glass border border-cyan-500/20 rounded-xl p-4 mb-6 text-left">
+                <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wide mb-3">What to expect:</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-neon-green" />
+                    <span className="text-sm text-cyan-300/80">Instant RAMA to USDT swaps</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-neon-green" />
+                    <span className="text-sm text-cyan-300/80">Competitive exchange rates</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-neon-green" />
+                    <span className="text-sm text-cyan-300/80">Low transaction fees</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-neon-green" />
+                    <span className="text-sm text-cyan-300/80">Direct withdrawal to wallet</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timer/Status */}
+              <div className="flex items-center justify-center gap-2 text-cyan-300/70 text-sm mb-6">
+                <Clock size={16} />
+                <span>Stay tuned for updates!</span>
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={() => setShowComingSoon(false)}
+                className="w-full py-3 px-6 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

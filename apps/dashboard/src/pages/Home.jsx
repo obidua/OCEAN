@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Waves, TrendingUp, Shield, Users, Award, Zap, ArrowRight, CheckCircle, Blocks, Lock, Network } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 import MoneyRevolution from './MoneyRevolution';
+import RPCStatus from '../components/RPCStatus';
 
 export default function Home() {
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function Home() {
               OCEAN DeFi combines innovative staking mechanisms with a powerful team-based reward system.
               Earn passive income through multiple streams: growth rewards, slab income, royalty programs, and milestone bonuses.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link
                 to="/login"
                 className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-neon-green text-dark-950 rounded-xl font-bold text-lg hover:shadow-neon-cyan transition-all inline-flex items-center justify-center gap-2"
@@ -49,6 +50,11 @@ export default function Home() {
               >
                 Learn More
               </a>
+            </div>
+
+            {/* RPC Status Display */}
+            <div className="max-w-2xl mx-auto">
+              <RPCStatus />
             </div>
           </div>
         </div>

@@ -129,7 +129,7 @@ To make royalty claims fully functional:
 ## Contract Details
 
 - **RoyaltyManager**: `0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5`
-- **Network**: Ramestta (RPC: https://blockchain.ramestta.com)
+- **Network**: Ramestta (RPC: https://blockchain2.ramestta.com)
 - **Key Methods**:
   - `claimRoyalty()`: Claim pending royalty (requires proof)
   - `royalty(address)`: Get user's royalty state

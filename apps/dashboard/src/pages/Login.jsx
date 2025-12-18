@@ -4,6 +4,8 @@ import { Wallet, Search, ArrowRight, AlertCircle, Waves } from 'lucide-react';
 // import { mockConnectWallet, checkWalletRegistration, getUserById } from '../utils/walletAuth';
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useStore } from '../../store/useUserInfoStore';
+import RPCStatus from '../components/RPCStatus';
+import { switchToWorkingRPC } from '../utils/networkSwitcher';
 
 export default function Login() {
   const [userId, setUserId] = useState('');
@@ -61,6 +63,25 @@ export default function Login() {
   };
 
 
+  // Auto-switch to working RPC when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      // Small delay to ensure wallet is fully connected
+      const timer = setTimeout(async () => {
+        try {
+          const result = await switchToWorkingRPC();
+          if (result.success && !result.alreadyConnected) {
+            console.log(`✅ Network switched: ${result.message}`);
+          }
+        } catch (error) {
+          console.warn('Auto RPC switch failed:', error);
+        }
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, address]);
+
   useEffect(() => {
     if (isConnected && address) {
       handleConnectWallet();
@@ -96,6 +117,11 @@ export default function Login() {
               <p className="text-sm text-red-300">{error}</p>
             </div>
           )}
+
+          {/* RPC Status Display */}
+          <div className="mb-6">
+            <RPCStatus />
+          </div>
 
           <button
             onClick={async () => {

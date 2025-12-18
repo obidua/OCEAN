@@ -318,6 +318,8 @@ export default function StakeInvest() {
   const lastProcessedTxIdRef = useRef(0);
   const [txModalOpen, setTxModalOpen] = useState(false);
   const [txSuccess, setTxSuccess] = useState(false);
+  // Track transaction building errors for ProgressiveTransactionModal
+  const [txBuildError, setTxBuildError] = useState(null);
 
   const { handleSendTx, hash } = useTransaction(trxData !== null && trxData);
   
@@ -377,6 +379,7 @@ export default function StakeInvest() {
     setTxSuccess(false);
     setIsStaking(false);
     setTxAmount(0); // Reset transaction amount
+    setTxBuildError(null); // Reset build error
   };
 
   const handleSuccess = () => {
@@ -757,6 +760,7 @@ export default function StakeInvest() {
     
     setIsStaking(true);
     setTxModalOpen(true);
+    setTxBuildError(null); // Clear any previous errors
     setShowRegisterModal(false);
   try { financialSounds.playPortfolioUpdate(); } catch {}
 
@@ -808,6 +812,7 @@ export default function StakeInvest() {
         txIdRef.current += 1;
         const txWithId = { ...response, _txId: txIdRef.current };
         console.log('[Registration] Setting transaction:', { txId: txIdRef.current, amount: stakeAmountNum });
+        setTxBuildError(null); // Clear any previous errors
         setTrxData(txWithId);
         // After successful registration, mark beneficiary as validated
         setSponsorInfo({ address: unregisteredBeneficiary, id: null });
@@ -815,13 +820,17 @@ export default function StakeInvest() {
         sponsorValidatedRef.current = true;
         lastValidatedRef.current = unregisteredBeneficiary;
       } else {
-        toast.error('Unable to build registration transaction.');
+        const errorMsg = 'Unable to build registration transaction.';
+        toast.error(errorMsg);
+        setTxBuildError({ message: errorMsg, shortMessage: errorMsg });
         setIsStaking(false);
         try { financialSounds.playMoneyOut(); } catch {}
       }
     } catch (err) {
       console.error('Registration failed:', err);
-      toast.error(err?.message || 'Unexpected error during registration.');
+      const errorMsg = err?.message || 'Unexpected error during registration.';
+      toast.error(errorMsg);
+      setTxBuildError({ message: errorMsg, shortMessage: errorMsg });
       setIsStaking(false);
       try { financialSounds.playMoneyOut(); } catch {}
     }
@@ -907,6 +916,7 @@ export default function StakeInvest() {
 
     setIsStaking(true);
     setTxModalOpen(true);
+    setTxBuildError(null); // Clear any previous errors
   try { financialSounds.playPortfolioUpdate(); } catch {}
 
     try {
@@ -951,15 +961,20 @@ export default function StakeInvest() {
         txIdRef.current += 1;
         const txWithId = { ...response, _txId: txIdRef.current, _expectedAmount: stakeAmountNum };
         console.log('[CreatePortfolio] Setting transaction:', { txId: txIdRef.current, amount: stakeAmountNum });
+        setTxBuildError(null); // Clear any previous errors
         setTrxData(txWithId);
       } else {
-        toast.error('Unable to build staking transaction.');
+        const errorMsg = 'Unable to build staking transaction.';
+        toast.error(errorMsg);
+        setTxBuildError({ message: errorMsg, shortMessage: errorMsg });
         setIsStaking(false);
         try { financialSounds.playMoneyOut(); } catch {}
       }
     } catch (err) {
       console.error('CreateNewPortFolio failed:', err);
-      toast.error(err?.message || 'Unexpected error. Please try again.');
+      const errorMsg = err?.message || 'Unexpected error. Please try again.';
+      toast.error(errorMsg);
+      setTxBuildError({ message: errorMsg, shortMessage: errorMsg });
       setIsStaking(false);
       try { financialSounds.playMoneyOut(); } catch {}
     }
@@ -1655,6 +1670,8 @@ export default function StakeInvest() {
         onSuccess={handleSuccess}
         amount={txAmount > 0 ? `$${txAmount.toFixed(2)}` : ''}
         amountLabel="Stake Amount"
+        externalError={txBuildError}
+        externalIsError={!!txBuildError}
       />
 
       {showRegisterModal && (

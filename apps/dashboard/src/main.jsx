@@ -9,6 +9,9 @@ import './utils/financialSounds.js';
 // Filter out non-critical console warnings
 import './utils/consoleFilter.js';
 
+// Initialize RPC before app starts
+import { initializeWithWorkingRPC } from '../config/index.js';
+
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
@@ -22,8 +25,28 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   });
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+// Initialize app with working RPC
+async function initializeApp() {
+  try {
+    // Check and configure working RPC before rendering
+    await initializeWithWorkingRPC();
+
+    // Render app after RPC is configured
+    ReactDOM.createRoot(document.getElementById('root')).render(
+      <StrictMode>
+        <App />
+      </StrictMode>
+    );
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
+    // Render anyway with default config
+    ReactDOM.createRoot(document.getElementById('root')).render(
+      <StrictMode>
+        <App />
+      </StrictMode>
+    );
+  }
+}
+
+// Start app initialization
+initializeApp();

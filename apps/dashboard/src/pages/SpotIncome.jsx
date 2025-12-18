@@ -196,13 +196,9 @@ export default function SpotIncome() {
       
       setSafeWalletLoading(true);
       try {
-        // Get native RAMA coin balance of SafeWallet contract
-        const { default: Web3 } = await import('web3');
-        const rpcUrl = import.meta.env.VITE_RPC_URL || 'https://blockchain.ramestta.com';
-        const web3 = new Web3(rpcUrl);
-        
-        // Get native RAMA balance (like ETH on Ethereum)
-        const balanceWei = await web3.eth.getBalance(SafeWalletAddress);
+        // Get native RAMA coin balance of SafeWallet contract using resilient RPC
+        const { rpcManager } = await import('../utils/rpcManager.js');
+        const balanceWei = await rpcManager.getBalance(SafeWalletAddress);
         const balanceRama = Number(balanceWei) / 1e18;
         
         if (!cancelled) {

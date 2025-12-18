@@ -19,7 +19,8 @@ import RoiDistributionABI from './Contract_ABI/RoiDistributor.json';
 import RoiDistributionViewABI from './Contract_ABI/ROIDistributorView.json';
 import { dayShortFromUnix } from "../src/utils/helper";
 import { checkEnvironmentConfig, resolveContractAddress, validateRuntimeConfig } from "../src/utils/envCheck.js";
-import { getRPCUrls, callWithDualRPC as rpcCallWithDualRPC, createWeb3Instance } from "../src/utils/rpcConfig.js";
+import { getRPCUrls, callWithDualRPC as rpcCallWithDualRPC, createWeb3InstanceSync } from "../src/utils/rpcConfig.js";
+import { rpcManager, executeWithFailover, createResilientContract } from "../src/utils/rpcManager.js";
 import {
   ROYALTY_LEVELS as ROYALTY_LEVELS_FALLBACK,
   ONE_TIME_REWARDS as ONE_TIME_REWARDS_FALLBACK,
@@ -47,7 +48,7 @@ const getContractInterface = async () => {
     // Add cache busting for fresh contract data
     const cacheBuster = Date.now();
     // console.log(`🔄 Initializing contracts (v${cacheBuster})`);
-    
+
     const oceanicView = new web3.eth.Contract(OceanicViewABI, Contract["Oceanicview"]);
     const portfolioManager = new web3.eth.Contract(PortFolioManagerABI, Contract["PortFolioManager"]);
     return { oceanicView, portfolioManager };
@@ -67,12 +68,12 @@ const resolveEnvValue = (key) => {
 };
 
 const resolveAddress = (key, fallback) => {
-    const candidate = resolveEnvValue(key);
-    if (typeof candidate === "string" && candidate.startsWith("0x") && candidate.length === 42) {
-      return candidate;
-    }
-    return fallback;
-  };
+  const candidate = resolveEnvValue(key);
+  if (typeof candidate === "string" && candidate.startsWith("0x") && candidate.length === 42) {
+    return candidate;
+  }
+  return fallback;
+};
 
 
 
@@ -115,20 +116,36 @@ const envRpcUrls = getRPCUrls(); // Use the centralized utility
 
 // Fallback URLs (only used if environment variables are not set)
 const defaultRpcUrls = [
-  "https://blockchain.ramestta.com",
-  "https://blockchain2.ramestta.com", 
+  "https://blockchain2.ramestta.com",
+  "https://blockchain2.ramestta.com",
 ];
 
 const RPC_URLs = envRpcUrls.length > 0 ? envRpcUrls : defaultRpcUrls;
 
 // Create multiple Web3 instances for load balancing
 const web3Instances = RPC_URLs.map(url => new Web3(url));
-const web3 = createWeb3Instance('UserInfoStore'); // Use centralized Web3 creation
+const web3 = createWeb3InstanceSync('UserInfoStore'); // Use synchronous creation for initial setup
 
-// Multi RPC utility for faster contract calls (legacy name retained)
+// Initialize RPC Manager in background for resilient calls
+rpcManager.initialize().catch(err => console.warn('RPC Manager init warning:', err.message));
+
+// Multi RPC utility for faster contract calls - now uses RPC Manager
 const callWithDualRPC = async (contractMethod, methodName = 'unknown') => {
-  // Use the centralized RPC failover utility
-  return await rpcCallWithDualRPC(contractMethod, methodName);
+  // Use the RPC Manager's executeWithFailover for robust handling
+  return executeWithFailover(
+    async (web3Instance) => {
+      // Try to execute the contract method
+      // If it's a function that needs a web3 instance, pass it
+      // Otherwise, just call it directly
+      try {
+        return await contractMethod(web3Instance);
+      } catch {
+        // Backward compatibility: call without arguments
+        return await contractMethod();
+      }
+    },
+    { operationName: methodName }
+  );
 };
 
 const USD_MICRO = 1e6;
@@ -186,7 +203,7 @@ const makeContract = (abi, address) =>
   hasAddress(address) ? new web3.eth.Contract(abi, address) : null;
 
 // Create multiple contract instances for dual RPC calls
-const makeDualContracts = (abi, address) => 
+const makeDualContracts = (abi, address) =>
   hasAddress(address) ? web3Instances.map(web3Instance => new web3Instance.eth.Contract(abi, address)) : [];
 
 const toNumber = (value) => {
@@ -526,7 +543,7 @@ export const useStore = create((set, get) => ({
 
       const totalRewardsUsd = parseFloat(Web3.utils.fromWei(lifetimeUsdWad || '0', 'ether'));
       const totalRewardsRama = parseFloat(Web3.utils.fromWei(ramaWei || '0', 'ether'));
-      
+
       // Calculate pending rewards from unclaimed thresholds
       const pendingRewardsUsd = (Array.isArray(rewardsUsdWad) ? rewardsUsdWad : [])
         .filter((_, index) => !(Array.isArray(achieved) ? achieved[index] : false))
@@ -540,12 +557,12 @@ export const useStore = create((set, get) => ({
           : [];
       const lastClaimTimestamp = portfolioList.length
         ? Math.max(
-            ...portfolioList.map((p) => {
-              const v = p?.lastUpdate ?? p?.lastAccrual ?? p?.lastUpdateTs ?? 0;
-              const n = Number(v);
-              return Number.isFinite(n) ? n : 0;
-            })
-          )
+          ...portfolioList.map((p) => {
+            const v = p?.lastUpdate ?? p?.lastAccrual ?? p?.lastUpdateTs ?? 0;
+            const n = Number(v);
+            return Number.isFinite(n) ? n : 0;
+          })
+        )
         : 0;
 
       return {
@@ -586,16 +603,16 @@ export const useStore = create((set, get) => ({
 
   claimAccruedROI: async (fromAddress) => {
     try {
-     
+
       if (!fromAddress) throw new Error('No connected wallet address found');
 
       const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
       if (!roiDistributor) throw new Error("ROI Distributor contract not available");
-      
+
       // Use view contract for read operations
       const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
       if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
-      
+
       // 1) Pre-check unclaimed ROI to prevent revert
       let unclaimed;
       try {
@@ -620,7 +637,7 @@ export const useStore = create((set, get) => ({
             const when = new Date(tsNum * 1000).toLocaleString();
             etaMsg = ` Next distribution in ${h}h ${m}m (at ${when}).`;
           }
-        } catch {}
+        } catch { }
         throw new Error(`No ROI available to claim yet.${etaMsg}`);
       }
 
@@ -634,7 +651,7 @@ export const useStore = create((set, get) => ({
         throw new Error(`Claim not available: ${msg}`);
       }
 
-      const data =  roiDistributor.methods.claimROI().encodeABI();
+      const data = roiDistributor.methods.claimROI().encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
       let gasLimit;
@@ -676,7 +693,7 @@ export const useStore = create((set, get) => ({
     }
   },
 
- 
+
   // ROI Distributor timings and window helpers
   getROITiming: async () => {
     try {
@@ -747,18 +764,18 @@ export const useStore = create((set, get) => ({
       const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
       if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
       const result = await roiDistributorView.methods.getTotalsClaimed(address).call();
-      
+
       // Handle both array and object responses
       const usd = result?.[0] ?? result?.usd ?? result;
       const rama = result?.[1] ?? result?.rama;
-      
+
       const claimedData = {
         usd: fromMicroUSD(usd ?? 0),
         rama: fromWeiToRama(rama ?? 0),
       };
-      
+
       // console.log('getTotalsClaimedFromDistributor result:', { raw: result, parsed: claimedData });
-      
+
       return claimedData;
     } catch (error) {
       console.error("Error fetching totals claimed from distributor:", error);
@@ -811,12 +828,12 @@ export const useStore = create((set, get) => ({
       // First try to get portfolio IDs to check if user has valid portfolios
       const portfolioManager = makeContract(PortFolioManagerABI, Contract["PortfolioManager"]);
       let hasValidPortfolios = false;
-      
+
       if (portfolioManager) {
         try {
           const portfolioIds = await portfolioManager.methods.getPortfolioIds(address).call();
           hasValidPortfolios = portfolioIds && portfolioIds.length > 0;
-          
+
           if (!hasValidPortfolios) {
             // console.log(`getPortfolioIds: no valid portfolios found for ${address}`);
             return { map: new Map(), fromPeriod: 0, lastPeriod: 0, portfolioIds: [] };
@@ -829,9 +846,9 @@ export const useStore = create((set, get) => ({
       // Use ROI Distributor View to get preview
       const roiDistributorView = makeContract(RoiDistributionViewABI, Contract.RoiDistributionView);
       if (!roiDistributorView) throw new Error("ROI Distributor View contract not available");
-      
+
       const previewRaw = await roiDistributorView.methods.previewClaimPerPortfolio(address).call();
-      
+
       // Handle both array and object responses with safe access
       const pids = previewRaw?.pids ?? previewRaw?.[0] ?? [];
       const usdTotals = previewRaw?.usdTotals ?? previewRaw?.[1] ?? [];
@@ -839,48 +856,48 @@ export const useStore = create((set, get) => ({
       const epochCounts = previewRaw?.epochCounts ?? previewRaw?.[3] ?? [];
       const fromPeriod = toNumber(previewRaw?.fromPeriod ?? previewRaw?.[4] ?? 0);
       const lastPeriod = toNumber(previewRaw?.lastPeriod ?? previewRaw?.[5] ?? 0);
-      
+
       const map = new Map();
       const portfolioDetails = [];
-      
+
       // Ensure all arrays have the same length
       const minLength = Math.min(pids.length, usdTotals.length, ramaTotals.length, epochCounts.length);
-      
+
       for (let idx = 0; idx < minLength; idx++) {
         const pidValue = pids[idx];
         const pid = Number(pidValue);
-        
+
         if (!Number.isFinite(pid) || pid <= 0) continue;
-        
+
         const usd = fromMicroUSD(usdTotals[idx] ?? 0);
         const rama = fromWeiToRama(ramaTotals[idx] ?? 0);
         const epochCount = toNumber(epochCounts[idx] ?? 0);
-        
+
         const entry = { usd, rama, epochCount, pid };
         map.set(pid, entry);
         portfolioDetails.push(entry);
       }
-      
-      return { 
-        map, 
-        fromPeriod, 
-        lastPeriod, 
+
+      return {
+        map,
+        fromPeriod,
+        lastPeriod,
         portfolioDetails,
         totalPortfolios: portfolioDetails.length,
         hasValidPortfolios
       };
     } catch (error) {
       console.error("Error fetching ROI preview per portfolio:", error);
-      
+
       // Return comprehensive fallback data
-      return { 
-        map: new Map(), 
-        fromPeriod: 0, 
-        lastPeriod: 0, 
+      return {
+        map: new Map(),
+        fromPeriod: 0,
+        lastPeriod: 0,
         portfolioDetails: [],
         totalPortfolios: 0,
         hasValidPortfolios: false,
-        error: error.message 
+        error: error.message
       };
     }
   },
@@ -958,10 +975,10 @@ export const useStore = create((set, get) => ({
 
       const periods = Array.isArray(preview.periodIds)
         ? preview.periodIds.map((periodId, idx) => ({
-            periodId: toNumber(periodId),
-            usd: fromMicroUSD(preview.usdPerPeriod?.[idx] ?? 0),
-            rama: fromWeiToRama(preview.ramaPerPeriod?.[idx] ?? 0),
-          }))
+          periodId: toNumber(periodId),
+          usd: fromMicroUSD(preview.usdPerPeriod?.[idx] ?? 0),
+          rama: fromWeiToRama(preview.ramaPerPeriod?.[idx] ?? 0),
+        }))
         : [];
 
       return {
@@ -1069,7 +1086,7 @@ export const useStore = create((set, get) => ({
       const history = (result ?? []).map((item, index) => {
         const usdAmount = fromMicroUSD(item.usdTotal);
         const ramaAmount = fromWeiToRama(item.ramaTotal);
-        
+
         return {
           id: `${item.fromPeriod}-${item.toPeriod}-${index}`,
           dayId: `${item.fromPeriod} - ${item.toPeriod}`,
@@ -1164,7 +1181,7 @@ export const useStore = create((set, get) => ({
     try {
       // First try ComprehensiveView for more comprehensive data
       const comprehensiveView = makeContract(ComprehensiveViewABI, Contract["ComprehensiveView"]);
-      
+
       if (comprehensiveView) {
         try {
           const [totalRoi, todayRoi, unclaimedRoi] = await Promise.all([
@@ -1176,9 +1193,9 @@ export const useStore = create((set, get) => ({
           // Extract data from ComprehensiveView responses
           const claimedUsd = fromMicroUSD(totalRoi.usdSum || 0);
           const claimedRama = fromWeiToRama(totalRoi.ramaSum || 0);
-          const unclaimedUsd = unclaimedRoi.claims.reduce((sum, claim) => 
+          const unclaimedUsd = unclaimedRoi.claims.reduce((sum, claim) =>
             sum + fromMicroUSD(claim.usdTotalMicro || 0), 0);
-          const unclaimedRama = unclaimedRoi.claims.reduce((sum, claim) => 
+          const unclaimedRama = unclaimedRoi.claims.reduce((sum, claim) =>
             sum + fromWeiToRama(claim.ramaTotalWei || 0), 0);
 
           return {
@@ -1223,10 +1240,10 @@ export const useStore = create((set, get) => ({
     } catch (error) {
       console.error("Error fetching ROI totals:", error);
       // Return fallback data instead of throwing
-      return { 
-        claimedUsd: 0, 
-        claimedRama: 0, 
-        unclaimedUsd: 0, 
+      return {
+        claimedUsd: 0,
+        claimedRama: 0,
+        unclaimedUsd: 0,
         unclaimedRama: 0,
         todayUsd: 0,
         todayRama: 0,
@@ -1235,7 +1252,7 @@ export const useStore = create((set, get) => ({
         lastPeriod: 0,
         epochsCount: 0,
         portfolioClaims: [],
-        error: error.message 
+        error: error.message
       };
     }
   },
@@ -1268,7 +1285,7 @@ export const useStore = create((set, get) => ({
           epoch: claimHistory.epoch[i]
         }));
 
-        const totalRewardsUsd = portfolioRewards.reduce((sum, reward) => 
+        const totalRewardsUsd = portfolioRewards.reduce((sum, reward) =>
           sum + parseFloat(Web3.utils.fromWei(reward, 'ether')), 0);
         const pendingRewardsUsd = portfolioRewards
           .filter((_, i) => !portfolioAchieved[i])
@@ -1533,7 +1550,7 @@ export const useStore = create((set, get) => ({
       if (!userAddress) {
         throw new Error("Invalid userId");
       }
-      
+
       // Use centralized RPC approach for better reliability
       const isUserExist = await callWithDualRPC(
         () => {
@@ -1602,11 +1619,11 @@ export const useStore = create((set, get) => ({
       const validIds = rawIds
         .map((id) => Number(id))
         .filter((id) => Number.isFinite(id) && id > 0);
-      
+
       if (validIds.length === 0) {
         // console.log(`getPortfolioIds: no valid portfolios found for ${userAddress}`);
       }
-      
+
       return validIds;
     } catch (error) {
       console.error("getPortfolioIds error:", error);
@@ -1694,14 +1711,14 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error) {
       console.error(`Portfolio error for PID ${portId}:`, error);
-      
+
       // Check if it's a contract execution error (portfolio doesn't exist)
-      if (error?.message?.includes('execution reverted') || 
-          error?.message?.includes('ContractExecutionError')) {
+      if (error?.message?.includes('execution reverted') ||
+        error?.message?.includes('ContractExecutionError')) {
         console.warn(`Portfolio ${portId} does not exist or is invalid`);
         return null; // Return null instead of throwing for non-existent portfolios
       }
-      
+
       // For other errors (network, contract address, etc.), throw them
       throw error;
     }
@@ -2012,7 +2029,7 @@ export const useStore = create((set, get) => ({
           }
 
 
-          const cap_used= await cappingIncomeManager.methods.getEarnedByKind(userAddress).call();
+          const cap_used = await cappingIncomeManager.methods.getEarnedByKind(userAddress).call();
 
           // console.log("cap_used",cap_used)
           return {
@@ -2033,8 +2050,8 @@ export const useStore = create((set, get) => ({
                 sumPrincipalUsd > 0
                   ? sumPrincipalUsd
                   : sumPrincipalUsdMicro > 0n
-                  ? fromMicroUSD(sumPrincipalUsdMicro)
-                  : summaryTotalStakedUsd,
+                    ? fromMicroUSD(sumPrincipalUsdMicro)
+                    : summaryTotalStakedUsd,
               totalStakedRama:
                 sumPrincipalRama > 0 ? sumPrincipalRama : summaryTotalStakedRama,
             },
@@ -2054,11 +2071,11 @@ export const useStore = create((set, get) => ({
             },
             accruedGrowthUsd: fromMicroUSD(
               pick(wallet, "pendingGrowthUsdMicro", 4) ??
-                pick(summary, "accruedGrowthUsdMicro", 3)
+              pick(summary, "accruedGrowthUsdMicro", 3)
             ),
             accruedGrowthRama: fromWeiToRama(
               pick(summary, "accruedGrowthRamaWei", 4) ??
-                pick(wallet, "pendingGrowthRamaWei", 3)
+              pick(wallet, "pendingGrowthRamaWei", 3)
             ),
             totalEarningsUsd,
             totalEarningsRama,
@@ -2286,23 +2303,23 @@ export const useStore = create((set, get) => ({
             ? overrideWaveRaw.map(fromMicroUSD)
             : [];
 
-      return {
-        totalClaimableUsd,
-        streams: {
-          growthUsd,
-          slabTotalUsd: slabUsd,
-          slabAvailableUsd,
-          royaltyUsd,
-          overrideUsd,
-          rewardsUsd,
-          overrideWaveUsd,
-          slabCanClaim:
-            Boolean(pick(income, 'slabCanClaim', 8)) || slabAvailableUsd > 0,
-        },
-        incomeTotalsUsd: {
-          growth: growthUsd,
-          slab: slabUsd,
-          royalty: royaltyUsd,
+          return {
+            totalClaimableUsd,
+            streams: {
+              growthUsd,
+              slabTotalUsd: slabUsd,
+              slabAvailableUsd,
+              royaltyUsd,
+              overrideUsd,
+              rewardsUsd,
+              overrideWaveUsd,
+              slabCanClaim:
+                Boolean(pick(income, 'slabCanClaim', 8)) || slabAvailableUsd > 0,
+            },
+            incomeTotalsUsd: {
+              growth: growthUsd,
+              slab: slabUsd,
+              royalty: royaltyUsd,
               override: overrideUsd,
               rewards: rewardsUsd,
               total: totalClaimableUsd,
@@ -2366,7 +2383,7 @@ export const useStore = create((set, get) => ({
           royalty: fromMicroUSD(pickIncome(incomeTotalsRaw, "royalty", 2)),
           override: fromMicroUSD(
             pickIncome(incomeTotalsRaw, "overrideB", 3)
-              ?? pickIncome(incomeTotalsRaw, "override", 3)
+            ?? pickIncome(incomeTotalsRaw, "override", 3)
           ),
           rewards: fromMicroUSD(pickIncome(incomeTotalsRaw, "rewards", 4)),
         },
@@ -2888,12 +2905,12 @@ export const useStore = create((set, get) => ({
         get().getComprehensiveCapStatus(userAddress).catch(() => null),
         rewardVault
           ? rewardVault.methods
-              .getHeldFundsDueToCap(userAddress)
-              .call()
-              .catch((err) => {
-                console.warn("RewardVault.getHeldFundsDueToCap failed:", err);
-                return null;
-              })
+            .getHeldFundsDueToCap(userAddress)
+            .call()
+            .catch((err) => {
+              console.warn("RewardVault.getHeldFundsDueToCap failed:", err);
+              return null;
+            })
           : null,
       ]);
 
@@ -3291,74 +3308,74 @@ export const useStore = create((set, get) => ({
               return Number.isFinite(pid) && pid > 0;
             })
             .map(async (entry) => {
-            const pid = Number(pick(entry, "pid", 0));
-            const principalUsdMicro =
-              pick(entry, "principalUsdMicro", 2) ??
-              pick(entry, "principalUSD", 2) ??
-              0;
-            const principalRamaWei =
-              pick(entry, "principalRamaWei", 1) ??
-              pick(entry, "principalRama", 1) ??
-              0;
-            const capRamaWei =
-              pick(entry, "capRamaWei", 3) ?? pick(entry, "capRama", 3) ?? 0;
-            const creditedRamaWei =
-              pick(entry, "creditedRamaWei", 5) ??
-              pick(entry, "creditedRama", 5) ??
-              0;
-            const capPct = Number(pick(entry, "capPct", 9) ?? 0);
-            const booster = Boolean(pick(entry, "booster", 11));
-            const tier = Number(pick(entry, "tier", 10) ?? 0);
-            const dailyRateWad = pick(entry, "dailyRateWad", 8);
-            const active = Boolean(pick(entry, "active", 12));
-            const createdAt = Number(pick(entry, "createdAt", 13) ?? 0);
-            const frozenUntil = Number(pick(entry, "frozenUntil", 14) ?? 0);
-            const capProgressBps = Number(
-              pick(entry, "capProgressBps", 7) ?? 0
-            );
+              const pid = Number(pick(entry, "pid", 0));
+              const principalUsdMicro =
+                pick(entry, "principalUsdMicro", 2) ??
+                pick(entry, "principalUSD", 2) ??
+                0;
+              const principalRamaWei =
+                pick(entry, "principalRamaWei", 1) ??
+                pick(entry, "principalRama", 1) ??
+                0;
+              const capRamaWei =
+                pick(entry, "capRamaWei", 3) ?? pick(entry, "capRama", 3) ?? 0;
+              const creditedRamaWei =
+                pick(entry, "creditedRamaWei", 5) ??
+                pick(entry, "creditedRama", 5) ??
+                0;
+              const capPct = Number(pick(entry, "capPct", 9) ?? 0);
+              const booster = Boolean(pick(entry, "booster", 11));
+              const tier = Number(pick(entry, "tier", 10) ?? 0);
+              const dailyRateWad = pick(entry, "dailyRateWad", 8);
+              const active = Boolean(pick(entry, "active", 12));
+              const createdAt = Number(pick(entry, "createdAt", 13) ?? 0);
+              const frozenUntil = Number(pick(entry, "frozenUntil", 14) ?? 0);
+              const capProgressBps = Number(
+                pick(entry, "capProgressBps", 7) ?? 0
+              );
 
-            // Remaining-to-cap from CappingIncomeManager (returns USD6 directly)
-            let remainingCapUsdMicro = "0";
-            try {
-              if (cappingIncomeManager && Number.isFinite(pid) && pid > 0) {
-                const usd6 = await cappingIncomeManager.methods.remainingToCapUSD(pid).call();
-                remainingCapUsdMicro = String(usd6 ?? "0");
-              }
-            } catch (remErr) {
-              console.warn("remainingToCapUSD (portfolio summaries v2) failed:", remErr?.message || remErr);
-            }
-
-            const normalized = {
-              pid,
-              principalUsdRaw: principalUsdMicro,
-              principalUsd: fromMicroUSD(principalUsdMicro),
-              principalRama: fromWeiToRama(principalRamaWei),
-              principalRamaWei,
-              capRama: toNumber(capRamaWei),
-              creditedRama: toNumber(creditedRamaWei),
-              capPct,
-              booster,
-              tier,
-              dailyRateWad,
-              active,
-              createdAt,
-              frozenUntil,
-              capProgressBps,
-              remainingCapUsdMicro,
-              remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
-            };
-
-            if (portfolioManager && pid > 0) {
+              // Remaining-to-cap from CappingIncomeManager (returns USD6 directly)
+              let remainingCapUsdMicro = "0";
               try {
-                const pmRaw = await portfolioManager.methods.getPortfolio(pid).call();
-                applyPortfolioManagerFields(normalized, pmRaw);
-              } catch (err) {
-                console.warn(`PortfolioManager.getPortfolio(${pid}) failed:`, err?.message || err);
+                if (cappingIncomeManager && Number.isFinite(pid) && pid > 0) {
+                  const usd6 = await cappingIncomeManager.methods.remainingToCapUSD(pid).call();
+                  remainingCapUsdMicro = String(usd6 ?? "0");
+                }
+              } catch (remErr) {
+                console.warn("remainingToCapUSD (portfolio summaries v2) failed:", remErr?.message || remErr);
               }
-            }
 
-            return normalized;
-          }));
+              const normalized = {
+                pid,
+                principalUsdRaw: principalUsdMicro,
+                principalUsd: fromMicroUSD(principalUsdMicro),
+                principalRama: fromWeiToRama(principalRamaWei),
+                principalRamaWei,
+                capRama: toNumber(capRamaWei),
+                creditedRama: toNumber(creditedRamaWei),
+                capPct,
+                booster,
+                tier,
+                dailyRateWad,
+                active,
+                createdAt,
+                frozenUntil,
+                capProgressBps,
+                remainingCapUsdMicro,
+                remainingCapUsd: fromMicroUSD(remainingCapUsdMicro),
+              };
+
+              if (portfolioManager && pid > 0) {
+                try {
+                  const pmRaw = await portfolioManager.methods.getPortfolio(pid).call();
+                  applyPortfolioManagerFields(normalized, pmRaw);
+                } catch (err) {
+                  console.warn(`PortfolioManager.getPortfolio(${pid}) failed:`, err?.message || err);
+                }
+              }
+
+              return normalized;
+            }));
 
           return mapped;
         } catch (err) {
@@ -3367,21 +3384,21 @@ export const useStore = create((set, get) => ({
             "Using OceanicView.getPortfolios fallback (contract method updated):",
             err?.message ?? err
           );
-          
+
           // Fallback to OceanicView.getPortfolios (working method used in other pages)
           try {
             const oceanicView = makeContract(OceanicViewABI, Contract["Oceanicview"]);
             if (!oceanicView?.methods?.getPortfolios) {
               throw new Error("OceanicView.getPortfolios not available");
             }
-            
+
             const portfoliosData = await oceanicView.methods.getPortfolios(userAddress).call();
-            const portfolioList = Array.isArray(portfoliosData?.portfolios) 
-              ? portfoliosData.portfolios 
-              : Array.isArray(portfoliosData) 
-              ? portfoliosData 
-              : [];
-            
+            const portfolioList = Array.isArray(portfoliosData?.portfolios)
+              ? portfoliosData.portfolios
+              : Array.isArray(portfoliosData)
+                ? portfoliosData
+                : [];
+
             // Map OceanicView data structure to match expected format
             const oceanicMapped = await Promise.all(
               portfolioList
@@ -3449,7 +3466,7 @@ export const useStore = create((set, get) => ({
                   };
                 })
             );
-            
+
             return oceanicMapped;
           } catch (fallbackErr) {
             console.error("OceanicView.getPortfolios fallback also failed:", fallbackErr);
@@ -3477,13 +3494,13 @@ export const useStore = create((set, get) => ({
       const items = [];
       for (const entry of rawSummaries ?? []) {
         const pid = Number(pickValue(entry, "pid", 0));
-        
+
         // Skip invalid PIDs (0, negative, non-finite)
         if (!Number.isFinite(pid) || pid <= 0) {
           console.warn(`Skipping invalid PID: ${pid}`);
           continue;
         }
-        
+
         const principalUsdRaw = toNumber(pickValue(entry, "principalUSD", 2));
         const principalRama = toNumber(pickValue(entry, "principalRama", 1));
         const capRama = toNumber(pickValue(entry, "capRama", 3));
@@ -3572,8 +3589,8 @@ export const useStore = create((set, get) => ({
         raw?.status?.[key] != null
           ? raw.status[key]
           : raw?.[key] != null
-          ? raw[key]
-          : raw?.status?.[index] ?? raw?.[index];
+            ? raw[key]
+            : raw?.status?.[index] ?? raw?.[index];
       const totalPortfolioValueUSD6 = pick("totalPortfolioValueUSD6", 0) ?? 0;
       const cap4xUSD6 = pick("cap4xUSD6", 1) ?? 0;
       const totalIncomeEarnedUSD6 = pick("totalIncomeEarnedUSD6", 2) ?? 0;
@@ -3607,8 +3624,8 @@ export const useStore = create((set, get) => ({
         raw?.summary?.[key] != null
           ? raw.summary[key]
           : raw?.[key] != null
-          ? raw[key]
-          : raw?.summary?.[index] ?? raw?.[index];
+            ? raw[key]
+            : raw?.summary?.[index] ?? raw?.[index];
 
       const totalDirects = pick("totalDirects", 0) ?? 0;
       const totalTeamSize = pick("totalTeamSize", 1) ?? 0;
@@ -3642,10 +3659,10 @@ export const useStore = create((set, get) => ({
         const topLegsRaw = await viewContract.methods
           .getTopLegsWithBusiness(userAddress)
           .call();
-        
+
         const legs = topLegsRaw?.legs ?? topLegsRaw?.[0] ?? [];
         const volumes = topLegsRaw?.volumes ?? topLegsRaw?.[1] ?? [];
-        
+
         legsData = { legs, volumes };
       } catch (legsError) {
         console.warn('getTopLegsWithBusiness failed:', legsError);
@@ -3673,10 +3690,10 @@ export const useStore = create((set, get) => ({
         for (let i = 0; i < Math.min(legsData.legs.length, legsData.volumes.length); i++) {
           const legAddress = legsData.legs[i];
           if (!hasAddress(legAddress)) continue;
-          
+
           const addr = legAddress.toLowerCase();
           const volumeUsd = fromMicroUSD(legsData.volumes[i] ?? 0);
-          
+
           // Try to get individual member details for this leg
           let memberDetails = null;
           try {
@@ -3686,13 +3703,13 @@ export const useStore = create((set, get) => ({
           } catch (memberError) {
             console.warn(`getTeamMemberDetails failed for ${legAddress}:`, memberError);
           }
-          
+
           const selfUsd = memberDetails ? fromMicroUSD(memberDetails.totalPortfolioValueUSD ?? 0) : 0;
           const teamUsd = memberDetails ? fromMicroUSD(memberDetails.teamBusinessUSD ?? 0) : volumeUsd;
-          
-          const entry = { 
-            address: legAddress, 
-            selfUsd, 
+
+          const entry = {
+            address: legAddress,
+            selfUsd,
             teamUsd,
             memberDetails: memberDetails ? {
               totalPortfolioValueUSD: fromMicroUSD(memberDetails.totalPortfolioValueUSD ?? 0),
@@ -3703,7 +3720,7 @@ export const useStore = create((set, get) => ({
               isSlabEligible: memberDetails.isSlabEligible ?? false
             } : null
           };
-          
+
           map.set(addr, entry);
           entries.push(entry);
           directs.push(legAddress);
@@ -3735,18 +3752,18 @@ export const useStore = create((set, get) => ({
 
     } catch (error) {
       console.error('ComprehensiveView.getDirectsPortfolioAndTeamVolumes error:', error);
-      
+
       // Fallback: try to get basic team summary
       try {
         const viewContract = new web3.eth.Contract(
           ComprehensiveViewABI,
           Contract["ComprehensiveView"]
         );
-        
+
         const teamSummary = await viewContract.methods
           .getTeamSummary(userAddress, 2) // Get 2 levels deep
           .call();
-        
+
         // Return minimal structure with team summary data
         return {
           directs: [],
@@ -3863,7 +3880,7 @@ export const useStore = create((set, get) => ({
         OceanQueryUpgradeableABI,
         Contract["OceanQueryUpgradeable"]
       );
-      
+
       const raw = await oceanQuery.methods
         .getLifetimeCapProgress(userAddress)
         .call();
@@ -3955,21 +3972,21 @@ export const useStore = create((set, get) => ({
 
       const renewalTargetUsd = fromMicroUSD(nextThresholdUSD6);
       const renewalRequiredUsd = fromMicroUSD(neededUSD6);
-      
+
       // Calculate other values
       const paidMonths = Math.max(0, Number(lastPaidLevel));
       const canClaim = currentLevel > lastPaidLevel && !paused;
-      
+
       // Calculate renewal amounts from cache
       const renewalSnapshotUsd = fromMicroUSD(t60dAgoCacheUSD6 || 0);
       const renewalRecentUsd = fromMicroUSD(tNowCacheUSD6 || 0);
-      
+
       // Calculate directs from team business (L1, L2, Lrest)
       const l1Usd = fromMicroUSD(L1_atLast || 0);
       const l2Usd = fromMicroUSD(L2_atLast || 0);
       const lrestUsd = fromMicroUSD(Lrest_atLast || 0);
       const directs = l1Usd + l2Usd + lrestUsd;
-      
+
       // Calculate royalty income based on qualified volume
       const royaltyIncomeUsd = qualifiedVolumeUsd * 0.05; // 5% royalty rate
       const royaltyIncomeRama = royaltyIncomeUsd / 0.1; // RAMA conversion (adjust as needed)
@@ -4003,7 +4020,7 @@ export const useStore = create((set, get) => ({
       } catch (err) {
         console.warn("RoyaltyManager tier fetch failed:", err);
       }
-      
+
       // Use fallback tiers if none found
       if (!tiers.length) {
         tiers = ROYALTY_LEVELS_FALLBACK.map((level) => ({
@@ -4259,7 +4276,7 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
-      
+
       if (!slabManager) {
         console.warn("SlabManager contract not available, using fallback data");
         return {
@@ -4306,7 +4323,7 @@ export const useStore = create((set, get) => ({
       } catch (overviewError) {
         // Silently handle missing contract method
         console.warn("SlabManager.getUserOverview not available, using fallback");
-        
+
         // Try individual function calls as fallback
         try {
           const [
@@ -4397,13 +4414,13 @@ export const useStore = create((set, get) => ({
       // Calculate slab income from achieved slabs with safety checks
       let slabIncomeUsd = 0;
       let slabIncomeAvailableUsd = 0;
-      
+
       if (Array.isArray(achievedSlabs) && achievedSlabs.length > 0) {
         achievedSlabs.forEach(slab => {
           try {
-            const slabAmount = safeFromMicroUSD(slab.qualifiedL1) + 
-                              safeFromMicroUSD(slab.qualifiedL2) + 
-                              safeFromMicroUSD(slab.qualifiedLrest);
+            const slabAmount = safeFromMicroUSD(slab.qualifiedL1) +
+              safeFromMicroUSD(slab.qualifiedL2) +
+              safeFromMicroUSD(slab.qualifiedLrest);
             slabIncomeUsd += slabAmount;
             if (canClaim) {
               slabIncomeAvailableUsd += slabAmount;
@@ -4422,7 +4439,7 @@ export const useStore = create((set, get) => ({
           return 0.1;
         }
       };
-      
+
       const ramaPrice = getRamaPrice();
       const slabIncomeRama = ramaPrice > 0 ? slabIncomeUsd / ramaPrice : 0;
       const slabIncomeAvailableRama = ramaPrice > 0 ? slabIncomeAvailableUsd / ramaPrice : 0;
@@ -4430,13 +4447,13 @@ export const useStore = create((set, get) => ({
       // Calculate override income from achieved rewards with safety checks
       let overrideIncomeUsd = 0;
       let overrideIncomeRama = 0;
-      
+
       if (Array.isArray(achievedRewards) && achievedRewards.length > 0) {
         achievedRewards.forEach(reward => {
           try {
-            const rewardAmount = safeFromMicroUSD(reward.qualifiedL1) + 
-                                safeFromMicroUSD(reward.qualifiedL2) + 
-                                safeFromMicroUSD(reward.qualifiedLrest);
+            const rewardAmount = safeFromMicroUSD(reward.qualifiedL1) +
+              safeFromMicroUSD(reward.qualifiedL2) +
+              safeFromMicroUSD(reward.qualifiedLrest);
             overrideIncomeUsd += rewardAmount;
           } catch (error) {
             console.warn("Error processing reward achievement:", error);
@@ -4448,13 +4465,13 @@ export const useStore = create((set, get) => ({
       // Process royalty achievements with safety checks
       let royaltyIncomeUsd = 0;
       let royaltyIncomeRama = 0;
-      
+
       if (Array.isArray(achievedRoyalties) && achievedRoyalties.length > 0) {
         achievedRoyalties.forEach(royalty => {
           try {
-            const royaltyAmount = safeFromMicroUSD(royalty.qualifiedL1) + 
-                                 safeFromMicroUSD(royalty.qualifiedL2) + 
-                                 safeFromMicroUSD(royalty.qualifiedLrest);
+            const royaltyAmount = safeFromMicroUSD(royalty.qualifiedL1) +
+              safeFromMicroUSD(royalty.qualifiedL2) +
+              safeFromMicroUSD(royalty.qualifiedLrest);
             royaltyIncomeUsd += royaltyAmount;
           } catch (error) {
             console.warn("Error processing royalty achievement:", error);
@@ -4496,9 +4513,9 @@ export const useStore = create((set, get) => ({
               qualifiedL1: safeFromMicroUSD(item.qualifiedL1),
               qualifiedL2: safeFromMicroUSD(item.qualifiedL2),
               qualifiedLrest: safeFromMicroUSD(item.qualifiedLrest),
-              totalQualified: safeFromMicroUSD(item.qualifiedL1) + 
-                            safeFromMicroUSD(item.qualifiedL2) + 
-                            safeFromMicroUSD(item.qualifiedLrest)
+              totalQualified: safeFromMicroUSD(item.qualifiedL1) +
+                safeFromMicroUSD(item.qualifiedL2) +
+                safeFromMicroUSD(item.qualifiedLrest)
             };
           } catch (error) {
             console.warn(`Error processing ${type} achievement:`, error);
@@ -4554,7 +4571,7 @@ export const useStore = create((set, get) => ({
         currentEpoch,
         lastClaimEpoch,
         newDirects,
-        
+
         // Income calculations
         slabIncomeUsd,
         slabIncomeAvailableUsd,
@@ -4564,16 +4581,16 @@ export const useStore = create((set, get) => ({
         overrideIncomeRama,
         royaltyIncomeUsd,
         royaltyIncomeRama,
-        
+
         // Partner/leg data
         sameSlabPartners,
         legsDetailed,
         legBreakdown,
-        
+
         // Achievement data
         achievementsData,
         progressData,
-        
+
         // Raw data for backward compatibility
         slabAchiev: achievementsData,
         summary: {
@@ -4595,7 +4612,7 @@ export const useStore = create((set, get) => ({
 
     } catch (error) {
       console.error("❌ getSlabIncomeOverview error:", error);
-      
+
       // Return safe fallback data instead of throwing
       console.warn("🔄 Returning fallback slab data due to error");
       return {
@@ -4652,7 +4669,7 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
-      
+
       if (!slabManager) {
         console.warn("SlabManager contract not available for details, using fallback");
         return {
@@ -4676,31 +4693,31 @@ export const useStore = create((set, get) => ({
       ]);
 
       // Process results with fallbacks
-      const slabPercents = results[0].status === 'fulfilled' 
+      const slabPercents = results[0].status === 'fulfilled'
         ? (results[0].value || []).map(p => Number(p) || 0)
         : Array(11).fill(0).map((_, i) => [5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25][i] || 0);
 
       const rewardMilestones = results[1].status === 'fulfilled'
         ? (results[1].value || []).map(m => {
-            try {
-              return fromMicroUSD(m || 0);
-            } catch {
-              return 0;
-            }
-          })
+          try {
+            return fromMicroUSD(m || 0);
+          } catch {
+            return 0;
+          }
+        })
         : [];
 
       const royaltyTiers = results[2].status === 'fulfilled'
         ? (results[2].value || []).map(tier => {
-            try {
-              return {
-                threshold: fromMicroUSD(tier.thresholdUSD || 0),
-                reward: fromMicroUSD(tier.rewardUSD || 0)
-              };
-            } catch {
-              return { threshold: 0, reward: 0 };
-            }
-          })
+          try {
+            return {
+              threshold: fromMicroUSD(tier.thresholdUSD || 0),
+              reward: fromMicroUSD(tier.rewardUSD || 0)
+            };
+          } catch {
+            return { threshold: 0, reward: 0 };
+          }
+        })
         : [];
 
       const currentEpoch = results[3].status === 'fulfilled'
@@ -4732,7 +4749,7 @@ export const useStore = create((set, get) => ({
 
     } catch (error) {
       console.error("❌ getSlabManagerDetails error:", error);
-      
+
       // Return safe fallback data
       return {
         slabPercents: Array(11).fill(0).map((_, i) => [5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25][i] || 0),
@@ -4751,14 +4768,14 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
-      
+
       if (!slabManager) {
         throw new Error("SlabManager contract not available");
       }
 
       // Get detailed leg data from SlabManager
       const legsDetailed = await slabManager.methods.getLegsDetailed(userAddress).call();
-      
+
       if (!legsDetailed || !Array.isArray(legsDetailed)) {
         return {
           legs: [],
@@ -4820,7 +4837,7 @@ export const useStore = create((set, get) => ({
 
       // Calculate summary statistics
       const activeLegs = sortedLegs.filter(leg => leg.volume > 0).length;
-      
+
       const summary = {
         totalLegs: sortedLegs.length,
         activeLegs,
@@ -4853,7 +4870,7 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
-      
+
       if (!slabManager) {
         throw new Error("SlabManager contract not available");
       }
@@ -4889,7 +4906,7 @@ export const useStore = create((set, get) => ({
       // Calculate total volume for percentage calculations
       const totalVolume = processedLegs.reduce((sum, leg) => sum + leg.volume, 0);
       const activeLegs = processedLegs.filter((leg) => leg.volume > 0).length;
-      
+
       // Add percentage to each leg
       processedLegs.forEach(leg => {
         leg.percentage = totalVolume > 0 ? (leg.volume / totalVolume) * 100 : 0;
@@ -4914,7 +4931,7 @@ export const useStore = create((set, get) => ({
       const currentSlabIndex = contractSlabIndex + 1; // Always add 1 to convert to display level
 
       const capBreakdown = computeBusinessCapBreakdown(processedLegs, qualifiedVolumeContract);
-      
+
       // If qualified volume is 0 but we have actual leg volumes, use uncapped volumes as capped volumes
       // This handles the case where the contract hasn't processed qualification yet but legs have volume
       let cappedVolumes;
@@ -4923,7 +4940,7 @@ export const useStore = create((set, get) => ({
         const L1Volume = processedLegs[0]?.volume || 0;
         const L2Volume = processedLegs[1]?.volume || 0;
         const LrestVolume = processedLegs.slice(2).reduce((sum, leg) => sum + leg.volume, 0);
-        
+
         cappedVolumes = {
           L1: L1Volume,
           L2: L2Volume,
@@ -4936,7 +4953,7 @@ export const useStore = create((set, get) => ({
           Lrest: capBreakdown.breakdown.Lrest
         };
       }
-      
+
       const totalQualified = qualifiedVolumeContract > 0 ? qualifiedVolumeContract : capBreakdown.countedTotal;
 
       // Volume performance analysis
@@ -4990,14 +5007,14 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const comprehensiveView = makeContract(ComprehensiveViewABI, Contract["ComprehensiveView"]);
-      
+
       if (!comprehensiveView) {
         throw new Error("ComprehensiveView contract not available");
       }
 
       // Call getIncomeTotals function
       const result = await comprehensiveView.methods.getIncomeTotals(userAddress).call();
-      
+
       // Process the results to convert from micro USD and wei
       const totals = {
         roi: {
@@ -5005,7 +5022,7 @@ export const useStore = create((set, get) => ({
           rama: fromWeiToRama(result.roiRama || 0)
         },
         direct: {
-          usd: fromMicroUSD(result.directUsd || 0), 
+          usd: fromMicroUSD(result.directUsd || 0),
           rama: fromWeiToRama(result.directRama || 0)
         },
         slab: {
@@ -5032,7 +5049,7 @@ export const useStore = create((set, get) => ({
       totals.allIncomesUsd = totals.total.usd;
       totals.totalEarningsUsd = totals.total.usd;
       totals.totalEarningsRama = totals.total.rama;
-      
+
       // Individual income types with expected property names
       totals.growthUsd = totals.roi.usd;
       totals.totalRoiUsd = totals.roi.usd;
@@ -5065,7 +5082,7 @@ export const useStore = create((set, get) => ({
       }
 
       // console.log('🔍 Getting comprehensive slab user overview for:', userAddress);
-      
+
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) {
         throw new Error('SlabManager contract not available');
@@ -5081,19 +5098,19 @@ export const useStore = create((set, get) => ({
         qualifiedBusinessUSD: Number(userOverview.qualifiedBusinessUSD || 0),
         currentSlabIdx: Number(userOverview.currentSlabIdx || 0), // 0-based from contract
         displaySlabLevel: (Number(userOverview.currentSlabIdx || 0)) + 1, // 1-based for UI
-        
+
         // Current leg volumes (capped for slab calculations)
         currentL1: Number(userOverview.currentL1 || 0),
         currentL2: Number(userOverview.currentL2 || 0),
         currentLrest: Number(userOverview.currentLrest || 0),
-        
+
         // All legs detailed information
         allLegs: (userOverview.allLegs || []).map((leg, index) => ({
           address: leg.leg || '',
           volume: Number(leg.volume || 0),
           rank: index + 1
         })),
-        
+
         // Achieved slabs with full details
         achievedSlabs: (userOverview.achievedSlabs || []).map(slab => ({
           id: Number(slab.id || 0), // 0-based contract index
@@ -5104,7 +5121,7 @@ export const useStore = create((set, get) => ({
           qualifiedL2: Number(slab.qualifiedL2 || 0),
           qualifiedLrest: Number(slab.qualifiedLrest || 0)
         })),
-        
+
         // Achieved rewards
         achievedRewards: (userOverview.achievedRewards || []).map(reward => ({
           id: Number(reward.id || 0),
@@ -5114,7 +5131,7 @@ export const useStore = create((set, get) => ({
           qualifiedL2: Number(reward.qualifiedL2 || 0),
           qualifiedLrest: Number(reward.qualifiedLrest || 0)
         })),
-        
+
         // Achieved royalties
         achievedRoyalties: (userOverview.achievedRoyalties || []).map(royalty => ({
           id: Number(royalty.id || 0),
@@ -5124,12 +5141,12 @@ export const useStore = create((set, get) => ({
           qualifiedL2: Number(royalty.qualifiedL2 || 0),
           qualifiedLrest: Number(royalty.qualifiedLrest || 0)
         })),
-        
+
         // Next level thresholds
         nextSlabThreshold: Number(userOverview.nextSlabThreshold || 0),
         nextRewardThreshold: Number(userOverview.nextRewardThreshold || 0),
         nextRoyaltyThreshold: Number(userOverview.nextRoyaltyThreshold || 0),
-        
+
         // Claiming status
         canClaimSlab: Boolean(userOverview.canClaimSlab || false),
         lastClaimAt: Number(userOverview.lastClaimAt || 0),
@@ -5137,7 +5154,7 @@ export const useStore = create((set, get) => ({
       };
 
       // console.log('✅ Processed slab user overview:', result);
-      
+
       return {
         success: true,
         data: result,
@@ -5168,7 +5185,7 @@ export const useStore = create((set, get) => ({
       }
 
       // console.log('🎯 Getting detailed achievement progress for:', userAddress, 'kind:', achievementKind);
-      
+
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
       if (!slabManager) {
         throw new Error('SlabManager contract not available');
@@ -5196,7 +5213,7 @@ export const useStore = create((set, get) => ({
       }
 
       // console.log('✅ Processed achievement progress:', result);
-      
+
       return {
         success: true,
         data: result,
@@ -5227,7 +5244,7 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
-      
+
       if (!slabManager) {
         console.warn("SlabManager contract not available for achievement progress, using fallback");
         return {
@@ -5323,7 +5340,7 @@ export const useStore = create((set, get) => ({
     } catch (error) {
       // Silently handle errors and return safe fallback
       console.warn("getNextAchievementProgress: Using fallback data");
-      
+
       // Return safe fallback data
       return {
         nextSlab: {
@@ -6007,27 +6024,27 @@ export const useStore = create((set, get) => ({
         const incomePromise =
           incomeDistributor
             ? safeCall(
-                incomeDistributor.methods
-                  .getDirectIncomeSummary(addr)
-                  .call(),
-                "IncomeDistributor.getDirectIncomeSummary"
-              )
+              incomeDistributor.methods
+                .getDirectIncomeSummary(addr)
+                .call(),
+              "IncomeDistributor.getDirectIncomeSummary"
+            )
             : Promise.resolve(null);
 
         const teamVolumePromise =
           oceanQuery
             ? safeCall(
-                oceanQuery.methods.getTeamVolume(addr).call(),
-                "OceanQuery.getTeamVolume"
-              )
+              oceanQuery.methods.getTeamVolume(addr).call(),
+              "OceanQuery.getTeamVolume"
+            )
             : Promise.resolve(null);
 
         const stakePromise =
           oceanQuery
             ? safeCall(
-                oceanQuery.methods.getTotalStakedAmount(addr).call(),
-                "OceanQuery.getTotalStakedAmount"
-              )
+              oceanQuery.methods.getTotalStakedAmount(addr).call(),
+              "OceanQuery.getTotalStakedAmount"
+            )
             : Promise.resolve(null);
 
         const [info, incomeRaw, teamVolumeRaw, stakeRaw] = await Promise.all([
@@ -6057,21 +6074,21 @@ export const useStore = create((set, get) => ({
           ? fromWeiToRama(pickField(incomeRaw, "claimableRama", 3) ?? 0)
           : null;
 
-       const teamVolume = teamVolumeRaw
-         ? {
-              qualifiedUsd: formatTeamVolume(
-                fromWadToUsd(pickField(teamVolumeRaw, "qualifiedUSD", 0))
-              ),
-              leg1Usd: formatTeamVolume(
-                fromWadToUsd(pickField(teamVolumeRaw, "L1", 1))
-              ),
-              leg2Usd: formatTeamVolume(
-                fromWadToUsd(pickField(teamVolumeRaw, "L2", 2))
-              ),
-              legRestUsd: formatTeamVolume(
-                fromWadToUsd(pickField(teamVolumeRaw, "Lrest", 3))
-              ),
-            }
+        const teamVolume = teamVolumeRaw
+          ? {
+            qualifiedUsd: formatTeamVolume(
+              fromWadToUsd(pickField(teamVolumeRaw, "qualifiedUSD", 0))
+            ),
+            leg1Usd: formatTeamVolume(
+              fromWadToUsd(pickField(teamVolumeRaw, "L1", 1))
+            ),
+            leg2Usd: formatTeamVolume(
+              fromWadToUsd(pickField(teamVolumeRaw, "L2", 2))
+            ),
+            legRestUsd: formatTeamVolume(
+              fromWadToUsd(pickField(teamVolumeRaw, "Lrest", 3))
+            ),
+          }
           : null;
 
         let stakeUsd = null;
@@ -6083,14 +6100,14 @@ export const useStore = create((set, get) => ({
             totalUsdMicro != null
               ? fromMicroUSD(totalUsdMicro)
               : stakeRaw?.[1]
-              ? fromMicroUSD(stakeRaw[1])
-              : null;
+                ? fromMicroUSD(stakeRaw[1])
+                : null;
           stakeRama =
             totalRamaWei != null
               ? fromWeiToRama(totalRamaWei)
               : stakeRaw?.[0]
-              ? fromWeiToRama(stakeRaw[0])
-              : null;
+                ? fromWeiToRama(stakeRaw[0])
+                : null;
         }
 
         return {
@@ -6573,8 +6590,8 @@ export const useStore = create((set, get) => ({
           : Promise.resolve([]),
       ]);
 
-  const thresholdsRaw = Array.isArray(allMilestonesRaw?.[0]) ? allMilestonesRaw[0] : [];
-  const rewardsRaw = Array.isArray(allMilestonesRaw?.[1]) ? allMilestonesRaw[1] : [];
+      const thresholdsRaw = Array.isArray(allMilestonesRaw?.[0]) ? allMilestonesRaw[0] : [];
+      const rewardsRaw = Array.isArray(allMilestonesRaw?.[1]) ? allMilestonesRaw[1] : [];
       const rewardMilestonesArray = Array.isArray(rewardMilestonesRaw) ? rewardMilestonesRaw : [];
 
       const isNonZero = (v) => {
@@ -6712,56 +6729,56 @@ export const useStore = create((set, get) => ({
       ] = await Promise.all([
         oceanQuery
           ? oceanQuery.methods
-              .getTotalRewardsClaimed(userAddress)
-              .call()
-              .catch(() => "0")
+            .getTotalRewardsClaimed(userAddress)
+            .call()
+            .catch(() => "0")
           : Promise.resolve("0"),
         oceanQuery
           ? oceanQuery.methods
-              .getOneTimeRewardIncome(userAddress)
-              .call()
-              .catch(() => "0")
+            .getOneTimeRewardIncome(userAddress)
+            .call()
+            .catch(() => "0")
           : Promise.resolve("0"),
         rewardVault
           ? rewardVault.methods
-              .getUserTotals(userAddress)
-              .call()
-              .catch(() => [0, 0])
+            .getUserTotals(userAddress)
+            .call()
+            .catch(() => [0, 0])
           : Promise.resolve([0, 0]),
         rewardVault
           ? rewardVault.methods
-              .getUserMilestoneStatus(userAddress)
-              .call()
-              .catch(() => [])
+            .getUserMilestoneStatus(userAddress)
+            .call()
+            .catch(() => [])
           : Promise.resolve([]),
         rewardVault
           ? rewardVault.methods
-              .getAllMilestones()
-              .call()
-              .catch(() => [[], []])
+            .getAllMilestones()
+            .call()
+            .catch(() => [[], []])
           : Promise.resolve([[], []]),
         slabManager
           ? slabManager.methods
-              .getRewardMilestones()
-              .call()
-              .catch(() => [])
+            .getRewardMilestones()
+            .call()
+            .catch(() => [])
           : Promise.resolve([]),
         slabManager
           ? slabManager.methods
-              .getAchievedWithTimes(userAddress, 0)
-              .call()
-              .catch(() => [[], []])
+            .getAchievedWithTimes(userAddress, 0)
+            .call()
+            .catch(() => [[], []])
           : Promise.resolve([[], []]),
         slabManager
           ? slabManager.methods
-              .getQualifiedBusinessUSD(userAddress)
-              .call()
-              .catch(() => "0")
+            .getQualifiedBusinessUSD(userAddress)
+            .call()
+            .catch(() => "0")
           : Promise.resolve("0"),
       ]);
 
-  // Qualified business from SlabManager is reported in USD micro (per on-chain data), not WAD
-  const qualifiedVolumeFromSlab = fromMicroUSD(qualifiedBusinessRaw ?? 0);
+      // Qualified business from SlabManager is reported in USD micro (per on-chain data), not WAD
+      const qualifiedVolumeFromSlab = fromMicroUSD(qualifiedBusinessRaw ?? 0);
       let qualifiedVolumeUsd = Number.isFinite(qualifiedVolumeFromSlab)
         ? qualifiedVolumeFromSlab
         : 0;
@@ -6884,12 +6901,12 @@ export const useStore = create((set, get) => ({
         const progressPct =
           thresholdUsd > 0
             ? Math.min(
-                100,
-                Math.max(
-                  0,
-                  (Number(qualifiedVolumeUsd) / Number(thresholdUsd)) * 100
-                )
+              100,
+              Math.max(
+                0,
+                (Number(qualifiedVolumeUsd) / Number(thresholdUsd)) * 100
               )
+            )
             : 0;
 
         milestones.push({
@@ -6930,8 +6947,8 @@ export const useStore = create((set, get) => ({
       const remainingUsd = usedFallback
         ? 0
         : milestones
-            .filter((m) => !m.achieved)
-            .reduce((sum, m) => sum + (m.rewardUsd ?? 0), 0);
+          .filter((m) => !m.achieved)
+          .reduce((sum, m) => sum + (m.rewardUsd ?? 0), 0);
 
       const pendingRewardUsd = usedFallback
         ? 0
@@ -7048,7 +7065,7 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  CreateportFolio: async (userAddress, sponsorInput,amt=10) => {
+  CreateportFolio: async (userAddress, sponsorInput, amt = 10) => {
     // console.log('CreateportFolio args:', userAddress, sponsorInput);
     try {
       if (!userAddress || typeof userAddress !== 'string' || !userAddress.startsWith('0x')) {
@@ -7121,7 +7138,7 @@ export const useStore = create((set, get) => ({
         from: userAddress,
         to: Contract.PortFolioManager,   // ✅ correct target (PM)
         data,
-  value: valueToSend,       // ✅ must send RAMA wei (buffered)
+        value: valueToSend,       // ✅ must send RAMA wei (buffered)
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
         // chainId: <your chain id> // optional, wallet usually fills it
@@ -7166,7 +7183,7 @@ export const useStore = create((set, get) => ({
         });
       } catch (err) {
         console.error('Gas estimation failed:', err);
-        toast.error(err?.message || 'Check contract & inputs.' , 'Gas Estimation Failed');
+        toast.error(err?.message || 'Check contract & inputs.', 'Gas Estimation Failed');
         throw err;
       }
       const toHex = web3.utils.toHex;
@@ -7180,7 +7197,7 @@ export const useStore = create((set, get) => ({
       return tx;
     } catch (error) {
       console.error('withdraw error:', error);
-      toast.error(error?.message || 'Unknown error' , 'Registration error');
+      toast.error(error?.message || 'Unknown error', 'Registration error');
       throw error;
     }
   },
@@ -7209,7 +7226,7 @@ export const useStore = create((set, get) => ({
         });
       } catch (err) {
         console.error('Gas estimation failed:', err);
-        toast.error(err?.message || 'Check contract & inputs.' , 'Gas Estimation Failed');
+        toast.error(err?.message || 'Check contract & inputs.', 'Gas Estimation Failed');
         throw err;
       }
       const toHex = web3.utils.toHex;
@@ -7223,7 +7240,7 @@ export const useStore = create((set, get) => ({
       return tx;
     } catch (error) {
       console.error('withdraw error:', error);
-      toast.error(error?.message || 'Unknown error' , 'Registration error');
+      toast.error(error?.message || 'Unknown error', 'Registration error');
       throw error;
     }
   },
@@ -7252,7 +7269,7 @@ export const useStore = create((set, get) => ({
 
     } catch (error) {
       console.error('GetchStakeInvest error:', error);
-      toast.error(error?.message || 'Unknown error' , 'GetchStakeInvest error');
+      toast.error(error?.message || 'Unknown error', 'GetchStakeInvest error');
       throw error;
     }
   },
@@ -7272,7 +7289,7 @@ export const useStore = create((set, get) => ({
 
     } catch (error) {
       console.error('InvestInPortFolio error:', error);
-      toast.error(error?.message || 'Unknown error' , 'Portfolio creation error');
+      toast.error(error?.message || 'Unknown error', 'Portfolio creation error');
       throw error;
     }
   },
@@ -7377,7 +7394,7 @@ export const useStore = create((set, get) => ({
 
   CreateSelfPort: async (userAddress, Amt) => {
     console.log('[CreateSelfPort] Called with:', { userAddress, Amt, timestamp: new Date().toISOString() });
-    
+
     // Validate inputs
     if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
       throw new Error('Invalid user address');
@@ -7385,13 +7402,13 @@ export const useStore = create((set, get) => ({
     if (!Amt || Amt <= 0) {
       throw new Error('Invalid amount: must be greater than 0');
     }
-    
+
     try {
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
 
       const usdMicro = Amt * 1e6;
       console.log('[CreateSelfPort] USD micro:', usdMicro);
-      
+
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -7400,15 +7417,15 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-      console.log('[CreateSelfPort] RAMA values:', { 
-        rawWei: valueToSendRaw.toString(), 
-        bufferedWei: valueToSend.toString(), 
+      console.log('[CreateSelfPort] RAMA values:', {
+        rawWei: valueToSendRaw.toString(),
+        bufferedWei: valueToSend.toString(),
         bufferPPM: getRamaBufferPpm(),
         usdAmount: Amt
       });
 
       const data = pm.methods
-  .createPortfolio(valueToSend)
+        .createPortfolio(valueToSend)
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
@@ -7437,7 +7454,7 @@ export const useStore = create((set, get) => ({
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
-      
+
       console.log('[CreateSelfPort] Transaction built:', { from: tx.from, to: tx.to, value: valueToSend.toString() });
 
       return tx;
@@ -7448,15 +7465,15 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  CreateOtherfPort: async (userAddress, toBeActivatedUSer, Amt,sponsorAddress) => {
-    console.log('[CreateOtherfPort] Called with:', { 
-      userAddress, 
-      toBeActivatedUSer, 
-      Amt, 
+  CreateOtherfPort: async (userAddress, toBeActivatedUSer, Amt, sponsorAddress) => {
+    console.log('[CreateOtherfPort] Called with:', {
+      userAddress,
+      toBeActivatedUSer,
+      Amt,
       sponsorAddress,
       timestamp: new Date().toISOString()
     });
-    
+
     // Validate inputs before proceeding
     if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
       throw new Error('Invalid caller address');
@@ -7470,7 +7487,7 @@ export const useStore = create((set, get) => ({
     if (!Amt || Amt <= 0) {
       throw new Error('Invalid amount');
     }
-    
+
     try {
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
 
@@ -7486,7 +7503,7 @@ export const useStore = create((set, get) => ({
       // console.log('[CreateOtherfPort]', { rawWei: valueToSendRaw.toString(), bufferedWei: valueToSend.toString(), bufferPPM: getRamaBufferPpm() })
 
       const data = pm.methods
-  .createPortfolioForOthers(toBeActivatedUSer, sponsorAddress)
+        .createPortfolioForOthers(toBeActivatedUSer, sponsorAddress)
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
@@ -7526,7 +7543,7 @@ export const useStore = create((set, get) => ({
 
   SafeSelfPort: async (userAddress, Amt) => {
     console.log('[SafeSelfPort] Called with:', { userAddress, Amt, timestamp: new Date().toISOString() });
-    
+
     // Validate inputs
     if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
       throw new Error('Invalid user address');
@@ -7534,14 +7551,14 @@ export const useStore = create((set, get) => ({
     if (!Amt || Amt <= 0) {
       throw new Error('Invalid amount: must be greater than 0');
     }
-    
+
     try {
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
       const safeWallCont = new web3.eth.Contract(SafeWalletABI, Contract.SafeWallet);
 
       const usdMicro = BigInt(Math.floor(Number(Amt) * 1e6));
       console.log('[SafeSelfPort] USD micro:', usdMicro.toString());
-      
+
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -7550,14 +7567,14 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-      console.log('[SafeSelfPort] RAMA values:', { 
-        rawWei: valueToSendRaw.toString(), 
-        bufferedWei: valueToSend.toString(), 
+      console.log('[SafeSelfPort] RAMA values:', {
+        rawWei: valueToSendRaw.toString(),
+        bufferedWei: valueToSend.toString(),
         bufferPPM: getRamaBufferPpm(),
         usdAmount: Amt
       });
 
-  const data = safeWallCont.methods.createPortfolioFromSafe(valueToSend).encodeABI();
+      const data = safeWallCont.methods.createPortfolioFromSafe(valueToSend).encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
 
@@ -7579,13 +7596,13 @@ export const useStore = create((set, get) => ({
 
       const tx = {
         from: userAddress,
-        to: Contract.SafeWallet,  
+        to: Contract.SafeWallet,
         data,
-        value: 0,       
+        value: 0,
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
-      
+
       console.log('[SafeSelfPort] Transaction built:', { from: tx.from, to: tx.to, ramaAmount: valueToSend.toString() });
 
       return tx;
@@ -7596,15 +7613,15 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  SafeOtherPort: async (userAddress,sponserAddress, beneficiary, Amt) => {
-    console.log('[SafeOtherPort] Called with:', { 
-      userAddress, 
-      sponserAddress, 
-      beneficiary, 
+  SafeOtherPort: async (userAddress, sponserAddress, beneficiary, Amt) => {
+    console.log('[SafeOtherPort] Called with:', {
+      userAddress,
+      sponserAddress,
+      beneficiary,
       Amt,
       timestamp: new Date().toISOString()
     });
-    
+
     // Validate inputs before proceeding
     if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
       throw new Error('Invalid caller address');
@@ -7618,7 +7635,7 @@ export const useStore = create((set, get) => ({
     if (!Amt || Amt <= 0) {
       throw new Error('Invalid amount: must be greater than 0');
     }
-    
+
     try {
 
       const pm = new web3.eth.Contract(PortFolioManagerABI, Contract.PortFolioManager);
@@ -7626,7 +7643,7 @@ export const useStore = create((set, get) => ({
 
       const usdMicro = BigInt(Math.floor(Number(Amt) * 1e6));
       console.log('[SafeOtherPort] USD micro:', usdMicro.toString());
-      
+
       const ramaWeiQuoteStr = await pm.methods
         .getPackageValueInRAMA(usdMicro.toString())
         .call();
@@ -7635,9 +7652,9 @@ export const useStore = create((set, get) => ({
       if (valueToSendRaw <= 0n) throw new Error('Invalid RAMA quote (0)');
       const valueToSend = addRamaBufferWei(valueToSendRaw);
 
-      console.log('[SafeOtherPort] RAMA values:', { 
-        rawWei: valueToSendRaw.toString(), 
-        bufferedWei: valueToSend.toString(), 
+      console.log('[SafeOtherPort] RAMA values:', {
+        rawWei: valueToSendRaw.toString(),
+        bufferedWei: valueToSend.toString(),
         bufferPPM: getRamaBufferPpm(),
         usdAmount: Amt
       });
@@ -7668,24 +7685,24 @@ export const useStore = create((set, get) => ({
 
       const tx = {
         from: userAddress,
-        to: Contract.SafeWallet,   
+        to: Contract.SafeWallet,
         data,
-        value: 0,       
+        value: 0,
         gas: toHex(gasLimit),
         gasPrice: toHex(gasPrice),
       };
-      
+
       console.log('[SafeOtherPort] Transaction built:', { from: tx.from, to: tx.to, beneficiary, sponsor: sponserAddress });
 
-      return tx; 
+      return tx;
     } catch (error) {
       console.error('SafeOtherPort error:', error);
-      toast.error(error?.message || 'Unknown error' , 'SafeOtherPort error');
+      toast.error(error?.message || 'Unknown error', 'SafeOtherPort error');
       throw error;
     }
   },
 
-// ==========================================================================
+  // ==========================================================================
   // INcome Transaction History
   // ==========================================================================
 
@@ -7785,7 +7802,7 @@ export const useStore = create((set, get) => ({
       return tx;
     } catch (error) {
       console.error('SafeRegisterAndActivate error:', error);
-      toast.error(error?.message || 'Unknown error' , 'Registration error');
+      toast.error(error?.message || 'Unknown error', 'Registration error');
       throw error;
     }
   },
@@ -7803,7 +7820,7 @@ export const useStore = create((set, get) => ({
       const ramaWeiBigInt = decimalToWei(ramaAmount, 18);
       if (ramaWeiBigInt <= 0n) throw new Error('Invalid withdrawal amount');
       const ramaWei = ramaWeiBigInt.toString();
-      
+
       // Check if user has sufficient balance
       const balance = await safeWallet.methods.balanceOf(userAddress).call();
       if (ramaWeiBigInt > toBigIntSafe(balance)) {
@@ -7816,7 +7833,7 @@ export const useStore = create((set, get) => ({
         .encodeABI();
 
       const gasPrice = await web3.eth.getGasPrice();
-      
+
       let gasLimit;
       try {
         gasLimit = await web3.eth.estimateGas({
@@ -7853,27 +7870,27 @@ export const useStore = create((set, get) => ({
   // Cache Management Methods
   clearCache: async () => {
     // console.log('[Store] Clearing all cached data...');
-    
+
     try {
       // Clear local storage data
       localStorage.removeItem('userInfo');
       localStorage.removeItem('contractData');
       localStorage.removeItem('portfolioData');
       localStorage.removeItem('transactionHistory');
-      
+
       // Clear session storage
       sessionStorage.clear();
-      
+
       // Reset store state
       const resetState = useUserInfoStore.getState().resetStore;
       if (resetState) resetState();
-      
+
       // Force contract re-initialization
       const initState = useUserInfoStore.getState().initializeContracts;
       if (initState) {
         await initState();
       }
-      
+
       // console.log('[Store] Cache cleared successfully');
     } catch (error) {
       console.error('[Store] Error clearing cache:', error);
@@ -7882,14 +7899,14 @@ export const useStore = create((set, get) => ({
 
   invalidateContractCache: async () => {
     // console.log('[Store] Invalidating contract cache...');
-    
+
     try {
       // Clear contract-specific cached data
       localStorage.removeItem('contractData');
       localStorage.removeItem('portfolioData');
       localStorage.removeItem('stakingData');
       localStorage.removeItem('rewardData');
-      
+
       // Reset contract-related state
       set(state => ({
         ...state,
@@ -7900,13 +7917,13 @@ export const useStore = create((set, get) => ({
         totalRewards: '0',
         isInitialized: false
       }));
-      
+
       // Re-initialize contracts with fresh data
       const initContracts = useUserInfoStore.getState().initializeContracts;
       if (initContracts) {
         await initContracts();
       }
-      
+
       // console.log('[Store] Contract cache invalidated and contracts re-initialized');
     } catch (error) {
       console.error('[Store] Error invalidating contract cache:', error);
@@ -7952,7 +7969,7 @@ export const useStore = create((set, get) => ({
 
       // Convert from USD6 (micro USD) to regular USD
       const totalEarnedUSD = fromMicroUSD(totalEarnedUSD6);
-      
+
       // console.log('[Store] CappingIncomeManager breakdown:', {
       //   roi: fromMicroUSD(roiUSD6),
       //   direct: fromMicroUSD(directUSD6),
@@ -7982,7 +7999,7 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error) {
       console.error('[Store] Error fetching CappingIncomeManager data:', error);
-      
+
       // Return safe fallback values
       return {
         breakdown: {
@@ -8031,12 +8048,12 @@ export const useStore = create((set, get) => ({
       // Extract and parse the response
 
       const directs = result?.directs;
-      const selfUsd=result?.selfUsd;;
-      const teamUsd=result?.teamUsd;;
-      const sumUsd=result?.sumUsd;;
-      const totalSelfUsd=result?.totalSelfUsd;;
-      const totalTeamUsd=result?.totalTeamUsd;;
-      const totalSumUsd=result?.totalSumUsd;
+      const selfUsd = result?.selfUsd;;
+      const teamUsd = result?.teamUsd;;
+      const sumUsd = result?.sumUsd;;
+      const totalSelfUsd = result?.totalSelfUsd;;
+      const totalTeamUsd = result?.totalTeamUsd;;
+      const totalSumUsd = result?.totalSumUsd;
 
       // const [
       //   directs,
@@ -8050,8 +8067,8 @@ export const useStore = create((set, get) => ({
 
       // Convert USD values from wei (18 decimals) to regular USD
       // Process each direct member with their portfolio data
-      
-      
+
+
       const directsData = directs.map((address, index) => {
         const selfUsdValue = fromWadToUsd(selfUsd[index] || '0');
         const teamUsdValue = fromWadToUsd(teamUsd[index] || '0');
@@ -8087,11 +8104,11 @@ export const useStore = create((set, get) => ({
         averageDirectPortfolio: directs.length > 0 ? fromWadToUsd(totalSelfUsd) / directs.length : 0,
         averageTeamVolume: directs.length > 0 ? fromWadToUsd(totalTeamUsd) / directs.length : 0,
         teamPenetration: directs.length > 0 ? directsData.filter(d => d.hasTeam).length / directs.length : 0,
-        strongestDirect: directsData.reduce((max, current) => 
+        strongestDirect: directsData.reduce((max, current) =>
           current.totalBusiness > (max?.totalBusiness || 0) ? current : max, null
         ),
         // Network health indicators
-        teamBusinessRatio: fromWadToUsd(totalSelfUsd) > 0 ? 
+        teamBusinessRatio: fromWadToUsd(totalSelfUsd) > 0 ?
           (fromWadToUsd(totalTeamUsd) / fromWadToUsd(totalSelfUsd)).toFixed(2) : '0'
       };
 
@@ -8122,7 +8139,7 @@ export const useStore = create((set, get) => ({
       });
 
       return {
-        fullData:result,
+        fullData: result,
         directs: directsData,
         summary,
         success: true,
@@ -8131,7 +8148,7 @@ export const useStore = create((set, get) => ({
       };
     } catch (error) {
       console.error('[Store] Error fetching directs portfolio breakdown:', error);
-      
+
       return {
         directs: [],
         summary: {
@@ -8159,7 +8176,7 @@ export const useStore = create((set, get) => ({
   getMaxPeriodsPerClaim: async () => {
     try {
       // console.log('[Store] Fetching max periods per claim...');
-      
+
       const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
       if (roiDistributorContracts.length === 0) {
         throw new Error("RoiDistributor contract not available");
@@ -8184,7 +8201,7 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       // console.log('[Store] Fetching auto window for:', userAddress);
-      
+
       const roiDistributorContracts = makeDualContracts(RoiDistributionABI, Contract["RoiDistribution"]);
       if (roiDistributorContracts.length === 0) {
         throw new Error("RoiDistributor contract not available");
@@ -8226,7 +8243,7 @@ export const useStore = create((set, get) => ({
       // Calculate smart claiming strategy (max 99 periods per transaction)
       const maxPeriodsPerTx = 99;
       const totalTransactions = Math.ceil(totalPeriods / maxPeriodsPerTx);
-      
+
       const claimingPlan = [];
       for (let i = 0; i < totalTransactions; i++) {
         const txFromPeriod = fromPeriod + (i * maxPeriodsPerTx);
@@ -8262,7 +8279,7 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error) {
       console.error('[Store] Error fetching auto window:', error);
-      
+
       return {
         fromPeriod: 0,
         lastPeriod: 0,
@@ -8317,18 +8334,18 @@ export const useStore = create((set, get) => ({
           () => roiDistributorContracts[0].methods._autoWindow(userAddress).call(),
           '_autoWindow'
         );
-        
+
         actualFromPeriod = fromPeriod || Number(autoWindow.fromPeriod);
         actualToPeriod = toPeriod || Number(autoWindow.lastPeriod);
-        
+
         // console.log('[Store] Auto window:', { actualFromPeriod, actualToPeriod });
       }
 
       // Get per-period preview
       const perPeriodData = await callWithDualRPC(
         () => roiDistributorContracts[0].methods.perPeriodPreview(
-          userAddress, 
-          actualFromPeriod, 
+          userAddress,
+          actualFromPeriod,
           actualToPeriod
         ).call(),
         'perPeriodPreview'
@@ -8342,7 +8359,7 @@ export const useStore = create((set, get) => ({
       const dailyBreakdown = periodIds.map((periodId, index) => {
         const usdAmount = fromMicroUSD(BigInt(usdPerPeriod[index] || '0'));
         const ramaAmount = parseFloat(Web3.utils.fromWei(ramaPerPeriod[index] || '0', 'ether'));
-        
+
         return {
           periodId: Number(periodId),
           day: index + 1,
@@ -8384,7 +8401,7 @@ export const useStore = create((set, get) => ({
       };
     } catch (error) {
       console.error('[Store] Error fetching per-day ROI breakdown:', error);
-      
+
       return {
         dailyBreakdown: [],
         summary: {
@@ -8448,7 +8465,7 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error) {
       console.error('[Store] Error fetching detailed unclaimed ROI:', error);
-      
+
       return {
         totalUsd: 0,
         totalRama: 0,
@@ -8523,7 +8540,7 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error) {
       console.error('[Store] Error fetching portfolio claim preview:', error);
-      
+
       return {
         portfolioBreakdown: [],
         summary: {
@@ -8755,7 +8772,7 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error) {
       console.error('[Store] Error fetching ROI claim history:', error);
-      
+
       return {
         claimHistory: [],
         totalCount: 0,
@@ -8769,7 +8786,7 @@ export const useStore = create((set, get) => ({
 
   resetStore: () => {
     // console.log('[Store] Resetting store to initial state...');
-    
+
     set(state => ({
       ...state,
       contracts: {},
@@ -8817,7 +8834,7 @@ export const useStore = create((set, get) => ({
       // console.log('[Store] Fetching detailed getUserSlabView for:-->', userAddress);
 
       const SlabManagerReaderCont = makeDualContracts(SlabManagerReader, Contract["SlabReader"]);
-      
+
 
       const slabInfo = await SlabManagerReaderCont[0].methods.getUserOverview(userAddress).call();
 
@@ -8834,12 +8851,12 @@ export const useStore = create((set, get) => ({
 const computeBusinessCapBreakdown = (legs = [], targetVolume = 0) => {
   const sortedLegs = Array.isArray(legs)
     ? legs
-        .map((leg) => ({
-          ...leg,
-          volume: Number(leg?.volume ?? 0),
-        }))
-        .filter((leg) => leg.volume > 0)
-        .sort((a, b) => b.volume - a.volume)
+      .map((leg) => ({
+        ...leg,
+        volume: Number(leg?.volume ?? 0),
+      }))
+      .filter((leg) => leg.volume > 0)
+      .sort((a, b) => b.volume - a.volume)
     : [];
 
   const directCount = sortedLegs.length;
@@ -8920,7 +8937,7 @@ const calculateNextSlabRequirement = (currentSlabIndex, currentVolume) => {
   const nextSlabIndex = Math.min(currentSlabIndex + 1, slabThresholds.length - 1);
   const nextThreshold = slabThresholds[nextSlabIndex];
   const remaining = Math.max(0, nextThreshold - currentVolume);
-  
+
   return {
     currentSlab: currentSlabIndex,
     nextSlab: nextSlabIndex,

@@ -20,6 +20,9 @@ import { useStore } from '../../store/useUserInfoStore';
 import { useTransaction } from '../../config/register';
 import { useDisconnect, useWaitForTransactionReceipt } from 'wagmi';
 import financialSounds from '../utils/financialSounds';
+import RPCStatus from '../components/RPCStatus';
+import { switchToWorkingRPC, getCurrentChainId, switchToRamesttaNetwork } from '../utils/networkSwitcher';
+import { getWorkingRPCEndpoint } from '../utils/getWorkingRPCSync';
 
 const MIN_USD = 10;
 const MAX_USD = 100_000_000;
@@ -250,6 +253,25 @@ export default function Signup() {
       setSponsorError('');
     }
   }, [location.search]);
+
+  // Auto-switch to working RPC when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      // Small delay to ensure wallet is fully connected
+      const timer = setTimeout(async () => {
+        try {
+          const result = await switchToWorkingRPC();
+          if (result.success && !result.alreadyConnected) {
+            console.log(`✅ Network switched: ${result.message}`);
+          }
+        } catch (error) {
+          console.warn('Auto RPC switch failed:', error);
+        }
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, address]);
 
   useEffect(() => {
     if (trxData) {
@@ -507,6 +529,54 @@ useEffect(() => {
   try { financialSounds.playPortfolioUpdate(); } catch {}
 
     try {
+      // CRITICAL: Force-check RPC status RIGHT NOW (bypass cache)
+      // The cached RPC might have gone down since app initialization
+      console.log('🔍 Checking current network and RPC health...');
+      const currentChainId = await getCurrentChainId();
+      const RAMESTTA_CHAIN_ID = '0x55a'; // 1370 in hex
+
+      // Force fresh RPC check - bypass cache to get CURRENT working RPC
+      console.log('⚡ Checking which RPC is working RIGHT NOW...');
+      const workingRPCEndpoint = await getWorkingRPCEndpoint(true); // forceCheck = true
+      console.log('🎯 Current working RPC:', workingRPCEndpoint.name, workingRPCEndpoint.url);
+
+      // Set transaction stage to connecting
+      setTxStage('connecting');
+
+      // ALWAYS update MetaMask to the CURRENT working RPC before transaction
+      // This ensures MetaMask uses the RPC that's working RIGHT NOW
+      if (currentChainId !== RAMESTTA_CHAIN_ID) {
+        console.log('🔄 Not on Ramestta network, adding with working RPC...');
+
+        try {
+          await switchToRamesttaNetwork(workingRPCEndpoint.url, true);
+          console.log(`✅ Network switched to ${workingRPCEndpoint.name}`);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        } catch (error) {
+          throw new Error(`Failed to switch network: ${error.message}`);
+        }
+      } else {
+        console.log('✅ Already on Ramestta Mainnet');
+        console.log('🔄 Forcing MetaMask RPC update to CURRENT working endpoint:', workingRPCEndpoint.url);
+
+        try {
+          await switchToRamesttaNetwork(workingRPCEndpoint.url, true);
+          console.log('✅ MetaMask RPC updated to CURRENT working endpoint');
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        } catch (rpcUpdateError) {
+          // If user rejects, show error
+          if (rpcUpdateError.message.includes('approve')) {
+            throw new Error('Please approve the network RPC update in MetaMask to continue.');
+          }
+          console.warn('⚠️ RPC update issue:', rpcUpdateError.message);
+        }
+      }
+
+      console.log('✅ Proceeding with transaction...');
+
+      // Small delay for stability
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const already = await isUserRegisterd(address);
       if (already) {
         setTxModalOpen(false);
@@ -792,6 +862,11 @@ useEffect(() => {
                         </button>
                       </div>
                     </div>
+                  </div>
+
+                  {/* RPC Status Display */}
+                  <div className="rounded-2xl border border-cyan-500/30 bg-dark-900/60 p-5">
+                    <RPCStatus />
                   </div>
 
                   <div className="rounded-2xl border border-cyan-500/30 bg-dark-900/60 p-5 space-y-5">

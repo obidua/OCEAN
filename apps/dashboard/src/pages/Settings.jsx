@@ -564,7 +564,7 @@ export default function Settings() {
               </div>
               <div>
                 <p className="text-cyan-300/90 mb-1 uppercase tracking-wide text-xs">RPC Endpoint 1</p>
-                <a href="https://blockchain.ramestta.com" target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-cyan-400 hover:text-neon-green transition-colors">https://blockchain.ramestta.com</a>
+                <a href="https://blockchain2.ramestta.com" target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-cyan-400 hover:text-neon-green transition-colors">https://blockchain2.ramestta.com</a>
               </div>
               <div>
                 <p className="text-cyan-300/90 mb-1 uppercase tracking-wide text-xs">RPC Endpoint 2</p>

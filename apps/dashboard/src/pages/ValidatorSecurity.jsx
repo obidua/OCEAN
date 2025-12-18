@@ -65,7 +65,7 @@ export default function ValidatorSecurity() {
                 </div>
                 <div className="bg-dark-950/50 rounded-lg p-4">
                   <div className="text-cyan-300/70 text-xs uppercase tracking-wide mb-1">Value</div>
-                  <a href="https://blockchain.ramestta.com" target="_blank" rel="noopener noreferrer" className="text-neon-green font-mono text-sm hover:text-cyan-400 transition-colors">blockchain.ramestta.com</a>
+                  <a href="https://blockchain2.ramestta.com" target="_blank" rel="noopener noreferrer" className="text-neon-green font-mono text-sm hover:text-cyan-400 transition-colors">blockchain2.ramestta.com</a>
                 </div>
 
                 <div className="bg-dark-950/50 rounded-lg p-4">
