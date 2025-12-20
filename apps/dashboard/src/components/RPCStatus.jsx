@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, AlertCircle, CheckCircle2, RefreshCw, Network } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, RefreshCw, Network, Plus, Wallet } from 'lucide-react';
 import { rpcManager } from '../utils/rpcManager';
 import { switchToWorkingRPC } from '../utils/networkSwitcher';
 
@@ -9,6 +9,52 @@ export default function RPCStatus() {
   const [lastChecked, setLastChecked] = useState(null);
   const [switching, setSwitching] = useState(false);
   const [switchMessage, setSwitchMessage] = useState('');
+  const [addingRpc, setAddingRpc] = useState(null);
+
+  // Ramestta network configuration
+  const ramesttaNetwork = {
+    chainId: '0x55A', // 1370 in hex
+    chainName: 'Ramestta Mainnet',
+    nativeCurrency: {
+      name: 'RAMA',
+      symbol: 'RAMA',
+      decimals: 18,
+    },
+    blockExplorerUrls: ['https://ramascan.com/'],
+  };
+
+  // Add network to MetaMask with specific RPC
+  const addNetworkToMetaMask = async (rpcUrl, rpcName) => {
+    if (!window.ethereum) {
+      setSwitchMessage('❌ MetaMask not detected. Please install MetaMask.');
+      setTimeout(() => setSwitchMessage(''), 5000);
+      return;
+    }
+
+    setAddingRpc(rpcName);
+    try {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: ramesttaNetwork.chainId,
+          chainName: ramesttaNetwork.chainName,
+          nativeCurrency: ramesttaNetwork.nativeCurrency,
+          rpcUrls: [rpcUrl],
+          blockExplorerUrls: ramesttaNetwork.blockExplorerUrls,
+        }],
+      });
+      setSwitchMessage(`✅ Ramestta network added with ${rpcName}!`);
+    } catch (error) {
+      if (error.code === 4001) {
+        setSwitchMessage('❌ User rejected the request.');
+      } else {
+        setSwitchMessage(`❌ Failed to add network: ${error.message}`);
+      }
+    } finally {
+      setAddingRpc(null);
+      setTimeout(() => setSwitchMessage(''), 5000);
+    }
+  };
 
   const checkRPCs = async () => {
     setLoading(true);
@@ -73,6 +119,10 @@ export default function RPCStatus() {
       : 'bg-red-500/20 text-red-400 border-red-500/50';
   };
 
+  // Check if all RPCs are online
+  const allRpcsOnline = rpcStatuses.length > 0 && rpcStatuses.every(rpc => rpc.isOnline);
+  const onlineCount = rpcStatuses.filter(rpc => rpc.isOnline).length;
+
   return (
     <div className="cyber-glass border border-cyan-500/30 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
@@ -92,6 +142,39 @@ export default function RPCStatus() {
           />
         </button>
       </div>
+
+      {/* Success message when all RPCs are online */}
+      {!loading && allRpcsOnline && (
+        <div className="mb-4 p-3 bg-neon-green/10 border border-neon-green/30 rounded-lg flex items-center gap-2">
+          <CheckCircle2 className="text-neon-green flex-shrink-0" size={20} />
+          <div>
+            <p className="text-neon-green font-semibold text-sm">All Systems Operational! 🚀</p>
+            <p className="text-neon-green/70 text-xs">All {onlineCount} RPC endpoints are healthy and responding normally.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Warning when some RPCs are offline */}
+      {!loading && rpcStatuses.length > 0 && !allRpcsOnline && onlineCount > 0 && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-2">
+          <AlertCircle className="text-yellow-400 flex-shrink-0" size={20} />
+          <div>
+            <p className="text-yellow-400 font-semibold text-sm">Partial Connectivity</p>
+            <p className="text-yellow-400/70 text-xs">{onlineCount} of {rpcStatuses.length} RPC endpoints online. System will use available endpoints.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error when all RPCs are offline */}
+      {!loading && rpcStatuses.length > 0 && onlineCount === 0 && (
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2">
+          <AlertCircle className="text-red-400 flex-shrink-0" size={20} />
+          <div>
+            <p className="text-red-400 font-semibold text-sm">Network Unavailable</p>
+            <p className="text-red-400/70 text-xs">All RPC endpoints are offline. Please check your internet connection.</p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {loading && rpcStatuses.length === 0 ? (
@@ -132,7 +215,7 @@ export default function RPCStatus() {
                 </div>
 
                 {rpc.isOnline && (
-                  <div className="flex gap-4 text-xs text-cyan-300/80 mt-2">
+                  <div className="flex flex-wrap gap-4 text-xs text-cyan-300/80 mt-2">
                     <div>
                       <span className="text-cyan-400/60">Response: </span>
                       <span className="font-semibold">{rpc.responseTime}ms</span>
@@ -144,6 +227,27 @@ export default function RPCStatus() {
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Add to MetaMask button */}
+                {rpc.isOnline && (
+                  <button
+                    onClick={() => addNetworkToMetaMask(rpc.url, rpc.name)}
+                    disabled={addingRpc === rpc.name}
+                    className="mt-3 w-full px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/40 text-orange-300 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {addingRpc === rpc.name ? (
+                      <>
+                        <RefreshCw className="animate-spin" size={14} />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Wallet size={14} />
+                        Add Ramestta to MetaMask
+                      </>
+                    )}
+                  </button>
                 )}
 
                 {!rpc.isOnline && rpc.error && (

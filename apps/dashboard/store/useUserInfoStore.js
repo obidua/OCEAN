@@ -1107,6 +1107,39 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  // Get ClaimedROI events with transaction hashes
+  getClaimEventsWithTxHash: async (userAddress, fromBlock = 0, toBlock = 'latest') => {
+    try {
+      const roiDistributor = makeContract(RoiDistributionABI, Contract.RoiDistribution);
+      if (!roiDistributor) {
+        console.warn("ROI Distributor contract not available for events");
+        return [];
+      }
+
+      // Query past ClaimedROI events for this user
+      const events = await roiDistributor.getPastEvents('ClaimedROI', {
+        filter: { user: userAddress },
+        fromBlock: fromBlock,
+        toBlock: toBlock
+      });
+
+      // Map events to include transaction hash
+      return events.map(event => ({
+        transactionHash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        user: event.returnValues.user,
+        fromPeriod: Number(event.returnValues.fromPeriod),
+        toPeriod: Number(event.returnValues.toPeriod),
+        usdTotal: event.returnValues.usdTotal,
+        ramaTotal: event.returnValues.ramaTotal,
+        epoch: Number(event.returnValues.epoch)
+      }));
+    } catch (error) {
+      console.error("Error fetching ClaimedROI events:", error);
+      return [];
+    }
+  },
+
   getUnclaimedROI: async (address) => {
     try {
       const { oceanicView } = await getContractInterface();
@@ -8240,8 +8273,8 @@ export const useStore = create((set, get) => ({
           ? lastPeriod - fromPeriod + 1
           : 0;
 
-      // Calculate smart claiming strategy (max 99 periods per transaction)
-      const maxPeriodsPerTx = 99;
+      // Calculate smart claiming strategy (max 20 periods per transaction - contract upgraded)
+      const maxPeriodsPerTx = 20;
       const totalTransactions = Math.ceil(totalPeriods / maxPeriodsPerTx);
 
       const claimingPlan = [];
@@ -8589,11 +8622,13 @@ export const useStore = create((set, get) => ({
         // console.log('[Store] claimROI gas estimate:', gasEstimate);
       } catch (err) {
         console.error('Gas estimation failed for claimROI:', err);
-        gasEstimate = 300000; // Fallback gas limit (reduced since claimROI is more efficient)
+        // Higher fallback for multiple periods with multiple portfolios
+        // 5 periods × multiple portfolios × freeze checks + external calls
+        gasEstimate = 5000000; // Fallback gas limit for up to 5 periods
       }
 
-      // Calculate how many periods will be claimed (max 90 per transaction)
-      const maxPeriodsPerTransaction = 90;
+      // Calculate how many periods will be claimed (max 5 per transaction - contract limit)
+      const maxPeriodsPerTransaction = 5;
       const periodsInThisTransaction = Math.min(autoWindow.totalPeriods, maxPeriodsPerTransaction);
       const remainingPeriods = Math.max(0, autoWindow.totalPeriods - maxPeriodsPerTransaction);
       const needsMultipleTransactions = autoWindow.totalPeriods > maxPeriodsPerTransaction;
@@ -8602,16 +8637,16 @@ export const useStore = create((set, get) => ({
         from: fromAddress,
         to: Contract["RoiDistribution"],
         data: transaction.encodeABI(),
-        gas: Math.floor(Number(gasEstimate) * 1.2), // Add 20% buffer
+        gas: Math.floor(Number(gasEstimate) * 2), // Add 100% buffer for safety with multiple periods and portfolios
         gasPrice: await web3.eth.getGasPrice(),
         // Add metadata for UI display (keeping autoWindow info for user confirmation)
         _metadata: {
-          claimingStrategy: 'fixed_90_days', // Updated to reflect 90-day limit
+          claimingStrategy: 'fixed_5_days', // Updated to reflect 5-day limit (contract limit)
           totalPeriods: autoWindow.totalPeriods,
           periodsInThisTransaction: periodsInThisTransaction,
           remainingPeriods: remainingPeriods,
           estimatedFromDate: autoWindow.claimingPlan?.[0]?.estimatedFromDate,
-          estimatedToDate: autoWindow.claimingPlan?.[0]?.estimatedToDate, // Only first 90 days
+          estimatedToDate: autoWindow.claimingPlan?.[0]?.estimatedToDate, // Only first 5 days
           needsMultipleTransactions: needsMultipleTransactions,
           maxPeriodsPerTransaction: maxPeriodsPerTransaction
         }
@@ -8646,14 +8681,15 @@ export const useStore = create((set, get) => ({
         // console.log('[Store] claimROI gas estimate:', gasEstimate);
       } catch (err) {
         console.error('Gas estimation failed for claimROI:', err);
-        gasEstimate = 300000; // Fallback gas limit
+        // Higher fallback for multiple periods with multiple portfolios
+        gasEstimate = 5000000; // Fallback gas limit for up to 20 periods
       }
 
       const txObject = {
         from: fromAddress,
         to: Contract["RoiDistribution"],
         data: transaction.encodeABI(),
-        gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer
+        gas: Math.floor(gasEstimate * 2), // Add 100% buffer for safety
         gasPrice: await web3.eth.getGasPrice(),
       };
 
@@ -8687,14 +8723,14 @@ export const useStore = create((set, get) => ({
         // console.log('[Store] claimROIUpTo gas estimate:', gasEstimate);
       } catch (err) {
         console.error('Gas estimation failed for claimROIUpTo:', err);
-        gasEstimate = 350000; // Fallback gas limit (higher than claimROI)
+        gasEstimate = 5000000; // Fallback gas limit for multiple periods
       }
 
       const txObject = {
         from: fromAddress,
         to: Contract["RoiDistribution"],
         data: transaction.encodeABI(),
-        gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer
+        gas: Math.floor(gasEstimate * 2), // Add 100% buffer for safety
         gasPrice: await web3.eth.getGasPrice(),
       };
 

@@ -12,6 +12,17 @@ function App() {
   const wagmiAdapter = getWagmiAdapter()
   const networks = getNetworks()
 
+  // RamaPay wallet configuration - Official Ramestta Wallet
+  const ramaPayWallet = {
+    id: 'ramapay',
+    name: 'RamaPay',
+    homepage: 'https://ramestta.com/ramapay',
+    image_url: 'https://ramestta.com/assets/RamaPay%20Wallet-BVpk7FJX.png',
+    mobile_link: 'ramapay://', // Deep link for RamaPay wallet
+    play_store: 'https://play.google.com/store/apps/details?id=io.ramestta.wallet',
+    // app_store: '', // iOS coming soon
+  }
+
   // Create modal configuration
   const generalConfig = {
     projectId,
@@ -27,6 +38,8 @@ function App() {
   createAppKit({
     adapters: [wagmiAdapter],
     ...generalConfig,
+    // Add RamaPay as a custom wallet option
+    customWallets: [ramaPayWallet],
     features: {
       analytics: false // Optional - defaults to your Cloud configuration
     }

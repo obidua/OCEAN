@@ -35,7 +35,7 @@ import financialSounds from '../utils/financialSounds';
 import incomeTracker from '../utils/incomeTracker';
 import { useAppKitAccount } from '@reown/appkit/react';
 import ProgressiveTransactionModal from '../components/ProgressiveTransactionModal';
-import { addClaimTransaction, updateTransactionByHash, getClaimTransactions } from '../utils/transactionHistory';
+import { addClaimTransaction, updateTransactionByHash, getClaimTransactions, checkAndUpdatePendingTransactions } from '../utils/transactionHistory';
 
 const formatRAMAPrecise = (value) => {
   const num = Number(value) || 0;
@@ -133,9 +133,11 @@ const ClaimHistoryModal = ({ isOpen, onClose, history, loading }) => {
                             href={`${explorerTxBase}${item.hash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300"
+                            className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-1 rounded transition-colors"
+                            title={`View on Ramascan: ${item.hash}`}
                           >
-                            <ExternalLink size={14} />
+                            <ExternalLink size={12} />
+                            <span>View</span>
                           </a>
                         ) : (
                           <span className="text-cyan-500/30">—</span>
@@ -443,6 +445,7 @@ export default function AccruedRewards() {
   const getROIClaimHistory = useStore((s) => s.getROIClaimHistory);
   const claimAccruedROISmart = useStore((s) => s.claimAccruedROISmart);
   const getAutoWindow = useStore((s) => s.getAutoWindow);
+  const getClaimEventsWithTxHash = useStore((s) => s.getClaimEventsWithTxHash);
 
   const { handleSendTx, hash, receipt, isSuccess, isError, isTransactionReverted, error: txError } = useTransaction();
 
@@ -736,17 +739,17 @@ export default function AccruedRewards() {
         
         if (autoWindow && autoWindow.success && autoWindow.canClaim && autoWindow.totalPeriods > 0) {
           const firstClaim = autoWindow.claimingPlan?.[0];
-          const maxPerTransaction = 50; // claimROI() can claim max 50 days per transaction
+          const maxPerTransaction = 5; // claimROI() can claim max 5 days per transaction (contract limit)
           const claimingThisTime = Math.min(autoWindow.totalPeriods, maxPerTransaction);
           const remainingAfterThis = Math.max(0, autoWindow.totalPeriods - maxPerTransaction);
           const needsMultiple = autoWindow.totalPeriods > maxPerTransaction;
           
           setClaimConfirmData({
             totalDays: autoWindow.totalPeriods,
-            claimingDays: claimingThisTime, // Claiming up to 50 days in this transaction
+            claimingDays: claimingThisTime, // Claiming up to 5 days in this transaction
             remainingDays: remainingAfterThis,
             fromDate: firstClaim?.estimatedFromDate,
-            toDate: firstClaim?.estimatedToDate, // Only covers first 50 days
+            toDate: firstClaim?.estimatedToDate, // Only covers first 5 days
             totalTransactions: needsMultiple ? Math.ceil(autoWindow.totalPeriods / maxPerTransaction) : 1,
             currentTransaction: 1,
             estimatedAmount: dashboard.totals.unclaimed.usd,
@@ -905,23 +908,92 @@ export default function AccruedRewards() {
     try {
       const effectiveAddress = userAddress || address;
       
+      // First, check and update any pending transactions
+      try {
+        const { getWeb3Instance } = await import('../utils/rpcManager.js');
+        const web3 = await getWeb3Instance();
+        if (web3) {
+          await checkAndUpdatePendingTransactions(effectiveAddress, web3);
+        }
+      } catch (err) {
+        console.warn('[AccruedRewards] Could not check pending transactions:', err);
+      }
+      
       // Get on-chain claim history
       const { history: onChainHistory } = await getClaimHistoryPaged(effectiveAddress, 0, 100);
       
-      // Get local transaction history (includes failed transactions)
+      // Get local transaction history (includes all transactions with hashes)
       const localHistory = getClaimTransactions(effectiveAddress);
       
-      // Mark on-chain history as successful
-      const onChainWithStatus = (onChainHistory || []).map(item => ({
-        ...item,
-        status: 'success',
-        source: 'onchain'
-      }));
+      // Try to fetch ClaimedROI events for transaction hashes (for historical data)
+      let claimEvents = [];
+      try {
+        // Fetch events from recent blocks (last ~30 days worth of blocks)
+        // Block time ~2 seconds, 30 days = 30 * 24 * 60 * 60 / 2 = ~1.3M blocks
+        // We'll fetch from a reasonable range to get tx hashes
+        claimEvents = await getClaimEventsWithTxHash(effectiveAddress, 0, 'latest');
+        console.log('[AccruedRewards] Fetched', claimEvents.length, 'ClaimedROI events');
+      } catch (eventErr) {
+        console.warn('[AccruedRewards] Could not fetch claim events:', eventErr);
+      }
       
-      // Filter local history to only show failed/pending transactions
-      // (successful ones are already in on-chain history)
+      // Create event lookup by period range
+      const eventsByPeriod = {};
+      claimEvents.forEach(event => {
+        const key = `${event.fromPeriod}-${event.toPeriod}`;
+        eventsByPeriod[key] = event.transactionHash;
+      });
+      
+      // Create a lookup map for local transactions by timestamp (to match with on-chain)
+      // Allow 60-second tolerance for timestamp matching
+      const localTxByTime = {};
+      localHistory.forEach(tx => {
+        if (tx.hash && tx.timestamp) {
+          const timeKey = Math.floor(tx.timestamp / 1000);
+          // Store by approximate time window (30 second buckets)
+          for (let offset = -2; offset <= 2; offset++) {
+            const key = Math.floor((timeKey + offset * 30));
+            if (!localTxByTime[key]) localTxByTime[key] = [];
+            localTxByTime[key].push(tx);
+          }
+        }
+      });
+      
+      // Mark on-chain history as successful and try to match with local tx or events for hash
+      const onChainWithStatus = (onChainHistory || []).map(item => {
+        // Try to find matching transaction hash from events first (by period range)
+        let matchedHash = eventsByPeriod[item.dayId] || null;
+        
+        // If not found in events, try local history by timestamp
+        if (!matchedHash) {
+          const itemTime = item.claimedAt;
+          // Check various time buckets
+          for (let offset = -2; offset <= 2; offset++) {
+            const key = Math.floor(itemTime + offset * 30);
+            const candidates = localTxByTime[key] || [];
+            const match = candidates.find(tx => 
+              tx.status === 'success' && 
+              Math.abs(Math.floor(tx.timestamp / 1000) - itemTime) < 120
+            );
+            if (match) {
+              matchedHash = match.hash;
+              break;
+            }
+          }
+        }
+        
+        return {
+          ...item,
+          status: 'success',
+          source: 'onchain',
+          hash: matchedHash || null
+        };
+      });
+      
+      // Filter local history to only show failed/pending/dropped transactions
+      // (successful ones are merged with on-chain history above)
       const localFailedOrPending = localHistory.filter(tx => 
-        tx.status === 'failed' || tx.status === 'reverted' || tx.status === 'pending'
+        tx.status === 'failed' || tx.status === 'reverted' || tx.status === 'pending' || tx.status === 'dropped'
       ).map(tx => ({
         id: tx.id,
         epoch: tx.epoch || null,
@@ -1557,7 +1629,7 @@ export default function AccruedRewards() {
                     <div className="flex items-start gap-2">
                       <AlertCircle size={16} className="text-orange-400 mt-0.5 flex-shrink-0" />
                       <div className="text-orange-200 text-sm">
-                        <p className="font-semibold mb-1">50-Day Transaction Limit</p>
+                        <p className="font-semibold mb-1">20-Day Transaction Limit</p>
                         <p>This transaction will claim {claimConfirmData.claimingDays} days. The remaining {claimConfirmData.remainingDays} days can be claimed in a separate transaction later.</p>
                       </div>
                     </div>
@@ -1595,8 +1667,8 @@ export default function AccruedRewards() {
         title="Claim Accrued Reward"
         description={
           autoWindowInfo && autoWindowInfo.success && autoWindowInfo.totalPeriods > 0
-            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 50)} days of accrued rewards${autoWindowInfo.totalPeriods > 50 ? ` (${autoWindowInfo.totalPeriods - 50} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
-            : "Claiming up to 50 days of your portfolio growth rewards in this transaction"
+            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 20)} days of accrued rewards${autoWindowInfo.totalPeriods > 20 ? ` (${autoWindowInfo.totalPeriods - 20} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
+            : "Claiming up to 5 days of your portfolio growth rewards in this transaction"
         }
         successMessage="Your rewards have been claimed successfully!"
         onSuccess={handleClaimSuccess}

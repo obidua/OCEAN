@@ -672,7 +672,7 @@ export default function Dashboard() {
         
         if (autoWindow && autoWindow.success && autoWindow.canClaim && autoWindow.totalPeriods > 0) {
           const firstClaim = autoWindow.claimingPlan?.[0];
-          const maxPerTransaction = 50; // claimROI() can claim max 50 days per transaction
+          const maxPerTransaction = 5; // claimROI() can claim max 5 days per transaction (contract limit)
           const claimingThisTime = Math.min(autoWindow.totalPeriods, maxPerTransaction);
           const remainingAfterThis = Math.max(0, autoWindow.totalPeriods - maxPerTransaction);
           const needsMultiple = autoWindow.totalPeriods > maxPerTransaction;
@@ -3342,7 +3342,7 @@ export default function Dashboard() {
                     <div className="flex items-start gap-2">
                       <AlertCircle size={16} className="text-orange-400 mt-0.5 flex-shrink-0" />
                       <div className="text-orange-200 text-sm">
-                        <p className="font-semibold mb-1">50-Day Transaction Limit</p>
+                        <p className="font-semibold mb-1">20-Day Transaction Limit</p>
                         <p>This transaction will claim {claimConfirmData.claimingDays} days. The remaining {claimConfirmData.remainingDays} days can be claimed in a separate transaction later.</p>
                       </div>
                     </div>
@@ -3385,8 +3385,8 @@ export default function Dashboard() {
         title="Claim Daily Accrued Reward"
         description={
           autoWindowInfo && autoWindowInfo.success && autoWindowInfo.totalPeriods > 0
-            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 50)} days of accrued rewards${autoWindowInfo.totalPeriods > 50 ? ` (${autoWindowInfo.totalPeriods - 50} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
-            : "Claiming up to 50 days of your portfolio growth rewards in this transaction"
+            ? `Claiming ${Math.min(autoWindowInfo.totalPeriods, 20)} days of accrued rewards${autoWindowInfo.totalPeriods > 20 ? ` (${autoWindowInfo.totalPeriods - 20} days remaining for next transaction)` : ''} from ${autoWindowInfo.claimingPlan?.[0]?.estimatedFromDate}`
+            : "Claiming up to 5 days of your portfolio growth rewards in this transaction"
         }
         successMessage="Your Daily Accrued Reward has been claimed successfully!"
         onSuccess={handleClaimSuccess}
