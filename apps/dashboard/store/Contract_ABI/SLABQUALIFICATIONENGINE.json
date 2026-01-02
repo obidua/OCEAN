@@ -1,0 +1,557 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      }
+    ],
+    "name": "BeaconUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "slabManager",
+        "type": "address"
+      }
+    ],
+    "name": "SlabManagerSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "ThresholdsCached",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "targetUSD",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "powerLegPercent",
+        "type": "uint8"
+      }
+    ],
+    "name": "calculatePowerLegVolume",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "leg",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "volume",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ISlabQualificationEngine.LegData[]",
+        "name": "legData",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint32",
+        "name": "directsCount",
+        "type": "uint32"
+      }
+    ],
+    "name": "calculateQualification",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "qualifiedT",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "slabIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L1",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L2",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L3",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "Lrest",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sumAll",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "usedPowerLeg",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "pathKind",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ISlabQualificationEngine.QualificationResult",
+        "name": "result",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "leg",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "volume",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ISlabQualificationEngine.LegData[]",
+        "name": "legData",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint32",
+        "name": "directsCount",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "powerLegPercent",
+        "type": "uint8"
+      }
+    ],
+    "name": "calculateQualificationWithPowerLeg",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "qualifiedT",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "slabIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L1",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L2",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "L3",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "Lrest",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sumAll",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "usedPowerLeg",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "pathKind",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ISlabQualificationEngine.QualificationResult",
+        "name": "result",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "leg",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "volume",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ISlabQualificationEngine.LegData[]",
+        "name": "legData",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint32",
+        "name": "directsCount",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "targetUSD",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "powerLegPercent",
+        "type": "uint8"
+      }
+    ],
+    "name": "checkThreshold",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "qualified",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "pathKind",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "leg",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "volume",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ISlabQualificationEngine.LegData[]",
+        "name": "legData",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint32",
+        "name": "directsCount",
+        "type": "uint32"
+      }
+    ],
+    "name": "getQualifiedBusinessUSD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getRewardMilestones",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getRoyaltyThresholds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSlabThresholds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_slabManager",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "refreshThresholds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_slabManager",
+        "type": "address"
+      }
+    ],
+    "name": "setSlabManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "slabManager",
+    "outputs": [
+      {
+        "internalType": "contract ISlabManagerState",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]

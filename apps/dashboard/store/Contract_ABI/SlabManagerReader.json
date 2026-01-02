@@ -69,6 +69,19 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "slabManagerViews",
+        "type": "address"
+      }
+    ],
+    "name": "SlabManagerViewsSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "implementation",
         "type": "address"
       }
@@ -78,68 +91,38 @@
   },
   {
     "inputs": [],
-    "name": "cfg",
+    "name": "MAX_REWARDS",
     "outputs": [
       {
-        "internalType": "contract ICoreConfig",
+        "internalType": "uint8",
         "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "enum SlabManagerReader.AchKind",
-        "name": "kind",
         "type": "uint8"
       }
     ],
-    "name": "getRemainingForNext",
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_ROYALTIES",
     "outputs": [
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "targetUSD",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalNeeded",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "L1_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "L2_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "Lrest_needed",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isAchieved",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct SlabManagerReader.NextAchievementProgress",
-        "name": "p",
-        "type": "tuple"
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_SLABS",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -148,12 +131,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
+        "internalType": "address[]",
+        "name": "users",
+        "type": "address[]"
       }
     ],
-    "name": "getUserOverview",
+    "name": "batchGetUserOverviews",
     "outputs": [
       {
         "components": [
@@ -165,6 +148,16 @@
           {
             "internalType": "uint8",
             "name": "currentSlabIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "highestSlabAchieved",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "slabPercent",
             "type": "uint8"
           },
           {
@@ -183,6 +176,11 @@
             "type": "uint256"
           },
           {
+            "internalType": "uint256",
+            "name": "totalVolume",
+            "type": "uint256"
+          },
+          {
             "components": [
               {
                 "internalType": "address",
@@ -193,9 +191,14 @@
                 "internalType": "uint256",
                 "name": "volume",
                 "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "isArtificial",
+                "type": "bool"
               }
             ],
-            "internalType": "struct SlabManagerReader.LegBusiness[]",
+            "internalType": "struct SlabManagerReaderLite.LegBusiness[]",
             "name": "allLegs",
             "type": "tuple[]"
           },
@@ -207,27 +210,22 @@
                 "type": "uint8"
               },
               {
-                "internalType": "uint64",
-                "name": "achievedAt",
-                "type": "uint64"
-              },
-              {
                 "internalType": "uint256",
-                "name": "qualifiedL1",
+                "name": "thresholdUSD",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "qualifiedL2",
+                "name": "rewardUSD",
                 "type": "uint256"
               },
               {
-                "internalType": "uint256",
-                "name": "qualifiedLrest",
-                "type": "uint256"
+                "internalType": "bool",
+                "name": "isAdminGranted",
+                "type": "bool"
               }
             ],
-            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "internalType": "struct SlabManagerReaderLite.AchievementInfo[]",
             "name": "achievedSlabs",
             "type": "tuple[]"
           },
@@ -239,27 +237,22 @@
                 "type": "uint8"
               },
               {
-                "internalType": "uint64",
-                "name": "achievedAt",
-                "type": "uint64"
-              },
-              {
                 "internalType": "uint256",
-                "name": "qualifiedL1",
+                "name": "thresholdUSD",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "qualifiedL2",
+                "name": "rewardUSD",
                 "type": "uint256"
               },
               {
-                "internalType": "uint256",
-                "name": "qualifiedLrest",
-                "type": "uint256"
+                "internalType": "bool",
+                "name": "isAdminGranted",
+                "type": "bool"
               }
             ],
-            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "internalType": "struct SlabManagerReaderLite.AchievementInfo[]",
             "name": "achievedRewards",
             "type": "tuple[]"
           },
@@ -271,27 +264,22 @@
                 "type": "uint8"
               },
               {
-                "internalType": "uint64",
-                "name": "achievedAt",
-                "type": "uint64"
-              },
-              {
                 "internalType": "uint256",
-                "name": "qualifiedL1",
+                "name": "thresholdUSD",
                 "type": "uint256"
               },
               {
                 "internalType": "uint256",
-                "name": "qualifiedL2",
+                "name": "rewardUSD",
                 "type": "uint256"
               },
               {
-                "internalType": "uint256",
-                "name": "qualifiedLrest",
-                "type": "uint256"
+                "internalType": "bool",
+                "name": "isAdminGranted",
+                "type": "bool"
               }
             ],
-            "internalType": "struct SlabManagerReader.AchievementDetails[]",
+            "internalType": "struct SlabManagerReaderLite.AchievementInfo[]",
             "name": "achievedRoyalties",
             "type": "tuple[]"
           },
@@ -324,9 +312,492 @@
             "internalType": "uint32",
             "name": "new50DirectsSinceClaim",
             "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasPowerLeg",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "powerLegPercent",
+            "type": "uint8"
           }
         ],
-        "internalType": "struct SlabManagerReader.UserOverview",
+        "internalType": "struct SlabManagerReaderLite.UserOverview[]",
+        "name": "overviews",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "cfg",
+    "outputs": [
+      {
+        "internalType": "contract ICoreConfig",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      }
+    ],
+    "name": "checkAchievement",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "achieved",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAdminGranted",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getAchievementSummary",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint8[]",
+            "name": "slabIds",
+            "type": "uint8[]"
+          },
+          {
+            "internalType": "uint8[]",
+            "name": "rewardIds",
+            "type": "uint8[]"
+          },
+          {
+            "internalType": "uint8[]",
+            "name": "royaltyIds",
+            "type": "uint8[]"
+          },
+          {
+            "internalType": "uint8",
+            "name": "highestSlab",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "highestReward",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "highestRoyalty",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalSlabsAchieved",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalRewardsAchieved",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalRoyaltiesAchieved",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct SlabManagerReaderLite.AchievementSummary",
+        "name": "summary",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "users",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      }
+    ],
+    "name": "getAchieversFromList",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "achievers",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllThresholds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "slabThresholds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "rewardMilestones",
+        "type": "uint256[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "thresholdUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardUSD",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ISlabManagerLite.RoyaltyTier[]",
+        "name": "royaltyTiers",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getLegsDetailedSorted",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "leg",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "volume",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isArtificial",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct SlabManagerReaderLite.LegBusiness[]",
+        "name": "legs",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalVolume",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      }
+    ],
+    "name": "getNextAchievementProgress",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "targetUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentQualified",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remaining",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "percentComplete",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAchieved",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct SlabManagerReaderLite.NextAchievementProgress",
+        "name": "progress",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getUserOverview",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "qualifiedBusinessUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "currentSlabIdx",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "highestSlabAchieved",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "slabPercent",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentL1",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentL2",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentLrest",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalVolume",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "leg",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "volume",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "isArtificial",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct SlabManagerReaderLite.LegBusiness[]",
+            "name": "allLegs",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint8",
+                "name": "id",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint256",
+                "name": "thresholdUSD",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "rewardUSD",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "isAdminGranted",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct SlabManagerReaderLite.AchievementInfo[]",
+            "name": "achievedSlabs",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint8",
+                "name": "id",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint256",
+                "name": "thresholdUSD",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "rewardUSD",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "isAdminGranted",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct SlabManagerReaderLite.AchievementInfo[]",
+            "name": "achievedRewards",
+            "type": "tuple[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint8",
+                "name": "id",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint256",
+                "name": "thresholdUSD",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "rewardUSD",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "isAdminGranted",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct SlabManagerReaderLite.AchievementInfo[]",
+            "name": "achievedRoyalties",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextSlabThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextRewardThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextRoyaltyThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "canClaimSlab",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint64",
+            "name": "lastClaimAt",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint32",
+            "name": "new50DirectsSinceClaim",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasPowerLeg",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "powerLegPercent",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct SlabManagerReaderLite.UserOverview",
         "name": "ov",
         "type": "tuple"
       }
@@ -375,6 +846,13 @@
   },
   {
     "inputs": [],
+    "name": "refreshAddresses",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "reg",
     "outputs": [
       {
@@ -394,11 +872,37 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_slabManagerViews",
+        "type": "address"
+      }
+    ],
+    "name": "setSlabManagerViews",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "slab",
     "outputs": [
       {
-        "internalType": "contract ISlabLens",
+        "internalType": "contract ISlabManagerLite",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "slabManagerViews",
+    "outputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }

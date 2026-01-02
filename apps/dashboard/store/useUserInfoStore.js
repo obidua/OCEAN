@@ -12,6 +12,7 @@ import OceanicViewABI from './Contract_ABI/Oceanicview.json';
 import ComprehensiveViewABI from './Contract_ABI/COMPREHENSIVEVIEW.json';
 import CappingIncomeManagerABI from './Contract_ABI/CappingIncomeManager.json';
 import SlabManagerABI from './Contract_ABI/SlabManager.json';
+import SlabQualificationEngineABI from './Contract_ABI/SLABQUALIFICATIONENGINE.json';
 import RoyaltyManagerABI from './Contract_ABI/RoyaltyManager.json';
 import RewardVaultABI from './Contract_ABI/RewardVault.json';
 import SafeWalletABI from './Contract_ABI/SafeWallet.json';
@@ -87,6 +88,7 @@ const Contract = {
   PortFolioManager: resolveAddress("PORTFOLIOMANAGER", "0xC73f964eA7bC04a2c7455CAf6107238147c88365"),
   RoyaltyManager: resolveAddress("ROYALTYMANAGER", "0xd52Ae0c81ED2bb4A91b62686d8A8426E6Dd686C5"),
   SlabManager: resolveAddress("SLABMANAGER", "0x4fe89Bc0e109b2ad8Ace95f2E4b4e7832D47AEE9"),
+  SlabQualificationEngine: resolveAddress("SLABQUALIFICATIONENGINE", "0xEF719124AFc44A677b06EFc4B390bEcF80D2cbc2"),
   IncomeDistributor: resolveAddress("INCOMEDISTRIBUTOR", "0x8D9B36D95Fe0C15d25DdAecc99684449CEcdC626"),
   FreezePolicy: resolveAddress("FREEZEPOLICY", "0x6541987258B73bd8128d23e8678a00258226ad3C"),
   RewardVault: resolveAddress("REWARDVAULT", "0xfAF7781A4a6cB1b6262fB9279772f0f503b3855d"),
@@ -100,7 +102,7 @@ const Contract = {
   Oceanicview: resolveAddress("OCEANICVIEW", "0x938616ab14763506F7111Cdf06EF5A3B4C586dE6"),
   ComprehensiveView: resolveAddress("COMPREHENSIVEVIEW", "0x42d86B1c783c00C7912AD1F13FBC7108fF6EB0A0"),
   OceanQueryUpgradeable: resolveAddress("OCEANQUERYUPGRADEABLE", "0xaA4E8609Bb818c5927b9105da90E2C49a6f1F9db"),
-  SlabReader: resolveAddress("SLABMANAGERREADER", "0x0EDbE6D0e490b4a5e741e98696495fb8F6A0545d")
+  SlabReader: resolveAddress("SLABMANAGERREADER", "0x811cD63eada4F7b859E8f9292A8E224f05708976")
 };
 
 // Validate environment configuration on module load
@@ -4309,9 +4311,13 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabQualificationEngine = makeContract(
+        SlabQualificationEngineABI,
+        Contract["SlabQualificationEngine"]
+      );
 
-      if (!slabManager) {
-        console.warn("SlabManager contract not available, using fallback data");
+      if (!slabManager || !slabQualificationEngine) {
+        console.warn("SlabManager or SlabQualificationEngine contract not available, using fallback data");
         return {
           contractSlabIndex: 0,
           slabLevel: 0,
@@ -4365,7 +4371,7 @@ export const useStore = create((set, get) => ({
             legsTop2AndRest,
             canClaimSlab
           ] = await Promise.all([
-            slabManager.methods.getQualifiedBusinessUSD(userAddress).call(),
+            slabQualificationEngine.methods.getQualifiedBusinessUSD(userAddress).call(),
             slabManager.methods.getSlabIndex(userAddress).call(),
             slabManager.methods.getLegsTop2AndRest(userAddress).call(),
             slabManager.methods.canClaim(userAddress).call()
@@ -4702,9 +4708,13 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabQualificationEngine = makeContract(
+        SlabQualificationEngineABI,
+        Contract["SlabQualificationEngine"]
+      );
 
-      if (!slabManager) {
-        console.warn("SlabManager contract not available for details, using fallback");
+      if (!slabManager || !slabQualificationEngine) {
+        console.warn("SlabManager or SlabQualificationEngine contract not available for details, using fallback");
         return {
           slabPercents: Array(11).fill(0),
           rewardMilestones: [],
@@ -4719,7 +4729,7 @@ export const useStore = create((set, get) => ({
       // Get additional data in parallel with individual error handling
       const results = await Promise.allSettled([
         slabManager.methods.getSlabPercents().call(),
-        slabManager.methods.getRewardMilestones().call(),
+        slabQualificationEngine.methods.getRewardMilestones().call(),
         slabManager.methods.getRoyaltyTiers().call(),
         slabManager.methods.currentEpoch().call(),
         slabManager.methods.canClaim(userAddress).call()
@@ -4903,9 +4913,13 @@ export const useStore = create((set, get) => ({
       if (!userAddress) throw new Error("Missing user address");
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabQualificationEngine = makeContract(
+        SlabQualificationEngineABI,
+        Contract["SlabQualificationEngine"]
+      );
 
-      if (!slabManager) {
-        throw new Error("SlabManager contract not available");
+      if (!slabManager || !slabQualificationEngine) {
+        throw new Error("Required contracts not available");
       }
 
       // Get multiple volume-related data points in parallel
@@ -4915,7 +4929,7 @@ export const useStore = create((set, get) => ({
         slabIndex
       ] = await Promise.all([
         slabManager.methods.getLegsDetailed(userAddress).call(),
-        slabManager.methods.getQualifiedBusinessUSD(userAddress).call(),
+        slabQualificationEngine.methods.getQualifiedBusinessUSD(userAddress).call(),
         slabManager.methods.getSlabIndex(userAddress).call()
       ]);
 
@@ -5688,11 +5702,15 @@ export const useStore = create((set, get) => ({
       if (!userAddress) return { leg1: 40, leg2: 30, leg3: 30 };
 
       const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
-      if (!slabManager) return { leg1: 40, leg2: 30, leg3: 30 };
+      const slabQualificationEngine = makeContract(
+        SlabQualificationEngineABI,
+        Contract["SlabQualificationEngine"]
+      );
+      if (!slabManager || !slabQualificationEngine) return { leg1: 40, leg2: 30, leg3: 30 };
 
       const [legsDetailed, qualifiedBusinessUSD] = await Promise.all([
         slabManager.methods.getLegsDetailed(userAddress).call(),
-        slabManager.methods.getQualifiedBusinessUSD(userAddress).call()
+        slabQualificationEngine.methods.getQualifiedBusinessUSD(userAddress).call()
       ]);
 
       const processedLegs = (legsDetailed || []).map((leg) => {
@@ -6612,14 +6630,17 @@ export const useStore = create((set, get) => ({
   getGlobalOneTimeMilestones: async () => {
     try {
       const rewardVault = makeContract(RewardVaultABI, Contract["RewardVault"]);
-      const slabManager = makeContract(SlabManagerABI, Contract["SlabManager"]);
+      const slabQualificationEngine = makeContract(
+        SlabQualificationEngineABI,
+        Contract["SlabQualificationEngine"]
+      );
 
       const [allMilestonesRaw, rewardMilestonesRaw] = await Promise.all([
         rewardVault
           ? rewardVault.methods.getAllMilestones().call().catch(() => [[], []])
           : Promise.resolve([[], []]),
-        slabManager
-          ? slabManager.methods.getRewardMilestones().call().catch(() => [])
+        slabQualificationEngine
+          ? slabQualificationEngine.methods.getRewardMilestones().call().catch(() => [])
           : Promise.resolve([]),
       ]);
 
@@ -8878,6 +8899,138 @@ export const useStore = create((set, get) => ({
 
     } catch (error) {
       console.error('[Store] Error fetching user slab view:', error);
+    }
+  },
+
+  // NEW: Get all thresholds in one call (performance optimization)
+  getAllThresholds: async () => {
+    try {
+      const slabReader = makeContract(SlabManagerReader, Contract["SlabReader"]);
+      const thresholds = await slabReader.methods.getAllThresholds().call();
+      
+      return {
+        slabThresholds: thresholds[0] || [],
+        rewardThresholds: thresholds[1] || [],
+        royaltyThresholds: thresholds[2] || []
+      };
+    } catch (error) {
+      console.error('[Store] getAllThresholds error:', error);
+      return { slabThresholds: [], rewardThresholds: [], royaltyThresholds: [] };
+    }
+  },
+
+  // NEW: Get achievement summary for a user
+  getAchievementSummary: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+      
+      const slabReader = makeContract(SlabManagerReader, Contract["SlabReader"]);
+      const summary = await slabReader.methods.getAchievementSummary(userAddress).call();
+      
+      return {
+        currentSlab: summary[0],
+        achievedRewards: summary[1] || [],
+        achievedRoyalties: summary[2] || [],
+        qualifiedBusiness: summary[3]
+      };
+    } catch (error) {
+      console.error('[Store] getAchievementSummary error:', error);
+      return { currentSlab: 0, achievedRewards: [], achievedRoyalties: [], qualifiedBusiness: '0' };
+    }
+  },
+
+  // NEW: Get next achievement progress
+  getNextAchievementProgress: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+      
+      const slabReader = makeContract(SlabManagerReader, Contract["SlabReader"]);
+      const progress = await slabReader.methods.getNextAchievementProgress(userAddress).call();
+      
+      return {
+        nextSlab: progress[0],
+        nextReward: progress[1],
+        nextRoyalty: progress[2],
+        currentQualifiedBusiness: progress[3],
+        requiredForNextSlab: progress[4],
+        requiredForNextReward: progress[5],
+        requiredForNextRoyalty: progress[6]
+      };
+    } catch (error) {
+      console.error('[Store] getNextAchievementProgress error:', error);
+      return {
+        nextSlab: 0,
+        nextReward: 0,
+        nextRoyalty: 0,
+        currentQualifiedBusiness: '0',
+        requiredForNextSlab: '0',
+        requiredForNextReward: '0',
+        requiredForNextRoyalty: '0'
+      };
+    }
+  },
+
+  // NEW: Check specific achievement
+  checkAchievement: async (userAddress, achievementType, level) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+      
+      const slabReader = makeContract(SlabManagerReader, Contract["SlabReader"]);
+      const isAchieved = await slabReader.methods.checkAchievement(userAddress, achievementType, level).call();
+      
+      return isAchieved;
+    } catch (error) {
+      console.error('[Store] checkAchievement error:', error);
+      return false;
+    }
+  },
+
+  // NEW: Batch get user overviews (performance optimization for team views)
+  batchGetUserOverviews: async (userAddresses) => {
+    try {
+      if (!Array.isArray(userAddresses) || userAddresses.length === 0) {
+        throw new Error("Invalid user addresses array");
+      }
+      
+      const slabReader = makeContract(SlabManagerReader, Contract["SlabReader"]);
+      const overviews = await slabReader.methods.batchGetUserOverviews(userAddresses).call();
+      
+      return overviews;
+    } catch (error) {
+      console.error('[Store] batchGetUserOverviews error:', error);
+      return [];
+    }
+  },
+
+  // NEW: Get sorted legs detailed
+  getLegsDetailedSorted: async (userAddress) => {
+    try {
+      if (!userAddress) throw new Error("Missing user address");
+      
+      const slabReader = makeContract(SlabManagerReader, Contract["SlabReader"]);
+      const legs = await slabReader.methods.getLegsDetailedSorted(userAddress).call();
+      
+      return legs;
+    } catch (error) {
+      console.error('[Store] getLegsDetailedSorted error:', error);
+      return [];
+    }
+  },
+
+  // NEW: Get achievers from list
+  getAchieversFromList: async (userAddresses, achievementType, level) => {
+    try {
+      if (!Array.isArray(userAddresses) || userAddresses.length === 0) {
+        throw new Error("Invalid user addresses array");
+      }
+      
+      const slabReader = makeContract(SlabManagerReader, Contract["SlabReader"]);
+      const achievers = await slabReader.methods.getAchieversFromList(userAddresses, achievementType, level).call();
+      
+      return achievers;
+    } catch (error) {
+      console.error('[Store] getAchieversFromList error:', error);
+      return [];
     }
   }
 

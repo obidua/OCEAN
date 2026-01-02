@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, createRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Waves, ChevronLeft, ChevronRight, X, TrendingUp, Users, Award, Trophy, Gift, Shield, Zap, DollarSign, Target, CheckCircle, BarChart3, PieChart, Wallet, Lock, Globe, ArrowRight, AlertCircle, Maximize, Minimize, Play, Pause, Coins, Building2, CreditCard, Smartphone, Blocks, Code, FileText, Network, Layers } from 'lucide-react';
+import { Waves, ChevronLeft, ChevronRight, X, TrendingUp, Users, Award, Trophy, Gift, Shield, Zap, DollarSign, Target, CheckCircle, BarChart3, PieChart, Wallet, Lock, Globe, ArrowRight, AlertCircle, Maximize, Minimize, Play, Pause, Coins, Building2, CreditCard, Smartphone, Blocks, Code, FileText, Network, Layers, Download, Loader2 } from 'lucide-react';
 import TokenomicsComparison from '../components/TokenomicsComparison';
+import { jsPDF } from 'jspdf';
 
 function Presentation() {
 
@@ -1420,7 +1421,1207 @@ function Presentation() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
   const containerRef = useRef(null);
+  const slideContainerRef = useRef(null);
+
+  // Extract text content from React elements recursively
+  const extractTextFromElement = (element) => {
+    if (!element) return '';
+    if (typeof element === 'string' || typeof element === 'number') return String(element);
+    if (Array.isArray(element)) return element.map(extractTextFromElement).join(' ');
+    if (element.props && element.props.children) {
+      return extractTextFromElement(element.props.children);
+    }
+    return '';
+  };
+
+  // Parse slide content to extract structured data for PDF
+  const parseSlideContent = (slide) => {
+    const data = {
+      title: slide.title,
+      subtitle: slide.subtitle,
+      sections: []
+    };
+
+    // Extract from React component
+    const content = slide.content;
+    if (!content || !content.props) return data;
+
+    const processElement = (elem, depth = 0) => {
+      if (!elem) return null;
+      if (typeof elem === 'string' || typeof elem === 'number') {
+        return { type: 'text', content: String(elem), depth };
+      }
+      
+      if (Array.isArray(elem)) {
+        return elem.map(e => processElement(e, depth)).filter(Boolean);
+      }
+
+      if (!elem.props) return null;
+
+      const { children, className } = elem.props;
+      
+      // Detect content types based on className or element type
+      if (className) {
+        if (className.includes('grid')) {
+          const items = Array.isArray(children) ? children : [children];
+          return {
+            type: 'grid',
+            items: items.map(child => ({
+              text: extractTextFromElement(child),
+              isHighlight: child?.props?.className?.includes('border-2') || 
+                          child?.props?.className?.includes('neon-green')
+            })).filter(item => item.text)
+          };
+        }
+        if (className.includes('space-y')) {
+          return processElement(children, depth);
+        }
+      }
+
+      // Process children
+      if (children) {
+        return processElement(children, depth);
+      }
+
+      return null;
+    };
+
+    const parsed = processElement(content.props.children);
+    if (parsed) {
+      data.sections = Array.isArray(parsed) ? parsed.flat() : [parsed];
+    }
+
+    return data;
+  };
+
+  // PDF slide content data for direct PDF generation
+  const pdfSlideData = [
+    {
+      title: "Welcome to OCEAN DeFi",
+      subtitle: "The Future of Decentralized Finance on Ramestta Blockchain",
+      content: [
+        "A revolutionary validator-backed DeFi ecosystem with 7 income streams.",
+        "Built on Ramestta blockchain for security, speed, and sustainability.",
+        "",
+        "Key Highlights:",
+        "• 7 Income Streams - Multiple ways to earn passive income",
+        "• 4x Lifetime Cap - Sustainable earning structure",
+        "• 0% Trust Policy - Withdraw principal anytime",
+        "• $50 Min Stake - Low barrier to entry"
+      ]
+    },
+    {
+      title: "The Evolution of Money",
+      subtitle: "From Barter to Blockchain",
+      content: [
+        "Understanding how money evolved helps us appreciate why blockchain represents the next revolution:",
+        "",
+        "1. Barter System - Direct exchange of goods (limited by double coincidence)",
+        "2. Commodity Money - Precious metals for trade",
+        "3. Coins - Minted metal currency (heavy, hard to divide)",
+        "4. Paper Money - Banknotes backed by gold (portable, divisible)",
+        "5. Digital Banking - Credit cards, online transfers (banks control everything)",
+        "6. Cryptocurrency - Blockchain, decentralized (you control your assets)",
+        "7. DeFi - Automated finance, no banks - The Future is Here!"
+      ]
+    },
+    {
+      title: "What is Blockchain?",
+      subtitle: "The Foundation of OCEAN DeFi",
+      content: [
+        "A blockchain is a distributed digital ledger that records transactions across many",
+        "computers. Think of it as a digital chain of blocks where each block contains",
+        "transaction records.",
+        "",
+        "Key Properties:",
+        "• Immutable - Once recorded, data cannot be altered or deleted",
+        "• Decentralized - No single entity controls the network",
+        "• Transparent - All transactions are visible and verifiable",
+        "",
+        "OCEAN DeFi leverages Ramestta blockchain to provide fast (2-second blocks),",
+        "secure (validator-backed), and affordable transactions."
+      ]
+    },
+    {
+      title: "Smart Contracts",
+      subtitle: "Automated Agreements on Blockchain",
+      content: [
+        "Smart contracts are self-executing programs on blockchain that automatically",
+        "enforce agreements when conditions are met. No intermediaries needed!",
+        "",
+        "Traditional Contracts vs Smart Contracts:",
+        "",
+        "Traditional:                    Smart Contracts:",
+        "✗ Need lawyers & intermediaries ✓ No intermediaries",
+        "✗ Slow (weeks/months)           ✓ Instant execution",
+        "✗ Expensive fees                ✓ Minimal fees",
+        "✗ Can be disputed               ✓ Cannot be broken",
+        "✗ Manual enforcement            ✓ Automatic enforcement",
+        "",
+        "OCEAN DeFi uses smart contracts to automate staking, calculate daily growth,",
+        "distribute rewards, enforce caps, and manage withdrawals."
+      ]
+    },
+    {
+      title: "What is DeFi?",
+      subtitle: "Decentralized Finance Explained",
+      content: [
+        "DeFi (Decentralized Finance) recreates traditional financial services using",
+        "blockchain and smart contracts, eliminating banks and intermediaries.",
+        "",
+        "Traditional Finance:           DeFi:",
+        "✗ Banks control your money     ✓ You control your assets",
+        "✗ Limited hours (9-5, M-F)     ✓ 24/7 worldwide access",
+        "✗ High fees, slow transfers    ✓ Low fees, instant transfers",
+        "✗ Geographic restrictions      ✓ Accessible from anywhere",
+        "✗ Requires KYC/documentation   ✓ Pseudonymous participation",
+        "✗ Opaque operations            ✓ Fully transparent on-chain",
+        "",
+        "OCEAN DeFi combines staking, yield generation, and team rewards -",
+        "all powered by validator income for long-term sustainability."
+      ]
+    },
+    {
+      title: "Ramestta Blockchain",
+      subtitle: "Layer 3 Built on Polygon",
+      content: [
+        "Ramestta is an open-source public blockchain built by a global community of",
+        "developers since 2021. It's a Layer 3 blockchain optimized for DeFi applications.",
+        "",
+        "The Layer Hierarchy:",
+        "• Layer 1: Ethereum - Base security layer",
+        "• Layer 2: Polygon - Scalability layer", 
+        "• Layer 3: Ramestta - DeFi optimization",
+        "",
+        "Key Statistics:",
+        "• 70,000+ TPS Capacity",
+        "• $0.001 Gas Fee",
+        "• 4M RAMA in Circulation",
+        "• Listed on Koinpark, BitMart Exchange",
+        "",
+        "Lower supply + high demand = potential $50,000 RAMA price in the future"
+      ]
+    },
+    {
+      title: "RAMA Tokenomics",
+      subtitle: "1 Billion Total Supply",
+      content: [
+        "RAMA has a fixed supply of 1 billion (1000 million) coins, ensuring scarcity",
+        "and deflationary value over time.",
+        "",
+        "Token Distribution:",
+        "• 80% Locked (800 Million) - Allocated to validator nodes for network",
+        "  security and sustainable rewards generation",
+        "• 20% Ecosystem (200 Million) - Development, marketing, liquidity,",
+        "  and community growth initiatives",
+        "",
+        "Key Benefits:",
+        "✓ Fixed supply prevents inflation",
+        "✓ Deflationary over time",
+        "✓ Validator APY: 5-8.4% monthly",
+        "✓ Trading on BitMart & Koinpark"
+      ]
+    },
+    {
+      title: "RAMA vs Major Chains",
+      subtitle: "Cross-Chain Tokenomics Comparison",
+      content: [
+        "Compare RAMA's tokenomics against major blockchain networks:",
+        "",
+        "Chain          Supply          Circulating     Inflation",
+        "─────────────────────────────────────────────────────────",
+        "RAMA           1 Billion       4 Million       Fixed",
+        "Ethereum       Unlimited       120M+           Variable",
+        "Polygon        10 Billion      9.3B+           2%/year",
+        "BSC            200 Million     153M+           Deflationary",
+        "Tron           Unlimited       71B+            Variable",
+        "",
+        "The Scarcity Advantage:",
+        "With 30x less circulating supply than Ethereum, RAMA has significant",
+        "upside potential as OCEAN DeFi adoption grows."
+      ]
+    },
+    {
+      title: "Validator-Backed Security",
+      subtitle: "Real Income, Not Ponzi",
+      content: [
+        "Unlike platforms that rely only on new deposits, OCEAN DeFi generates",
+        "real income from blockchain validators.",
+        "",
+        "How Your Stake Works:",
+        "1. You Stake RAMA → Deposit coins",
+        "2. Validators Stake → Deploy to nodes",
+        "3. Earn Rewards → 5-8.4% APY",
+        "4. Powers Payouts → Sustainable",
+        "",
+        "Validator Income:                Safety Features:",
+        "• Monthly APY: 5-8.4%            • 4x lifetime earning cap",
+        "• User Payouts: Average 6-9%     • 200%/250% portfolio caps",
+        "• Result: Sustainable!           • Fee recycling to validators",
+        "                                 • Reserve vault for liquidity"
+      ]
+    },
+    {
+      title: "Income Stream 1: Self Income",
+      subtitle: "Your Personal Daily Growth",
+      content: [
+        "Earn daily growth that auto-compounds into your portfolio.",
+        "Rate depends on your tier and booster status.",
+        "",
+        "Tier 1 (Normal):              Tier 2 (Booster):",
+        "• Daily Rate: 0.33% - 0.40%   • Daily Rate: 0.66% - 0.80%",
+        "• Monthly: ~11%               • Monthly: ~22%",
+        "• Cap: 200%                   • Cap: 250%",
+        "• Time to Cap: ~18 months     • Time to Cap: ~11 months",
+        "",
+        "Examples:",
+        "Tier 1: $1,000 → $3.65/day → $2,000 total",
+        "Tier 2: $1,000 → $7.30/day → $2,500 total",
+        "",
+        "Booster: Activate 5+ directs in 10 days + team volume ≥ your stake"
+      ]
+    },
+    {
+      title: "Income Stream 2: Booster Income",
+      subtitle: "Double Your Growth Rate",
+      content: [
+        "Earn additional income during first 10 days when qualifying for booster",
+        "+ permanent doubled daily rate.",
+        "",
+        "Qualification Requirements:",
+        "• 5+ Direct Members in 10 days",
+        "• Team Volume ≥ Your Stake Amount",
+        "• 10 Day Window to qualify",
+        "",
+        "Booster Benefits:",
+        "✓ Immediate Reward: Extra income first 10 days",
+        "✓ Permanent Upgrade: 2x daily rate forever",
+        "✓ Higher Cap: 200% → 250%",
+        "✓ Faster Maturity: 18 months → 11 months"
+      ]
+    },
+    {
+      title: "Income Stream 3: Direct Income",
+      subtitle: "5% Instant Commission",
+      content: [
+        "Earn 5% instant commission on every direct referral activation.",
+        "Claim immediately in RAMA to your wallet of choice.",
+        "",
+        "How It Works:",
+        "1. Share Your Link - Give referral link to others",
+        "2. They Stake - Minimum $10 activation",
+        "3. Get 5% Instantly - Immediate RAMA payment",
+        "",
+        "Earnings Examples:",
+        "• Direct: $100  → $5",
+        "• Direct: $500  → $25",
+        "• Direct: $1,000 → $50",
+        "• 10 x $500 referrals → $250 commission",
+        "",
+        "No Limits: Unlimited direct referrals, unlimited earnings!"
+      ]
+    },
+    {
+      title: "Income Stream 4: Slab Income",
+      subtitle: "11 Levels, 5% to 60% Distribution",
+      content: [
+        "Your most powerful passive income. Earn from team's daily growth across",
+        "11 slab levels with up to 60% pool distribution.",
+        "",
+        "Slab Levels:",
+        "Level 1  Coral Reef      $500      5%",
+        "Level 2  Shallow Waters  $2.5K     10%",
+        "Level 3  Tide Pool       $10K      15%",
+        "Level 4  Wave Crest      $25K      20%",
+        "Level 5  Open Sea        $50K      25%",
+        "Level 6  Deep Current    $100K     30%",
+        "Level 7  Ocean Floor     $500K     35%",
+        "Level 8  Abyssal Zone    $1M       45%",
+        "Level 9  Mariana Trench  $2.5M     50%",
+        "Level 10 Pacific Master  $5M       55%",
+        "Level 11 Ocean Sovereign $20M      60%"
+      ]
+    },
+    {
+      title: "Slab Income Explained",
+      subtitle: "How the 60% Pool Distribution Works",
+      content: [
+        "60% of all team members' daily growth is distributed to upline leaders",
+        "based on their slab qualifications.",
+        "",
+        "Qualification Criteria:",
+        "1. Reach Volume Threshold using adaptive caps (40% strongest leg,",
+        "   30% per additional leg)",
+        "2. Unlock Slab Level with higher pool share",
+        "3. Claim Requirement: 1 new direct referral ($50+ stake)",
+        "",
+        "Example: Slab 7 with $500K team",
+        "• Team daily growth: $500/day",
+        "• 60% to pool: $300",
+        "• Your 35% share: $105/day",
+        "• Monthly: $3,150!"
+      ]
+    },
+    {
+      title: "Income Stream 5: Same-Slab Override",
+      subtitle: "10%, 5%, 5% Collaborative Bonus",
+      content: [
+        "Earn override bonuses when your downline members reach the same slab",
+        "level as you. Rewards mentorship!",
+        "",
+        "Override Distribution:",
+        "• 10% - First Same-Slab (first upline at your level)",
+        "• 5%  - Second Same-Slab (second upline at your level)",
+        "• 5%  - Third Same-Slab (third upline at your level)",
+        "",
+        "Example: You reach Slab 5 earning $100/day",
+        "System finds first 3 uplines at Slab 5",
+        "They get $10, $5, $5 daily EXTRA - on top of their own earnings!",
+        "",
+        "Why It Matters:",
+        "✓ Rewards top leaders for mentorship",
+        "✓ Creates team motivation",
+        "✓ Passive scaling as team grows"
+      ]
+    },
+    {
+      title: "Income Stream 6: Royalty Program",
+      subtitle: "14 Tiers: $30 to $100,000/Month",
+      content: [
+        "Elite monthly payouts for top performers. 14 royalty tiers paid MONTHLY",
+        "FOR LIFETIME with 10% growth renewal requirement every 2 months.",
+        "",
+        "Royalty Tiers (Selected):",
+        "Tier 1   Coral Starter    $5K     → $30/mo",
+        "Tier 3   Sea Explorer     $20K    → $250/mo",
+        "Tier 5   Tide Surge       $120K   → $1,000/mo",
+        "Tier 8   Marine Commander $1.5M   → $5,000/mo",
+        "Tier 11  Sea Legend       $10M    → $15,000/mo",
+        "Tier 14  Ocean Supreme    $50M    → $100,000/mo",
+        "",
+        "Rules:",
+        "✓ First payout in qualification month",
+        "✓ 10% growth every 2 months to maintain",
+        "✓ Maximum: LIFETIME - No cap on royalty earnings!"
+      ]
+    },
+    {
+      title: "Income Stream 7: One-Time Rewards",
+      subtitle: "15 Milestone Bonuses: $100 to $3,000,000",
+      content: [
+        "One-time bonus rewards when you reach team volume milestones.",
+        "",
+        "Milestone Rewards (Selected):",
+        "1.  Coral Spark      $6K      → $100",
+        "3.  Shell Harvest    $40K     → $500",
+        "5.  Tide Treasure    $300K    → $2,500",
+        "7.  Guardian's Gift  $1.5M    → $8,000",
+        "9.  Trident Gem      $6M      → $30,000",
+        "11. Abyss Crown      $30M     → $85,000",
+        "13. Neptune Scepter  $200M    → $500,000",
+        "15. Legendary Wave   $1B      → $3,000,000",
+        "",
+        "Total Potential from All 15 Rewards: $5,343,850",
+        "Each milestone can only be claimed once per lifetime!"
+      ]
+    },
+    {
+      title: "Total Earning Potential",
+      subtitle: "22.9x Return Example",
+      content: [
+        "By combining all income streams, OCEAN DeFi offers unprecedented",
+        "earning potential.",
+        "",
+        "Example: $1,000 Stake with Active Team:",
+        "",
+        "1. Self Income (250% cap):         $2,500",
+        "2. Direct Income (10 x $500):      $250",
+        "3. Slab Income (12 months):        $3,600",
+        "4. Same-Slab Override:             $1,200",
+        "5. One-Time Rewards (first 6):     $9,350",
+        "6. Royalty (Sea Explorer, Life):   $6,000",
+        "─────────────────────────────────────────",
+        "TOTAL POTENTIAL:                   $22,900",
+        "",
+        "That's 22.9x Return on Investment!"
+      ]
+    },
+    {
+      title: "Platform Rules & Policies",
+      subtitle: "Transparent & Fair",
+      content: [
+        "0% Trust Policy:                Safe Wallet:",
+        "✓ Withdraw principal anytime    ✓ 0% fee for internal transfers",
+        "✓ 72-hour freeze period         ✓ 5% fee only on external claims",
+        "✓ Cancel to resume earning      ✓ Perfect for compounding",
+        "✓ After 72h: 80% refund         ✓ Instant transactions",
+        "",
+        "Earning Caps:                   Requirements:",
+        "✓ Self: 200% or 250%            ✓ Min stake: $10",
+        "✓ Global: 4x total stakes       ✓ Slab claim: 1 new $50 direct",
+        "✓ Slab continues after cap      ✓ Booster: 5 directs in 10 days",
+        "✓ Royalty: up to LIFETIME       ✓ Qualified volume: 40% strongest",
+        "                                  leg, 30% per additional leg"
+      ]
+    },
+    {
+      title: "Why Choose OCEAN DeFi?",
+      subtitle: "The Complete Package",
+      content: [
+        "Validator-Backed:",
+        "Real income from blockchain validators, not just new deposits.",
+        "Sustainable long-term!",
+        "",
+        "7 Income Streams:",
+        "Multiple ways to earn: self, booster, direct, slab, override,",
+        "royalty, and one-time rewards.",
+        "",
+        "Fast & Affordable:",
+        "Ramestta blockchain: 2-second blocks, $0.001 fees.",
+        "Lightning-fast transactions!",
+        "",
+        "0% Trust Policy:",
+        "Withdraw anytime with 72-hour freeze.",
+        "Complete freedom and transparency!",
+        "",
+        "Join thousands already earning sustainable passive income!"
+      ]
+    },
+    {
+      title: "Start Your Journey Today",
+      subtitle: "Begin Earning in 3 Simple Steps",
+      content: [
+        "",
+        "Step 1: CREATE ACCOUNT",
+        "Sign up and connect your wallet to get started",
+        "",
+        "Step 2: STAKE RAMA",
+        "Deposit minimum $10 to activate your portfolio",
+        "",
+        "Step 3: START EARNING",
+        "Watch your daily growth compound automatically!",
+        "",
+        "",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "",
+        "Ready to Join OCEAN DeFi?",
+        "Start earning with validator-backed passive income today!",
+        "",
+        "www.oceandefi.uk"
+      ]
+    }
+  ];
+
+  // Function to generate PDF directly using jsPDF with professional visual design
+  const downloadAsPDF = async () => {
+    if (isGeneratingPDF) return;
+    
+    setIsGeneratingPDF(true);
+    setPdfProgress(0);
+    
+    try {
+      // Create PDF in landscape mode
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const totalSlides = slides.length;
+      let currentSlideNum = 0; // Track current slide for multi-page support
+      
+      // Helper: Draw dark background with grid and decorative waves
+      const drawBackground = () => {
+        pdf.setFillColor(10, 22, 40);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+        pdf.setDrawColor(20, 45, 70);
+        pdf.setLineWidth(0.1);
+        for (let x = 0; x < pageWidth; x += 15) pdf.line(x, 0, x, pageHeight);
+        for (let y = 0; y < pageHeight; y += 15) pdf.line(0, y, pageWidth, y);
+        
+        // Decorative corner waves
+        pdf.setDrawColor(34, 211, 238, 0.1);
+        pdf.setLineWidth(0.5);
+        for (let i = 0; i < 5; i++) {
+          pdf.circle(0, 0, 10 + i * 8, 'S');
+          pdf.circle(pageWidth, pageHeight, 10 + i * 8, 'S');
+        }
+      };
+      
+      // Helper: Draw icon shapes
+      const drawIcon = (type, x, y, size = 8) => {
+        pdf.setLineWidth(1);
+        switch(type) {
+          case 'lock':
+            pdf.setDrawColor(34, 211, 238);
+            pdf.setFillColor(34, 211, 238, 0.2);
+            pdf.roundedRect(x - size/2, y - size/3, size, size * 0.8, 1, 1, 'FD');
+            pdf.circle(x, y - size/3, size/3, 'S');
+            break;
+          case 'globe':
+            pdf.setDrawColor(74, 222, 128);
+            pdf.circle(x, y, size/2, 'S');
+            pdf.line(x - size/2, y, x + size/2, y);
+            pdf.line(x, y - size/2, x, y + size/2);
+            pdf.ellipse(x, y, size/4, size/2, 'S');
+            break;
+          case 'zap':
+            pdf.setFillColor(251, 146, 60);
+            const points = [[x, y - size/2], [x - size/4, y], [x + size/4, y], [x, y + size/2]];
+            pdf.triangle(x - size/3, y - size/2, x + size/3, y, x - size/3, y + size/2, 'F');
+            break;
+          case 'dollar':
+            pdf.setDrawColor(74, 222, 128);
+            pdf.setFontSize(size * 1.5);
+            pdf.setTextColor(74, 222, 128);
+            pdf.text('$', x, y, { align: 'center' });
+            break;
+          case 'shield':
+            pdf.setDrawColor(168, 85, 247);
+            pdf.setFillColor(168, 85, 247, 0.2);
+            const shield = [[x, y - size/2], [x + size/2, y - size/4], [x + size/2, y + size/4], [x, y + size/2], [x - size/2, y + size/4], [x - size/2, y - size/4]];
+            pdf.path(shield.map((p, i) => ({ op: i === 0 ? 'm' : 'l', c: p })));
+            pdf.close();
+            pdf.fillStroke();
+            break;
+          case 'check':
+            pdf.setDrawColor(74, 222, 128);
+            pdf.setLineWidth(1.5);
+            pdf.line(x - size/3, y, x - size/6, y + size/3);
+            pdf.line(x - size/6, y + size/3, x + size/2, y - size/2);
+            break;
+          case 'waves':
+            pdf.setDrawColor(34, 211, 238);
+            pdf.setLineWidth(1.2);
+            for (let i = 0; i < 3; i++) {
+              const yOffset = y - size/3 + i * size/3;
+              pdf.line(x - size/2, yOffset, x - size/4, yOffset - size/6);
+              pdf.line(x - size/4, yOffset - size/6, x, yOffset);
+              pdf.line(x, yOffset, x + size/4, yOffset - size/6);
+              pdf.line(x + size/4, yOffset - size/6, x + size/2, yOffset);
+            }
+            break;
+        }
+      };
+      
+      // Helper: Format currency
+      const formatCurrency = (amount) => {
+        if (amount >= 1000000) return '$' + (amount / 1000000).toFixed(1) + 'M';
+        if (amount >= 1000) return '$' + (amount / 1000).toFixed(amount >= 10000 ? 0 : 1) + 'K';
+        return '$' + amount;
+      };
+      
+      // Helper: Draw header bar
+      const drawHeader = (slideNum, total) => {
+        pdf.setFillColor(34, 211, 238);
+        pdf.rect(0, 0, pageWidth, 4, 'F');
+        pdf.setFillColor(15, 32, 55);
+        pdf.roundedRect(12, 8, 50, 10, 2, 2, 'F');
+        pdf.setFontSize(10);
+        pdf.setTextColor(74, 222, 128);
+        pdf.text('OCEAN DeFi', 18, 15);
+        pdf.setFillColor(15, 32, 55);
+        pdf.roundedRect(pageWidth - 45, 8, 33, 10, 2, 2, 'F');
+        pdf.setTextColor(103, 232, 249);
+        pdf.text(`${slideNum} / ${total}`, pageWidth - 28, 15, { align: 'center' });
+      };
+      
+      // Helper: Draw footer bar
+      const drawFooter = () => {
+        pdf.setFillColor(74, 222, 128);
+        pdf.rect(0, pageHeight - 4, pageWidth, 4, 'F');
+        pdf.setFontSize(8);
+        pdf.setTextColor(103, 232, 249);
+        pdf.text('www.oceandefi.uk', pageWidth / 2, pageHeight - 7, { align: 'center' });
+      };
+      
+      // Helper: Draw title box
+      const drawTitle = (title, subtitle) => {
+        pdf.setFillColor(18, 38, 62);
+        pdf.setDrawColor(34, 211, 238);
+        pdf.setLineWidth(0.5);
+        pdf.roundedRect(20, 22, pageWidth - 40, 24, 3, 3, 'FD');
+        pdf.setFontSize(18);
+        pdf.setTextColor(34, 211, 238);
+        pdf.text(title, pageWidth / 2, 34, { align: 'center' });
+        pdf.setFontSize(11);
+        pdf.setTextColor(103, 232, 249);
+        pdf.text(subtitle, pageWidth / 2, 42, { align: 'center' });
+      };
+      
+      // Helper: Draw info boxes with icons
+      const drawBoxes = (boxes, y, boxHeight = 32) => {
+        const gap = 8;
+        const totalGaps = (boxes.length - 1) * gap;
+        const boxWidth = (pageWidth - 40 - totalGaps) / boxes.length;
+        boxes.forEach((box, i) => {
+          const x = 20 + i * (boxWidth + gap);
+          pdf.setFillColor(18, 40, 65);
+          pdf.setDrawColor(box.borderColor?.[0] || 74, box.borderColor?.[1] || 222, box.borderColor?.[2] || 128);
+          pdf.setLineWidth(1);
+          pdf.roundedRect(x, y, boxWidth, boxHeight, 3, 3, 'FD');
+          
+          // Draw icon if provided
+          if (box.icon) {
+            drawIcon(box.icon, x + boxWidth/2, y + boxHeight/3, 6);
+          }
+          
+          // Value
+          pdf.setFontSize(16);
+          pdf.setTextColor(box.valueColor?.[0] || 74, box.valueColor?.[1] || 222, box.valueColor?.[2] || 128);
+          const valueY = box.icon ? y + boxHeight/2 + 2 : y + boxHeight/2 - 2;
+          pdf.text(box.value, x + boxWidth / 2, valueY, { align: 'center' });
+          
+          // Label
+          pdf.setFontSize(8);
+          pdf.setTextColor(180, 220, 235);
+          pdf.text(box.label, x + boxWidth / 2, y + boxHeight / 2 + 8, { align: 'center' });
+        });
+      };
+      
+      // Helper: Draw bullet list
+      const drawBullets = (items, startY, leftMargin = 25) => {
+        let y = startY;
+        pdf.setFontSize(10);
+        items.forEach(item => {
+          if (y < pageHeight - 20) {
+            pdf.setTextColor(74, 222, 128);
+            pdf.text('●', leftMargin, y);
+            pdf.setTextColor(200, 230, 245);
+            pdf.text(item, leftMargin + 6, y);
+            y += 7;
+          }
+        });
+        return y;
+      };
+      
+      // Helper: Draw simple table with auto-pagination
+      const drawTable = (headers, rows, startY, leftMargin = 22) => {
+        const colWidths = headers.map(() => (pageWidth - 44) / headers.length);
+        let y = startY;
+        
+        // Check if we need new page
+        const estimatedHeight = (rows.length + 1) * 7 + 10;
+        
+        // Header row
+        pdf.setFillColor(25, 50, 80);
+        pdf.rect(leftMargin, y - 5, pageWidth - 44, 8, 'F');
+        pdf.setFontSize(9);
+        pdf.setTextColor(74, 222, 128);
+        headers.forEach((h, i) => {
+          pdf.text(h, leftMargin + 3 + i * colWidths[i], y);
+        });
+        y += 7;
+        
+        // Data rows with pagination
+        pdf.setTextColor(200, 230, 245);
+        rows.forEach((row, ri) => {
+          // Check if we need a new page
+          if (y > pageHeight - 20) {
+            pdf.addPage();
+            drawBackground();
+            drawHeader(currentSlideNum, totalSlides);
+            drawFooter();
+            y = 30;
+            
+            // Redraw header on new page
+            pdf.setFillColor(25, 50, 80);
+            pdf.rect(leftMargin, y - 5, pageWidth - 44, 8, 'F');
+            pdf.setFontSize(9);
+            pdf.setTextColor(74, 222, 128);
+            headers.forEach((h, i) => {
+              pdf.text(h, leftMargin + 3 + i * colWidths[i], y);
+            });
+            y += 7;
+            pdf.setTextColor(200, 230, 245);
+          }
+          
+          if (ri % 2 === 0) {
+            pdf.setFillColor(15, 35, 55);
+            pdf.rect(leftMargin, y - 4, pageWidth - 44, 7, 'F');
+          }
+          row.forEach((cell, ci) => {
+            pdf.text(String(cell), leftMargin + 3 + ci * colWidths[ci], y);
+          });
+          y += 7;
+        });
+        return y;
+      };
+      
+      // Helper: Draw comparison boxes (left=bad, right=good)
+      const drawComparison = (left, right, y, height = 50) => {
+        const halfW = (pageWidth - 50) / 2;
+        // Left (red)
+        pdf.setFillColor(35, 20, 25);
+        pdf.setDrawColor(220, 80, 80);
+        pdf.setLineWidth(0.8);
+        pdf.roundedRect(22, y, halfW, height, 3, 3, 'FD');
+        pdf.setFontSize(11);
+        pdf.setTextColor(220, 80, 80);
+        pdf.text(left.title, 22 + halfW / 2, y + 10, { align: 'center' });
+        pdf.setFontSize(9);
+        pdf.setTextColor(200, 180, 180);
+        let ly = y + 18;
+        left.items.forEach(item => { pdf.text('✗ ' + item, 27, ly); ly += 6; });
+        // Right (green)
+        pdf.setFillColor(18, 40, 35);
+        pdf.setDrawColor(74, 222, 128);
+        pdf.roundedRect(28 + halfW, y, halfW, height, 3, 3, 'FD');
+        pdf.setFontSize(11);
+        pdf.setTextColor(74, 222, 128);
+        pdf.text(right.title, 28 + halfW + halfW / 2, y + 10, { align: 'center' });
+        pdf.setFontSize(9);
+        pdf.setTextColor(180, 220, 200);
+        let ry = y + 18;
+        right.items.forEach(item => { pdf.text('✓ ' + item, 33 + halfW, ry); ry += 6; });
+        return y + height + 5;
+      };
+      
+      // Helper: Draw highlight box
+      const drawHighlight = (text, y) => {
+        pdf.setFillColor(22, 50, 65);
+        pdf.setDrawColor(74, 222, 128);
+        pdf.setLineWidth(1);
+        pdf.roundedRect(25, y, pageWidth - 50, 18, 3, 3, 'FD');
+        pdf.setFontSize(10);
+        pdf.setTextColor(74, 222, 128);
+        pdf.text(text, pageWidth / 2, y + 11, { align: 'center' });
+        return y + 22;
+      };
+
+      // ====== SLIDE 1: Welcome ======
+      drawBackground();
+      
+      // Large logo box with wave icon
+      pdf.setFillColor(34, 211, 238);
+      pdf.roundedRect(pageWidth / 2 - 35, 25, 70, 35, 5, 5, 'F');
+      drawIcon('waves', pageWidth / 2, 35, 12);
+      pdf.setFontSize(18);
+      pdf.setTextColor(10, 22, 40);
+      pdf.text('OCEAN DeFi', pageWidth / 2, 52, { align: 'center' });
+      
+      // Main title
+      pdf.setFontSize(26);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Welcome to OCEAN DeFi', pageWidth / 2, 82, { align: 'center' });
+      pdf.setFontSize(13);
+      pdf.setTextColor(103, 232, 249);
+      pdf.text('The Future of Decentralized Finance on Ramestta Blockchain', pageWidth / 2, 95, { align: 'center' });
+      
+      // Feature boxes with icons
+      drawBoxes([
+        { value: '7', label: 'Income Streams', icon: 'dollar', borderColor: [34, 211, 238], valueColor: [74, 222, 128] },
+        { value: '4x', label: 'Lifetime Cap', icon: 'lock', borderColor: [74, 222, 128], valueColor: [74, 222, 128] },
+        { value: '0%', label: 'Trust Policy', icon: 'shield', borderColor: [168, 85, 247], valueColor: [168, 85, 247] },
+        { value: '$50', label: 'Min Stake', icon: 'zap', borderColor: [251, 146, 60], valueColor: [251, 146, 60] }
+      ], 115, 38);
+      
+      drawFooter();
+      setPdfProgress(5);
+
+      // ====== SLIDE 2: Evolution of Money ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(2, 20);
+      drawTitle('The Evolution of Money', 'From Barter to Blockchain');
+      drawTable(
+        ['Era', 'System', 'Status'],
+        [
+          ['1', 'Barter System', 'Limited'],
+          ['2-3', 'Commodity & Coins', 'Heavy'],
+          ['4', 'Paper Money', 'Portable'],
+          ['5', 'Digital Banking', 'Centralized'],
+          ['6', 'Cryptocurrency', 'Decentralized'],
+          ['7', 'DeFi', 'The Future!']
+        ], 58
+      );
+      drawHighlight('OCEAN DeFi represents the pinnacle of financial evolution!', 130);
+      drawFooter();
+      setPdfProgress(10);
+
+      // ====== SLIDE 3: Blockchain ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(3, 20);
+      drawTitle('What is Blockchain?', 'The Foundation of OCEAN DeFi');
+      
+      // Icon boxes with visual icons
+      drawBoxes([
+        { value: '', label: 'Immutable', icon: 'lock', borderColor: [34, 211, 238], valueColor: [34, 211, 238] },
+        { value: '', label: 'Decentralized', icon: 'globe', borderColor: [74, 222, 128], valueColor: [74, 222, 128] },
+        { value: '', label: 'Transparent', icon: 'shield', borderColor: [168, 85, 247], valueColor: [168, 85, 247] }
+      ], 52, 30);
+      
+      drawBullets([
+        'Immutable - Once recorded, data cannot be altered or deleted',
+        'Decentralized - No single entity controls the network',
+        'Transparent - All transactions are visible and verifiable'
+      ], 95);
+      drawHighlight('OCEAN DeFi uses Ramestta: 2-second blocks, validator-backed, affordable!', 130);
+      drawFooter();
+      setPdfProgress(15);
+
+      // ====== SLIDE 4: Smart Contracts ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(4, 20);
+      drawTitle('Smart Contracts', 'Automated Agreements on Blockchain');
+      drawComparison(
+        { title: 'Traditional Contracts', items: ['Need intermediaries', 'Slow (weeks/months)', 'Expensive fees', 'Can be disputed'] },
+        { title: 'Smart Contracts', items: ['No intermediaries', 'Instant execution', 'Minimal fees', 'Cannot be broken'] },
+        55, 52
+      );
+      drawHighlight('OCEAN DeFi smart contracts automate staking, rewards & withdrawals!', 135);
+      drawFooter();
+      setPdfProgress(20);
+
+      // ====== SLIDE 5: DeFi ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(5, 20);
+      drawTitle('What is DeFi?', 'Decentralized Finance Explained');
+      drawComparison(
+        { title: 'Traditional Finance', items: ['Banks control money', 'Limited hours', 'High fees', 'Geographic limits'] },
+        { title: 'DeFi', items: ['You control assets', '24/7 access', 'Low fees', 'Global access'] },
+        55, 52
+      );
+      drawHighlight('OCEAN DeFi: Staking + Yield + Team Rewards powered by validators!', 135);
+      drawFooter();
+      setPdfProgress(25);
+
+      // ====== SLIDE 6: Ramestta ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(6, 20);
+      drawTitle('Ramestta Blockchain', 'Layer 3 Built on Polygon');
+      
+      // Stats boxes with proper formatting
+      drawBoxes([
+        { value: '70K+', label: 'TPS', icon: 'zap', borderColor: [34, 211, 238], valueColor: [34, 211, 238] },
+        { value: '$0.001', label: 'Gas Fee', icon: 'dollar', borderColor: [74, 222, 128], valueColor: [74, 222, 128] },
+        { value: '4M', label: 'Circulation', icon: 'globe', borderColor: [168, 85, 247], valueColor: [168, 85, 247] },
+        { value: '$50K', label: 'Price Target', icon: 'check', borderColor: [251, 146, 60], valueColor: [251, 146, 60] }
+      ], 52, 28);
+      
+      drawTable(['Layer', 'Blockchain', 'Purpose'], [
+        ['Layer 1', 'Ethereum', 'Security'],
+        ['Layer 2', 'Polygon', 'Scalability'],
+        ['Layer 3', 'Ramestta', 'DeFi Optimization']
+      ], 95);
+      drawHighlight('Lower supply + high demand = potential $50,000 RAMA!', 145);
+      drawFooter();
+      setPdfProgress(30);
+
+      // ====== SLIDE 7: Tokenomics ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(7, 20);
+      drawTitle('RAMA Tokenomics', '1 Billion Total Supply');
+      drawBoxes([
+        { value: '80%', label: '800M Locked', borderColor: [168, 85, 247], valueColor: [168, 85, 247] },
+        { value: '20%', label: '200M Ecosystem', borderColor: [74, 222, 128], valueColor: [74, 222, 128] }
+      ], 52, 35);
+      drawBullets([
+        '80% Locked in validator nodes for network security',
+        '20% for development, marketing, liquidity',
+        'Fixed supply prevents inflation',
+        'Validator APY: 5-8.4% monthly',
+        'Trading on BitMart & Koinpark'
+      ], 100);
+      drawFooter();
+      setPdfProgress(35);
+
+      // ====== SLIDE 8: Validator Security ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(8, 20);
+      drawTitle('Validator-Backed Security', 'Real Income, Not Ponzi');
+      drawBoxes([
+        { value: '1', label: 'Stake RAMA', borderColor: [34, 211, 238], valueColor: [34, 211, 238] },
+        { value: '2', label: 'Validators Deploy', borderColor: [74, 222, 128], valueColor: [74, 222, 128] },
+        { value: '3', label: 'Earn 5-8.4%', borderColor: [168, 85, 247], valueColor: [168, 85, 247] },
+        { value: '4', label: 'Sustainable!', borderColor: [251, 146, 60], valueColor: [251, 146, 60] }
+      ], 52, 28);
+      drawBullets([
+        'Real income from blockchain validators',
+        '4x lifetime cap for sustainability',
+        '200%/250% portfolio caps',
+        'Fee recycling back to validators'
+      ], 95);
+      drawHighlight('Unlike Ponzi schemes - OCEAN DeFi has real backing!', 135);
+      drawFooter();
+      setPdfProgress(40);
+
+      // ====== SLIDE 9: Self Income ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(9, 20);
+      drawTitle('Income Stream 1: Self Income', 'Your Personal Daily Growth');
+      drawComparison(
+        { title: 'Tier 1 (Normal)', items: ['Daily: 0.33%-0.40%', 'Monthly: ~11%', 'Cap: 200%', '~18 months'] },
+        { title: 'Tier 2 (Booster)', items: ['Daily: 0.66%-0.80%', 'Monthly: ~22%', 'Cap: 250%', '~11 months'] },
+        52, 48
+      );
+      drawHighlight('$1,000 Tier 2 → $7.30/day → $2,500 total in 11 months!', 130);
+      drawBullets(['Booster: 5+ directs in 10 days + team volume ≥ stake = 2x rate forever!'], 155);
+      drawFooter();
+      setPdfProgress(45);
+
+      // ====== SLIDE 10: Direct Income ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(10, 20);
+      drawTitle('Income Stream 3: Direct Income', '5% Instant Commission');
+      drawBoxes([
+        { value: '1', label: 'Share Link', borderColor: [34, 211, 238], valueColor: [34, 211, 238] },
+        { value: '2', label: 'They Stake', borderColor: [74, 222, 128], valueColor: [74, 222, 128] },
+        { value: '3', label: 'Get 5%', borderColor: [251, 146, 60], valueColor: [251, 146, 60] }
+      ], 52, 28);
+      drawTable(['Referral Stakes', 'Your Commission'], [
+        ['$100', '$5'],
+        ['$500', '$25'],
+        ['$1,000', '$50'],
+        ['10 x $500', '$250']
+      ], 95);
+      drawHighlight('Unlimited referrals = Unlimited earnings!', 150);
+      drawFooter();
+      setPdfProgress(50);
+
+      // ====== SLIDE 11: Slab Income ======
+      pdf.addPage();
+      drawBackground();
+      currentSlideNum = 11;
+      drawHeader(11, 20);
+      drawTitle('Income Stream 4: Slab Income', '11 Levels, 5% to 60% Distribution');
+      const slabEndY = drawTable(['Level', 'Name', 'Volume', 'Share'], [
+        ['1', 'Coral Reef', '$500', '5%'],
+        ['2', 'Shallow Waters', '$2,500', '10%'],
+        ['3', 'Tide Pool', '$10,000', '15%'],
+        ['4', 'Wave Crest', '$25,000', '20%'],
+        ['5', 'Open Sea', '$50,000', '25%'],
+        ['6', 'Deep Current', '$100,000', '30%'],
+        ['7', 'Ocean Floor', '$500,000', '35%'],
+        ['8', 'Abyssal Zone', '$1,000,000', '45%'],
+        ['9', 'Mariana Trench', '$2,500,000', '50%'],
+        ['10', 'Pacific Master', '$5,000,000', '55%'],
+        ['11', 'Ocean Sovereign', '$20,000,000', '60%']
+      ], 52);
+      drawHighlight('Slab 7: $500K team → $105/day → $3,150/month!', slabEndY + 5);
+      drawFooter();
+      setPdfProgress(55);
+
+      // ====== SLIDE 12: Same-Slab Override ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(12, 20);
+      drawTitle('Income Stream 5: Same-Slab Override', '10%, 5%, 5% Collaborative Bonus');
+      drawBoxes([
+        { value: '10%', label: '1st Same-Slab', borderColor: [74, 222, 128], valueColor: [74, 222, 128] },
+        { value: '5%', label: '2nd Same-Slab', borderColor: [34, 211, 238], valueColor: [34, 211, 238] },
+        { value: '5%', label: '3rd Same-Slab', borderColor: [168, 85, 247], valueColor: [168, 85, 247] }
+      ], 52, 30);
+      drawBullets([
+        'Rewards leaders for mentorship',
+        'Creates team motivation',
+        'Passive scaling as team grows'
+      ], 95);
+      drawHighlight('You at Slab 5 ($100/day) → Uplines get $10+$5+$5 daily EXTRA!', 135);
+      drawFooter();
+      setPdfProgress(60);
+
+      // ====== SLIDE 13: Royalty ======
+      pdf.addPage();
+      drawBackground();
+      currentSlideNum = 13;
+      drawHeader(13, 20);
+      drawTitle('Income Stream 6: Royalty Program', '14 Tiers: $30 to $100,000/Month');
+      const royaltyEndY = drawTable(['Tier', 'Name', 'Volume', 'Monthly'], [
+        ['1', 'Coral Starter', '$5,000', '$30'],
+        ['2', 'Pearl Diver', '$25,000', '$100'],
+        ['3', 'Sea Explorer', '$50,000', '$250'],
+        ['4', 'Wave Rider', '$100,000', '$500'],
+        ['5', 'Tide Surge', '$250,000', '$1,000'],
+        ['6', 'Deep Blue', '$500,000', '$2,000'],
+        ['7', 'Ocean Guardian', '$750,000', '$3,000'],
+        ['8', 'Marine Commander', '$1,500,000', '$5,000'],
+        ['9', 'Aqua Captain', '$2,000,000', '$7,500'],
+        ['10', 'Current Master', '$3,500,000', '$10,000'],
+        ['11', 'Sea Legend', '$5,000,000', '$15,000'],
+        ['12', 'Trident Icon', '$10,000,000', '$25,000'],
+        ['13', 'Poseidon Crown', '$20,000,000', '$50,000'],
+        ['14', 'Ocean Supreme', '$50,000,000', '$100,000']
+      ], 52);
+      drawHighlight('LIFETIME earnings with 10% growth every 2 months!', royaltyEndY + 5);
+      drawFooter();
+      setPdfProgress(65);
+
+      // ====== SLIDE 14: One-Time Rewards ======
+      pdf.addPage();
+      drawBackground();
+      currentSlideNum = 14;
+      drawHeader(14, 20);
+      drawTitle('Income Stream 7: One-Time Rewards', '15 Milestones: $100 to $3,000,000');
+      const rewardsEndY = drawTable(['#', 'Name', 'Volume', 'Reward'], [
+        ['1', 'Coral Spark', '$6,000', '$100'],
+        ['2', 'Pearl Bloom', '$15,000', '$250'],
+        ['3', 'Shell Harvest', '$40,000', '$500'],
+        ['4', 'Wave Bounty', '$120,000', '$1,000'],
+        ['5', 'Tide Treasure', '$300,000', '$2,500'],
+        ['6', 'Blue Depth Bonus', '$600,000', '$5,000'],
+        ['7', "Guardian's Gift", '$1,500,000', '$8,000'],
+        ['8', "Captain's Chest", '$3,000,000', '$12,000'],
+        ['9', 'Trident Gem', '$6,000,000', '$30,000'],
+        ['10', 'Sea Legend Award', '$15,000,000', '$50,000'],
+        ['11', 'Abyss Crown', '$30,000,000', '$85,000'],
+        ['12', "Poseidon's Favor", '$60,000,000', '$150,000'],
+        ['13', 'Neptune Scepter', '$200,000,000', '$500,000'],
+        ['14', 'Ocean Infinity', '$500,000,000', '$1,500,000'],
+        ['15', 'Legendary Wave', '$1,000,000,000', '$3,000,000']
+      ], 52);
+      drawHighlight('Total from all 15 rewards: $5,343,850!', rewardsEndY + 5);
+      drawFooter();
+      setPdfProgress(70);
+
+      // ====== SLIDE 15: Total Earning ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(15, 20);
+      drawTitle('Total Earning Potential', '$1,000 Stake → 22.9x Return');
+      drawTable(['Income Stream', 'Amount'], [
+        ['1. Self Income (250%)', '$2,500'],
+        ['2. Direct Income (10x$500)', '$250'],
+        ['3. Slab Income (12 mo)', '$3,600'],
+        ['4. Same-Slab Override', '$1,200'],
+        ['5. One-Time Rewards', '$9,350'],
+        ['6. Royalty', '$6,000'],
+        ['TOTAL', '$22,900']
+      ], 52);
+      drawHighlight('22.9x Return on Investment!', 135);
+      drawFooter();
+      setPdfProgress(75);
+
+      // ====== SLIDE 16: Platform Rules ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(16, 20);
+      drawTitle('Platform Rules & Policies', 'Transparent & Fair');
+      drawComparison(
+        { title: '0% Trust Policy', items: ['Withdraw anytime', '72-hour freeze', 'Cancel to resume', '80% after 72h'] },
+        { title: 'Safe Wallet', items: ['0% internal fee', '5% external fee', 'Compounding', 'Instant TX'] },
+        52, 45
+      );
+      drawComparison(
+        { title: 'Earning Caps', items: ['Self: 200%/250%', 'Global: 4x stakes', 'Slab continues', 'Royalty: LIFE'] },
+        { title: 'Requirements', items: ['Min: $10', 'Slab: 1 direct', 'Booster: 5 in 10d', '40%/30% legs'] },
+        105, 45
+      );
+      drawFooter();
+      setPdfProgress(80);
+
+      // ====== SLIDE 17: Why Choose ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(17, 20);
+      drawTitle('Why Choose OCEAN DeFi?', 'The Complete Package');
+      drawBoxes([
+        { value: '🛡', label: 'Validator-Backed', borderColor: [34, 211, 238], valueColor: [34, 211, 238] },
+        { value: '7', label: 'Income Streams', borderColor: [74, 222, 128], valueColor: [74, 222, 128] },
+        { value: '⚡', label: 'Fast & Cheap', borderColor: [168, 85, 247], valueColor: [168, 85, 247] },
+        { value: '🔓', label: '0% Trust', borderColor: [251, 146, 60], valueColor: [251, 146, 60] }
+      ], 52, 32);
+      drawBullets([
+        'Real income from validators - sustainable long-term',
+        '7 ways to earn: self, booster, direct, slab, override, royalty, rewards',
+        '2-second blocks, $0.001 fees on Ramestta',
+        'Withdraw anytime with complete freedom'
+      ], 100);
+      drawHighlight('Join thousands earning sustainable passive income!', 145);
+      drawFooter();
+      setPdfProgress(85);
+
+      // ====== SLIDE 18: Start Journey ======
+      pdf.addPage();
+      drawBackground();
+      drawHeader(18, 20);
+      drawTitle('Start Your Journey Today', 'Begin Earning in 3 Simple Steps');
+      // Step boxes
+      const steps = [
+        { num: '1', title: 'Create Account', desc: 'Connect wallet' },
+        { num: '2', title: 'Stake RAMA', desc: 'Min $10' },
+        { num: '3', title: 'Start Earning', desc: 'Daily growth!' }
+      ];
+      steps.forEach((s, i) => {
+        const x = 35 + i * 80;
+        pdf.setFillColor(18, 45, 60);
+        pdf.setDrawColor(74, 222, 128);
+        pdf.setLineWidth(1.2);
+        pdf.roundedRect(x, 58, 65, 55, 4, 4, 'FD');
+        pdf.setFillColor(74, 222, 128);
+        pdf.circle(x + 32.5, 75, 10, 'F');
+        pdf.setFontSize(16);
+        pdf.setTextColor(10, 22, 40);
+        pdf.text(s.num, x + 32.5, 79, { align: 'center' });
+        pdf.setFontSize(12);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(s.title, x + 32.5, 98, { align: 'center' });
+        pdf.setFontSize(9);
+        pdf.setTextColor(180, 220, 235);
+        pdf.text(s.desc, x + 32.5, 108, { align: 'center' });
+      });
+      drawHighlight('Ready to Join OCEAN DeFi? Start earning today!', 135);
+      drawFooter();
+      setPdfProgress(90);
+
+      // ====== SLIDE 19: Thank You ======
+      pdf.addPage();
+      drawBackground();
+      
+      // Large logo with wave icon
+      pdf.setFillColor(34, 211, 238);
+      pdf.roundedRect(pageWidth / 2 - 45, 30, 90, 40, 6, 6, 'F');
+      drawIcon('waves', pageWidth / 2, 40, 15);
+      pdf.setFontSize(22);
+      pdf.setTextColor(10, 22, 40);
+      pdf.text('OCEAN DeFi', pageWidth / 2, 62, { align: 'center' });
+      
+      // Main thank you
+      pdf.setFontSize(28);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Thank You!', pageWidth / 2, 95, { align: 'center' });
+      pdf.setFontSize(12);
+      pdf.setTextColor(103, 232, 249);
+      pdf.text('The Future of Decentralized Finance', pageWidth / 2, 110, { align: 'center' });
+      
+      // Feature boxes with icons
+      drawBoxes([
+        { value: '', label: '7 Income Streams', icon: 'dollar', borderColor: [74, 222, 128], valueColor: [255, 255, 255] },
+        { value: '', label: 'Validator-Backed', icon: 'lock', borderColor: [34, 211, 238], valueColor: [255, 255, 255] },
+        { value: '', label: '$0.001 Fees', icon: 'zap', borderColor: [168, 85, 247], valueColor: [255, 255, 255] },
+        { value: '', label: '4x Lifetime Cap', icon: 'waves', borderColor: [251, 146, 60], valueColor: [255, 255, 255] }
+      ], 130, 35);
+      
+      pdf.setFontSize(14);
+      pdf.setTextColor(74, 222, 128);
+      pdf.text('www.oceandefi.uk', pageWidth / 2, pageHeight - 15, { align: 'center' });
+      drawFooter();
+      setPdfProgress(100);
+
+      // Save
+      pdf.save('OCEAN_DeFi_Presentation.pdf');
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF: ' + error.message);
+    } finally {
+      setIsGeneratingPDF(false);
+      setPdfProgress(0);
+    }
+  };
 
   useEffect(() => {
     let interval;
@@ -1586,6 +2787,22 @@ function Presentation() {
             </button>
 
             <button
+              onClick={downloadAsPDF}
+              disabled={isGeneratingPDF}
+              className="p-2 hover:bg-cyan-500/10 rounded-lg transition-all border border-cyan-500/20 hover:border-cyan-500/40 text-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              title={isGeneratingPDF ? `Generating PDF... ${pdfProgress}%` : "Download as PDF"}
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  <span className="text-xs hidden md:inline">{pdfProgress}%</span>
+                </>
+              ) : (
+                <Download size={20} />
+              )}
+            </button>
+
+            <button
               onClick={toggleFullscreen}
               className="p-2 hover:bg-cyan-500/10 rounded-lg transition-all border border-cyan-500/20 hover:border-cyan-500/40 text-cyan-400"
               title="Fullscreen"
@@ -1641,7 +2858,7 @@ function Presentation() {
               onTouchEnd={handleTouchEnd}
               style={{touchAction: 'pan-y'}}
             >
-              <div key={currentSlide} className="cyber-glass rounded-xl md:rounded-3xl p-3 md:p-8 lg:p-12 border-2 border-cyan-500/30 flex-1 flex flex-col overflow-hidden">
+              <div ref={slideContainerRef} key={currentSlide} className="cyber-glass rounded-xl md:rounded-3xl p-3 md:p-8 lg:p-12 border-2 border-cyan-500/30 flex-1 flex flex-col overflow-hidden">
                 <div className="mb-2 md:mb-6 text-center flex-shrink-0">
                   <h2 className="text-base md:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-neon-green mb-0.5 md:mb-2 leading-tight animate-slide-in-top">
                     {slides[currentSlide].title}

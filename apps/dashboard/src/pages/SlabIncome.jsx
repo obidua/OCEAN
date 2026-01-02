@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LayoutGrid, Award, BarChart3 } from "lucide-react";
+import { LayoutGrid, Award, BarChart3, Info } from "lucide-react";
 import { useStore } from "../../store/useUserInfoStore";
 import SlabIncomeScreen from "../components/SlabIncomeScreen";
 import SlabDashboard from "../components/SlabDashboard";
@@ -238,7 +238,8 @@ const SlabIncome = () => {
             }`}
           >
             <LayoutGrid size={18} />
-            <span className="hidden sm:inline">Slab Overview</span>
+            <span className="hidden sm:inline">Contract Data</span>
+            <span className="inline sm:hidden">Contract</span>
           </button>
           <button
             onClick={() => setViewMode("dashboard")}
@@ -249,17 +250,40 @@ const SlabIncome = () => {
             }`}
           >
             <BarChart3 size={18} />
-            <span className="hidden sm:inline">Slab Dashboard</span>
+            <span className="hidden sm:inline">API Dashboard</span>
+            <span className="inline sm:hidden">API</span>
           </button>
         </div>
       </div>
 
       <div className="my-5">
         {viewMode === "overview" && (
-          <SlabIncomeScreen SlabIncomeData={SlabIncomeData} />
+          <div>
+            <div className="cyber-glass border border-cyan-500/30 rounded-lg p-3 mb-4">
+              <div className="flex items-start gap-2">
+                <Info size={16} className="text-cyan-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-cyan-300/80">
+                  <strong className="text-cyan-400">Contract Data:</strong> Real-time data directly from blockchain smart contracts. 
+                  Shows your current slab level, qualified business, and earnings calculated on-chain.
+                </p>
+              </div>
+            </div>
+            <SlabIncomeScreen SlabIncomeData={SlabIncomeData} />
+          </div>
         )}
         {viewMode === "dashboard" && (
-          <SlabDashboard />
+          <div>
+            <div className="cyber-glass border border-cyan-500/30 rounded-lg p-3 mb-4">
+              <div className="flex items-start gap-2">
+                <Info size={16} className="text-cyan-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-cyan-300/80">
+                  <strong className="text-cyan-400">API Dashboard:</strong> Historical data from our API server (<code className="text-neon-green">testapi.oceandefi.uk</code>). 
+                  View detailed analytics, income history, team statistics, and period-based reports.
+                </p>
+              </div>
+            </div>
+            <SlabDashboard />
+          </div>
         )}
       </div>
     </div>

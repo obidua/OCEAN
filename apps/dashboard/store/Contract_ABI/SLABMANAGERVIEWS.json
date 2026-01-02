@@ -1,0 +1,225 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_slabManager",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "achieverIndex",
+    "outputs": [
+      {
+        "internalType": "contract ISlabAchieverIndex",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "stage",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "offset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
+    ],
+    "name": "getAchievers",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "out",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "stage",
+        "type": "uint8"
+      }
+    ],
+    "name": "getAchieversCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "targetUSD",
+        "type": "uint256"
+      }
+    ],
+    "name": "getCappedSumForTarget",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "total",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "downline",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxHops",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOverrideParticipants",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "addrs",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint8[]",
+        "name": "slabIdxs",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "uint8[]",
+        "name": "slabPercs",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "uint8[]",
+        "name": "deltaPercs",
+        "type": "uint8[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getTop3AndSum",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "L1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "L2",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "L3",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "Lrest",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sumAll",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_achieverIndex",
+        "type": "address"
+      }
+    ],
+    "name": "setAchieverIndex",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_slabManager",
+        "type": "address"
+      }
+    ],
+    "name": "setSlabManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "slabManager",
+    "outputs": [
+      {
+        "internalType": "contract ISlabManagerLite",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

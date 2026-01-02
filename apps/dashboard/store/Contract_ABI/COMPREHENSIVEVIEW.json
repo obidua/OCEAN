@@ -1440,6 +1440,32 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_slabManagerViews",
+        "type": "address"
+      }
+    ],
+    "name": "setSlabManagerViews",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "slabManagerViews",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "newOwner",
         "type": "address"
       }

@@ -22,6 +22,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "adminController",
+        "type": "address"
+      }
+    ],
+    "name": "AdminControllerSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "beacon",
@@ -66,31 +79,19 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
-        "name": "user",
+        "name": "qualificationEngine",
         "type": "address"
       },
       {
         "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint8",
-        "name": "slabIdx",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint64",
-        "name": "epoch",
-        "type": "uint64"
+        "internalType": "address",
+        "name": "achievementProcessor",
+        "type": "address"
       }
     ],
-    "name": "Claimed",
+    "name": "EnginesSet",
     "type": "event"
   },
   {
@@ -223,25 +224,6 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "uint64",
-        "name": "epoch",
-        "type": "uint64"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "root",
-        "type": "bytes32"
-      }
-    ],
-    "name": "RootSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -345,6 +327,104 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "achievementProcessor",
+    "outputs": [
+      {
+        "internalType": "contract IAchievementProcessor",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "adminController",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "adminGrantedReward",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "adminGrantedRoyalty",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "adminGrantedSlab",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -365,44 +445,12 @@
   },
   {
     "inputs": [],
-    "name": "capRouter",
-    "outputs": [
-      {
-        "internalType": "contract ICappingIncomeManager",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "cfg",
     "outputs": [
       {
         "internalType": "contract ICoreConfig",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "claimedAtEpoch",
-    "outputs": [
-      {
-        "internalType": "uint64",
-        "name": "",
-        "type": "uint64"
       }
     ],
     "stateMutability": "view",
@@ -440,100 +488,17 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
-      },
-      {
-        "internalType": "enum SlabManager.AchKind",
-        "name": "kind",
-        "type": "uint8"
       }
     ],
-    "name": "getAchievedWithTimes",
+    "name": "generatePowerLegAddress",
     "outputs": [
       {
-        "internalType": "uint8[]",
-        "name": "idxs",
-        "type": "uint8[]"
-      },
-      {
-        "internalType": "uint64[]",
-        "name": "times",
-        "type": "uint64[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "L1s",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "L2s",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "Lrests",
-        "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "kind",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "stage",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint256",
-        "name": "offset",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "limit",
-        "type": "uint256"
-      }
-    ],
-    "name": "getAchievers",
-    "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "out",
-        "type": "address[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "kind",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "stage",
-        "type": "uint8"
-      }
-    ],
-    "name": "getAchieversCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
+        "internalType": "address",
         "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -542,19 +507,14 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "targetUSD",
-        "type": "uint256"
       }
     ],
-    "name": "getCappedSumForTarget",
+    "name": "getHighestSlab",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint8",
         "name": "",
-        "type": "uint256"
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -624,9 +584,14 @@
             "internalType": "uint256",
             "name": "volume",
             "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isArtificial",
+            "type": "bool"
           }
         ],
-        "internalType": "struct SlabManager.LegBusiness[]",
+        "internalType": "struct SlabManagerLite.LegBusiness[]",
         "name": "",
         "type": "tuple[]"
       }
@@ -667,45 +632,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "downline",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "maxHops",
-        "type": "uint256"
-      }
-    ],
-    "name": "getOverrideParticipants",
-    "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "addrs",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint8[]",
-        "name": "slabIdxs",
-        "type": "uint8[]"
-      },
-      {
-        "internalType": "uint8[]",
-        "name": "slabPercs",
-        "type": "uint8[]"
-      },
-      {
-        "internalType": "uint8[]",
-        "name": "deltaPercs",
-        "type": "uint8[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "user",
         "type": "address"
       }
@@ -723,24 +649,11 @@
   },
   {
     "inputs": [],
-    "name": "getRewardMilestones",
-    "outputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "",
-        "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "getRewardMilestonesAll",
     "outputs": [
       {
         "internalType": "uint256[]",
-        "name": "out",
+        "name": "",
         "type": "uint256[]"
       }
     ],
@@ -764,7 +677,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct SlabManager.RoyaltyTier[]",
+        "internalType": "struct SlabManagerLite.RoyaltyTier[]",
         "name": "",
         "type": "tuple[]"
       }
@@ -839,7 +752,7 @@
     "outputs": [
       {
         "internalType": "uint256[]",
-        "name": "out",
+        "name": "",
         "type": "uint256[]"
       }
     ],
@@ -852,34 +765,98 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint256",
+        "name": "targetUSD",
+        "type": "uint256"
       }
     ],
-    "name": "getTop3AndSum",
+    "name": "grantRewardState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint256",
+        "name": "targetUSD",
+        "type": "uint256"
+      }
+    ],
+    "name": "grantRoyaltyState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "timestamp",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint256",
+        "name": "targetUSD",
+        "type": "uint256"
+      }
+    ],
+    "name": "grantSlabState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "hasPowerLeg",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "L1",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "L2",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "L3",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "Lrest",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "sumAll",
-        "type": "uint256"
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -896,6 +873,174 @@
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "isPowerLeg",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "rewardIdx",
+        "type": "uint8"
+      }
+    ],
+    "name": "isRewardAchieved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "rewardIdx",
+        "type": "uint8"
+      }
+    ],
+    "name": "isRewardAdminGranted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "royaltyIdx",
+        "type": "uint8"
+      }
+    ],
+    "name": "isRoyaltyAchieved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "royaltyIdx",
+        "type": "uint8"
+      }
+    ],
+    "name": "isRoyaltyAdminGranted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "slabIdx",
+        "type": "uint8"
+      }
+    ],
+    "name": "isSlabAchieved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "slabIdx",
+        "type": "uint8"
+      }
+    ],
+    "name": "isSlabAdminGranted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -948,16 +1093,35 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "pm",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "contract IPortfolioManager",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
     ],
+    "name": "powerLegPercent",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "processAchievementsForUser",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -975,10 +1139,10 @@
   },
   {
     "inputs": [],
-    "name": "registry",
+    "name": "qualificationEngine",
     "outputs": [
       {
-        "internalType": "contract IUserRegistry",
+        "internalType": "contract ISlabQualificationEngine",
         "name": "",
         "type": "address"
       }
@@ -987,8 +1151,75 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "recalculateHighestSlab",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      }
+    ],
+    "name": "revokeRewardState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      }
+    ],
+    "name": "revokeRoyaltyState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "idx",
+        "type": "uint8"
+      }
+    ],
+    "name": "revokeSlabState",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1007,19 +1238,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rewardVault",
-    "outputs": [
-      {
-        "internalType": "contract IRewardVault",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -1053,11 +1271,85 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_adminController",
+        "type": "address"
+      }
+    ],
+    "name": "setAdminController",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_cfg",
         "type": "address"
       }
     ],
     "name": "setCoreConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_qualificationEngine",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_achievementProcessor",
+        "type": "address"
+      }
+    ],
+    "name": "setEngines",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "powerLegAddr",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "percent",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "hasPower",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isPower",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "addToKeys",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "removeFromKeys",
+        "type": "bool"
+      }
+    ],
+    "name": "setPowerLegState",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1152,6 +1444,24 @@
       }
     ],
     "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "newHighest",
+        "type": "uint8"
+      }
+    ],
+    "name": "updateHighestSlab",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
